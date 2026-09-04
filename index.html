@@ -1,0 +1,1855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kirya Verb — Digital Designer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&family=Alex+Brush&display=swap" rel="stylesheet">
+  <style>
+    /* ══ RESET ══ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    img, video { display: block; max-width: 100%; }
+    a { text-decoration: none; color: inherit; }
+    button { background: none; border: none; font: inherit; cursor: pointer; color: inherit; }
+
+    /* ══ TOKENS ══ */
+    :root {
+      --bg:      #080808;
+      --surface: #111111;
+      --text:    #F4F3F0;
+      --text-serif: #F7F5E0;
+      --muted:   rgba(244,243,240,.48);
+      --dim:     rgba(244,243,240,.28);
+      --gold:    #C9A96E;
+      --bdr:     rgba(255,255,255,.07);
+      --bdr2:    rgba(255,255,255,.14);
+
+      --serif:  'Instrument Serif', Georgia, 'Times New Roman', serif;
+      --sans:   'Gotham', 'Montserrat', Arial, sans-serif;
+      --script: 'Alex Brush', cursive;
+
+      --ease: cubic-bezier(.22,1,.36,1);
+      --max:  1200px;
+      --px:   clamp(22px, 5.5vw, 88px);
+    }
+
+    /* ══ BASE ══ */
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.65;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      cursor: none;
+    }
+    @media (hover: none) { body { cursor: auto; } }
+    .wrap { max-width: var(--max); margin-inline: auto; padding-inline: var(--px); }
+
+    /* ══ CURSOR ══ */
+    * { cursor: none !important; }
+
+    #cur-dot {
+      position: fixed; z-index: 9999; pointer-events: none;
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--text);
+      top: 0; left: 0;
+      transform: translate(-50%, -50%);
+      transition: width .2s var(--ease), height .2s var(--ease), opacity .3s, background .3s;
+      will-change: left, top;
+    }
+    #cur-ring {
+      position: fixed; z-index: 9998; pointer-events: none;
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.28);
+      background: transparent;
+      top: 0; left: 0;
+      transform: translate(-50%, -50%);
+      transition: width .45s var(--ease), height .45s var(--ease),
+                  border-color .45s, background .45s, opacity .3s;
+      will-change: left, top;
+    }
+    body.is-hov #cur-dot { width: 8px; height: 8px; }
+    body.is-hov #cur-ring {
+      width: 58px; height: 58px;
+      border-color: rgba(255,255,255,.68);
+      background: rgba(255,255,255,.055);
+    }
+    body.is-click #cur-ring {
+      width: 24px; height: 24px;
+      border-color: rgba(255,255,255,.9);
+      background: rgba(255,255,255,.12);
+      transition-duration: .1s;
+    }
+    @media (hover: none) { #cur-dot, #cur-ring { display: none; } }
+
+    /* ══ REVEAL ══ */
+    [data-r] {
+      opacity: 0; transform: translateY(30px);
+      transition: opacity .8s var(--ease), transform .8s var(--ease);
+      transition-delay: calc(var(--d,0) * 140ms);
+    }
+    [data-r].on { opacity: 1; transform: none; }
+    @media (prefers-reduced-motion: reduce) {
+      [data-r] { opacity: 1; transform: none; transition: none; }
+    }
+
+    /* ══ HEADER ══ */
+    .hdr {
+      position: fixed; inset: 0 0 auto; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 26px var(--px);
+      transition: padding .4s, background .5s, border-color .5s;
+      border-bottom: 1px solid transparent;
+    }
+    .hdr.scrolled {
+      padding-block: 17px;
+      background: rgba(8,8,8,.86);
+      backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+      border-color: var(--bdr);
+    }
+    .hdr__logo {
+      font-family: var(--script); font-size: 26px; letter-spacing: .01em;
+      transition: opacity .3s;
+    }
+    .hdr__logo:hover { opacity: .6; }
+
+    .hdr__right {
+      display: flex; align-items: center; gap: 36px;
+    }
+    .hdr__nav {
+      display: flex; align-items: center; gap: 36px;
+    }
+    .hdr__nav a {
+      font-size: 11px; font-weight: 500; letter-spacing: .15em;
+      text-transform: uppercase; color: var(--muted); transition: color .3s;
+    }
+    .hdr__nav a:hover { color: var(--text); }
+    .hdr__contact {
+      font-size: 11px; font-weight: 500; letter-spacing: .15em;
+      text-transform: uppercase; color: var(--text);
+      padding: 12px 28px; border: 1px solid var(--bdr2);
+      transition: background .3s, border-color .3s;
+    }
+    .hdr__contact:hover {
+      background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.35);
+    }
+
+    /* Language switcher */
+    .lang-sw {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; font-weight: 500; letter-spacing: .12em;
+    }
+    .lang-sw span { color: var(--dim); user-select: none; }
+    .lang-btn {
+      font-size: 11px; font-weight: 500; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--dim);
+      padding: 4px 2px;
+      border-bottom: 1px solid transparent;
+      transition: color .3s, border-color .3s;
+    }
+    .lang-btn.active { color: var(--text); border-color: var(--text); }
+    .lang-btn:hover:not(.active) { color: var(--muted); }
+
+    /* Burger */
+    .burg {
+      display: none; flex-direction: column; gap: 6px;
+      width: 28px; padding: 2px 0;
+    }
+    .burg span {
+      display: block; height: 1px; background: var(--text);
+      transition: transform .35s var(--ease), opacity .35s;
+    }
+    .burg.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .burg.open span:nth-child(2) { opacity: 0; }
+    .burg.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    /* Mobile nav */
+    .mob {
+      position: fixed; inset: 0; z-index: 90; background: var(--bg);
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 6px;
+      opacity: 0; pointer-events: none; transition: opacity .4s;
+    }
+    .mob.open { opacity: 1; pointer-events: auto; }
+    .mob a {
+      font-family: var(--serif); font-size: clamp(36px, 11vw, 56px);
+      color: var(--text); opacity: 0; transform: translateY(16px);
+      transition: color .3s, opacity .45s var(--ease), transform .45s var(--ease);
+    }
+    .mob.open a:nth-child(1) { opacity:1; transform:none; transition-delay:.06s; }
+    .mob.open a:nth-child(2) { opacity:1; transform:none; transition-delay:.13s; }
+    .mob.open a:nth-child(3) { opacity:1; transform:none; transition-delay:.20s; }
+    .mob.open a:nth-child(4) { opacity:1; transform:none; transition-delay:.27s; }
+    .mob a:hover { color: var(--gold); }
+    .mob__lang {
+      display: flex; gap: 12px; margin-top: 20px;
+    }
+    .mob__lang button {
+      font-family: var(--sans); font-size: 14px; font-weight: 500;
+      letter-spacing: .14em; text-transform: uppercase; color: var(--dim);
+      transition: color .3s;
+    }
+    .mob__lang button.active { color: var(--text); }
+    .mob__lang button:hover { color: var(--muted); }
+    .mob.open .mob__lang {
+      opacity: 1; transition-delay: .32s;
+    }
+
+    /* ══ HERO ══ */
+    .hero {
+      position: relative; width: 100%;
+      height: 100vh; height: 100svh; min-height: 560px;
+      display: flex; align-items: center; justify-content: center; overflow: hidden;
+    }
+    .hero__bg { position: absolute; inset: 0; }
+    .hero__bg img {
+      width: 100%; height: 100%; object-fit: cover; object-position: center 18%;
+      filter: brightness(.14) saturate(.55);
+      transform: scale(1.06); transition: transform 9s ease-out;
+    }
+    body.ready .hero__bg img { transform: scale(1); }
+    .hero__fade {
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg,
+        rgba(8,8,8,.25) 0%, transparent 35%, transparent 60%, rgba(8,8,8,.85) 100%);
+    }
+    .hero__body {
+      position: relative; z-index: 2;
+      display: flex; flex-direction: column; align-items: center; gap: 22px;
+    }
+    .hero__play {
+      width: 68px; height: 68px; border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.28);
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color .35s, transform .35s var(--ease);
+      opacity: 0; animation: fadeIn .9s var(--ease) .4s forwards;
+    }
+    .hero__play:hover { border-color: rgba(255,255,255,.65); transform: scale(1.1); }
+    .hero__play svg { width: 18px; margin-left: 3px; fill: rgba(255,255,255,.85); }
+    .hero__label {
+      font-family: var(--sans); font-size: clamp(16px, 3vw, 28px);
+      font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
+      color: rgba(255,255,255,.68);
+      opacity: 0; animation: fadeUp .9s var(--ease) .55s forwards;
+    }
+    .hero__scroll {
+      position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%);
+      z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 10px;
+      opacity: 0; animation: fadeIn 1s var(--ease) 1.1s forwards;
+    }
+    .hero__scroll span {
+      font-size: 9px; font-weight: 500; letter-spacing: .22em;
+      text-transform: uppercase; color: var(--dim);
+    }
+    .hero__scroll-line {
+      width: 1px; height: 40px;
+      background: linear-gradient(to bottom, var(--dim), transparent);
+      animation: lineDrop 2s ease-in-out infinite;
+    }
+
+    @keyframes fadeIn  { from{opacity:0} to{opacity:1} }
+    @keyframes fadeUp  { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:none} }
+    @keyframes lineDrop {
+      0%,100%{transform:scaleY(1);transform-origin:top}
+      50%{transform:scaleY(.45);transform-origin:top}
+    }
+
+    /* ── Instrument Serif / Georgia color ── */
+    .about__h, .about__sig,
+    .works__h, .wcard__name,
+    .process__h, .step__title,
+    .cta__h,
+    .foot a,
+    .wp-item__title,
+    .wp-hero__name,
+    .wp-results__value,
+    .wp-foot a,
+    .wp-pnav__name,
+    .wp-proj-btn { color: var(--text-serif); }
+    .about { padding-block: clamp(60px, 9vw, 116px); }
+    .about__grid {
+      display: grid; grid-template-columns: .88fr 1fr;
+      gap: clamp(44px, 7vw, 100px); align-items: center;
+    }
+    .about__img {
+      position: relative; overflow: hidden;
+    }
+    .about__img::before { content: ''; display: block; padding-top: 118%; }
+    .about__img img {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; object-position: center top;
+      filter: brightness(.94) contrast(1.04);
+      transition: transform .95s var(--ease);
+    }
+    .about__img:hover img { transform: scale(1.04); }
+    .about__title-row {
+      display: flex; align-items: flex-start; gap: 16px; margin-bottom: 28px;
+    }
+    .about__h {
+      font-family: var(--serif); font-size: clamp(48px, 7.5vw, 84px);
+      font-weight: 400; line-height: .95; letter-spacing: -.01em;
+    }
+    .about__sig {
+      font-family: var(--script); font-size: clamp(17px, 2.5vw, 28px);
+      color: var(--muted); margin-top: 6px; transform: rotate(-6deg);
+      display: block; white-space: nowrap;
+    }
+    .about__text {
+      font-size: 17px; font-weight: 400; color: var(--muted);
+      line-height: 1.88; max-width: 370px;
+    }
+
+    /* ══ WORKS ══ */
+    .works { padding-block: clamp(60px, 9vw, 116px); }
+    .works__h {
+      font-family: var(--serif); font-size: clamp(44px, 7.5vw, 84px);
+      font-weight: 400; line-height: .95; margin-bottom: clamp(36px, 5.5vw, 68px);
+    }
+    .works__grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: clamp(10px, 1.4vw, 18px);
+    }
+    .wcard { position: relative; overflow: hidden; aspect-ratio: 3/4; background: var(--surface); }
+    .wcard img {
+      width: 100%; height: 100%; object-fit: cover;
+      transition: transform .85s var(--ease);
+    }
+    .wcard__over {
+      position: absolute; inset: 0; background: rgba(8,8,8,0);
+      display: flex; align-items: flex-end; padding: 22px;
+      transition: background .4s;
+    }
+    .wcard__tag {
+      font-size: 10px; font-weight: 500; letter-spacing: .15em;
+      text-transform: uppercase; color: transparent; transition: color .35s .08s;
+    }
+    .wcard:hover img { transform: scale(1.065); }
+    .wcard:hover .wcard__over { background: rgba(8,8,8,.4); }
+    .wcard:hover .wcard__tag { color: rgba(255,255,255,.85); }
+    .works__foot { margin-top: clamp(32px, 4.5vw, 60px); text-align: center; }
+    .btn-border {
+      display: inline-block; font-size: 11px; font-weight: 500;
+      letter-spacing: .14em; text-transform: uppercase;
+      color: var(--text); padding: 15px 52px; border: 1px solid var(--bdr2);
+      transition: background .3s, border-color .3s;
+    }
+    .btn-border:hover {
+      background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.38);
+    }
+
+    /* wcard arrow */
+    .wcard__over { flex-direction: column; justify-content: flex-end; gap: 6px; }
+    .wcard__name {
+      font-family: var(--serif); font-weight: 400;
+      font-size: clamp(22px, 2.8vw, 34px);
+      line-height: 1; letter-spacing: -.01em;
+      color: #fff;
+      opacity: 0; transform: translateY(8px);
+      transition: opacity .35s var(--ease), transform .35s var(--ease);
+    }
+    .wcard:hover .wcard__name { opacity: 1; transform: none; }
+    .wcard__arrow {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.35);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0;
+      transform: translate(-6px, 6px);
+      transition: opacity .35s, transform .35s var(--ease);
+      align-self: flex-end;
+    }
+    .wcard__arrow svg { width: 16px; height: 16px; color: #fff; }
+    .wcard:hover .wcard__arrow { opacity: 1; transform: none; }
+    .wcard[data-work] { cursor: none; }
+
+    /* ══ WORK PAGE ══ */
+    #work-page {
+      position: fixed; inset: 0; z-index: 200;
+      background: var(--bg);
+      overflow-y: auto; overflow-x: hidden;      opacity: 0; pointer-events: none;
+      transform: translateY(20px);
+      transition: opacity .48s var(--ease), transform .48s var(--ease);
+    }
+    #work-page.active { opacity: 1; pointer-events: auto; transform: none; }
+
+    /* ── nav ── */
+    .wp-nav {
+      position: sticky; top: 0; z-index: 210;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px var(--px);
+      background: rgba(8,8,8,.92);
+      backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--bdr);
+      opacity: 0; transition: opacity .4s .18s;
+      /* needed for absolute-positioned project tabs */
+      isolation: isolate;
+    }
+    #work-page.active .wp-nav { opacity: 1; }
+    .wp-nav__left {
+      display: flex; align-items: center; gap: 9px;
+      font-size: 11px; font-weight: 500; letter-spacing: .14em;
+      text-transform: uppercase; color: var(--muted); transition: color .3s;
+    }
+    .wp-nav__left:hover { color: var(--text); }
+    .wp-nav__left svg { width: 15px; flex-shrink: 0; }
+    .wp-nav__lang {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; font-weight: 500; letter-spacing: .12em;
+    }
+    .wp-nav__lang span { color: var(--dim); user-select: none; }
+
+    /* ── HERO: full bleed ~42vh, title+desc overlaid bottom-left ── */
+    .wp-hero {
+      position: relative;
+      width: 100%; height: 62vh; min-height: 400px;
+      overflow: hidden;
+    }
+    .wp-hero img {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center 30%;
+      transform: scale(1.04);
+      transition: transform 1.1s var(--ease);
+    }
+    #work-page.active .wp-hero img { transform: scale(1); }
+    /* dark gradient at bottom for text legibility */
+    .wp-hero::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(
+        to bottom,
+        transparent 35%,
+        rgba(8,8,8,.72) 100%
+      );
+    }
+    .wp-nav__projects {
+      display: flex; align-items: center; gap: 4px;
+      position: absolute; left: 50%; transform: translateX(-50%);
+    }
+    .wp-proj-btn {
+      font-size: 11px; font-weight: 500; letter-spacing: .13em;
+      text-transform: uppercase; color: var(--dim);
+      padding: 7px 14px;
+      border: 1px solid transparent;
+      transition: color .3s, border-color .3s;
+      white-space: nowrap;
+    }
+    .wp-proj-btn:hover { color: var(--muted); }
+    .wp-proj-btn.active {
+      color: var(--text);
+      border-color: var(--bdr2);
+    }
+
+    /* overlay text: bottom-left, same grid as all other sections */
+    .wp-hero__bar {
+      position: absolute; bottom: 0;
+      left: 50%; transform: translateX(-50%);
+      width: 100%;
+      max-width: var(--max);
+      z-index: 2;
+      display: grid;
+      grid-template-columns: .88fr 1fr;
+      gap: clamp(44px, 7vw, 100px);
+      align-items: flex-end;
+      padding: 28px var(--px);
+    }
+    .wp-hero__logo {
+      flex-shrink: 0;
+      display: flex; align-items: flex-end;
+    }
+    .wp-hero__logo svg {
+      height: 96px; width: auto;
+      display: block;
+      fill: #fff;
+    }
+    /* HUB logo is larger by design */
+    .wp-hero__logo--hub svg { height: 144px; }
+    .wp-hero__desc {
+      font-size: 13px; font-weight: 400;
+      color: rgba(244,243,240,.72);
+      line-height: 1.6;
+      max-width: 460px;
+      text-align: left;
+      flex-shrink: 1;
+    }
+
+    @media (max-width: 760px) {
+      .wp-nav { flex-wrap: wrap; gap: 10px; padding: 14px var(--px); }
+      .wp-nav__projects { position: static; transform: none; order: 3; width: 100%; justify-content: center; }
+      .wp-proj-btn { font-size: 10px; padding: 6px 10px; }
+    }
+
+    /* ── ITEM ROWS ── */
+    .wp-items {
+      max-width: var(--max);
+      margin-inline: auto;
+      padding: clamp(24px, 3vw, 40px) var(--px) clamp(72px, 10vw, 140px);
+      display: flex; flex-direction: column;
+      gap: clamp(72px, 11vw, 148px);
+    }
+    .wp-item {
+      display: grid;
+      grid-template-columns: .88fr 1fr;
+      gap: clamp(44px, 7vw, 100px);
+      align-items: start;
+    }
+    /* slider inside wp-item__img */
+    .wp-item__img {
+      position: sticky;
+      top: 80px;
+      overflow: hidden;
+    }
+    .wp-item__img::before {
+      content: ''; display: block; padding-top: 118%;
+    }
+    .wp-item__slides {
+      position: absolute; inset: 0;
+      display: flex;
+    }
+    .wp-item__slide {
+      position: absolute; inset: 0;
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+    .wp-item__slide.active { opacity: 1; }
+    .wp-item__slide img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center top;
+      display: block;
+    }
+    /* stories-style progress bar */
+    .wp-item__dots {
+      position: absolute; top: 12px; left: 12px; right: 12px;
+      display: flex; gap: 4px; z-index: 2;
+    }
+    .wp-item__dot {
+      flex: 1; height: 2.5px; border-radius: 2px;
+      background: rgba(255,255,255,.3);
+      overflow: visible;
+      cursor: pointer;
+      position: relative;
+    }
+    /* invisible larger hit area */
+    .wp-item__dot::before {
+      content: '';
+      position: absolute; top: -8px; bottom: -8px; left: 0; right: 0;
+    }
+    .wp-item__dot-fill {
+      position: absolute; inset: 0;
+      width: 0%;
+      background: #fff;
+      border-radius: 2px;
+      transform-origin: left;
+      overflow: hidden;
+    }
+    @keyframes dotFill { from { width: 0%; } to { width: 100%; } }
+    .wp-item__dot.filled .wp-item__dot-fill { width: 100%; animation: none; }
+    .wp-item__dot.active .wp-item__dot-fill { animation: dotFill 3.5s linear forwards; }
+    /* pause fill animation when slider is out of viewport */
+    .wp-item__slides.wp-paused .wp-item__dot.active .wp-item__dot-fill {
+      animation-play-state: paused;
+    }
+    /* invisible tap zones — left half = prev, right half = next, story-style */
+    .wp-item__zone {
+      position: absolute; top: 0; bottom: 0; width: 50%;
+      z-index: 1;
+    }
+    .wp-item__zone--prev { left: 0; }
+    .wp-item__zone--next { right: 0; }
+    .wp-item__img img {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center top;
+      transition: transform .95s var(--ease);
+      display: block;
+    }
+    .wp-item__img:hover img { transform: scale(1.04); }
+
+    .wp-item__txt {}
+    .wp-item__title {
+      font-family: var(--serif); font-weight: 400;
+      font-size: clamp(44px, 7.5vw, 84px);
+      line-height: .95; letter-spacing: -.01em;
+      margin-bottom: 23px; /* was 18px + 5px more */
+      color: var(--text);
+    }
+    .wp-item__sub {
+      font-size: 16px; font-weight: 400; /* was 17px */
+      color: var(--muted); line-height: 1.82;
+      max-width: 420px;
+    }
+    .wp-item__sub p { margin-bottom: 1.2em; }
+    .wp-item__sub p:last-child { margin-bottom: 0; }
+
+    /* ── RESULTS BLOCK ── */
+    .wp-results {
+      max-width: var(--max);
+      margin-inline: auto;
+      padding: clamp(56px, 8vw, 96px) var(--px);
+      border-top: 1px solid var(--bdr);
+    }
+    .wp-results__label {
+      font-size: 11px; font-weight: 500; letter-spacing: .2em;
+      text-transform: uppercase; color: var(--dim);
+      margin-bottom: clamp(32px, 5vw, 56px);
+    }
+    .wp-results__grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1px;
+      background: var(--bdr);
+      border: 1px solid var(--bdr);
+    }
+    .wp-results__item {
+      background: var(--bg);
+      padding: clamp(24px, 3.5vw, 40px) clamp(20px, 3vw, 36px);
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .wp-results__value {
+      font-family: var(--serif); font-weight: 400;
+      font-size: clamp(40px, 6vw, 72px);
+      line-height: 1; letter-spacing: -.02em;
+      color: var(--text);
+    }
+    .wp-results__desc {
+      font-size: 13px; font-weight: 400;
+      color: var(--muted); line-height: 1.55;
+      max-width: 160px;
+    }
+    .wp-scroll {
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      padding: clamp(8px, 1.5vw, 16px) 0;
+    }
+    .wp-scroll span {
+      font-size: 9px; font-weight: 500; letter-spacing: .22em;
+      text-transform: uppercase; color: var(--dim);
+    }
+    .wp-scroll-line {
+      width: 1px; height: 40px;
+      background: linear-gradient(to bottom, var(--dim), transparent);
+      animation: lineDrop 2s ease-in-out infinite;
+    }
+
+    /* mobile-only desc below hero — hidden on desktop */
+    .wp-hero-desc-mob { display: none; }
+
+    .wp-dribbble-btn {
+      max-width: var(--max);
+      margin-inline: auto;
+      padding: clamp(40px, 6vw, 64px) var(--px);
+      display: flex;
+      justify-content: center;
+    }
+
+    .wp-foot {
+      border-top: 1px solid var(--bdr);
+      padding: 32px var(--px);
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 12px 32px;
+    }
+    .wp-foot a {
+      font-family: var(--serif);
+      font-size: clamp(18px, 2.2vw, 22px);
+      color: var(--muted); transition: color .3s;
+    }
+    .wp-foot a[href*="dribbble"]:hover { color: #EA4C89; }
+    .wp-foot a[href^="mailto"]:hover { color: #30CFD7; }
+    .wp-foot a[href^="tel"]:hover { color: #65E24F; }
+
+    @media (max-width: 660px) {
+      /* hero */
+      .wp-hero { height: 44vh; min-height: 260px; }
+      .wp-hero__bar {
+        grid-template-columns: 1fr;
+        align-items: flex-end;
+        padding: 20px var(--px);
+        /* only logo visible inside hero on mobile */
+      }
+      .wp-hero__logo svg { height: 64px; }
+      .wp-hero__logo--hub svg { height: 110px; }
+      /* hide desc inside hero bar on mobile */
+      .wp-hero__desc { display: none; }
+
+      /* show desc as block below hero */
+      .wp-hero-desc-mob {
+        display: block;
+        padding: 20px var(--px) 0;
+        font-size: 14px; font-weight: 400;
+        color: var(--muted); line-height: 1.65;
+      }
+
+      /* nav project tabs wrap */
+      .wp-nav__projects { position: static; transform: none; flex-wrap: wrap; gap: 2px; }
+      .wp-proj-btn { padding: 5px 9px; font-size: 9px; }
+
+      /* item: single column, photo on top — NOT sticky */
+      .wp-item {
+        grid-template-columns: 1fr;
+        gap: 36px;
+      }
+      .wp-item__img {
+        position: relative; /* remove sticky — no more overlap */
+        top: auto;
+      }
+      /* vertical crop on mobile — same as desktop, no content loss */
+      .wp-item__img::before { padding-top: 118%; }
+
+      /* smaller body text on mobile, right padding for comfortable line length */
+      .wp-item__title { font-size: clamp(28px, 8vw, 44px); margin-bottom: 14px; }
+      .wp-item__sub { font-size: 14px; line-height: 1.72; padding-right: 10%; }
+
+      /* results grid: 2 cols on mobile */
+      .wp-results__grid { grid-template-columns: 1fr 1fr; }
+      .wp-results__value { font-size: clamp(28px, 8vw, 44px); }
+      .wp-results__desc { font-size: 12px; }
+
+      /* footer */
+      .wp-foot { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .wp-foot a { font-size: 16px; }
+    }
+    }
+
+    /* ══ PROCESS ══ */
+    .process {
+      padding-block: clamp(60px, 9vw, 116px); border-top: 1px solid var(--bdr);
+    }
+    .process__grid {
+      display: grid; grid-template-columns: .9fr 1.1fr;
+      gap: clamp(23px, 9vw, 35px);
+    }
+    .process__h {
+      font-family: var(--serif); font-size: clamp(40px, 6.5vw, 72px);
+      font-weight: 400; line-height: 1.02; margin-bottom: 28px;
+    }
+    .process__sub {
+      font-size: 17px; font-weight: 400; color: var(--muted);
+      line-height: 1.88; max-width: 300px;
+    }
+
+    /* Steps */
+    .steps {}
+    .step {
+      display: grid;
+      grid-template-columns: 24px 1fr 1fr;
+      gap: 20px 22px;
+      padding: 26px 0;
+      border-bottom: 1px solid var(--bdr);
+      align-items: start;
+      transition: border-color .3s;
+    }
+    .step:first-child { border-top: 1px solid var(--bdr); }
+    .step:hover { border-bottom-color: var(--bdr2); }
+
+    /* col 1: icon */
+    .step__icon {
+      width: 22px; height: 22px;
+      margin-top: 4px; /* optical align with cap-height of title */
+      margin-right: -22px; /* tightened to the physical limit — any further and the icon would overlap the title text */
+      color: rgba(244,243,240,.28);
+      flex-shrink: 0;
+      transition: color .4s var(--ease);
+    }
+    .step__icon svg { width: 100%; height: 100%; display: block; stroke-width: 1.4; }
+    .step:hover .step__icon { color: var(--gold); }
+
+    /* col 2: number + title stacked */
+    .step__head {
+      display: flex; flex-direction: column; gap: 0;
+    }
+    .step__title-row {
+      display: flex; align-items: baseline; gap: 7px;
+    }
+    .step__n {
+      font-family: var(--serif); font-style: normal; font-weight: 400;
+      font-size: clamp(20px, 2.5vw, 27px);
+      line-height: 1.12; letter-spacing: -.01em;
+      color: rgba(244,243,240,.82);
+      flex-shrink: 0;
+      transition: color .35s;
+    }
+    .step__ttl {
+      font-family: var(--serif); font-weight: 400;
+      font-size: clamp(20px, 2.5vw, 27px);
+      line-height: 1.12; letter-spacing: -.01em;
+      color: rgba(244,243,240,.82);
+      transition: color .35s;
+    }
+    .step:hover .step__n,
+    .step:hover .step__ttl { color: var(--text); }
+
+    /* col 3: description */
+    .step__desc {
+      font-size: 17px; font-weight: 400; color: var(--muted);
+      line-height: 1.85;
+    }
+
+    /* ══ CTA ══ */
+    .cta-outer {
+      padding-inline: var(--px);
+      padding-top: clamp(60px, 9vw, 116px);
+      padding-bottom: clamp(60px, 9vw, 116px);
+    }
+    .cta {
+      position: relative; overflow: hidden;
+      min-height: 380px; display: flex; align-items: flex-end;
+      padding: clamp(40px, 6vw, 72px);
+    }
+    .cta__bg { position: absolute; inset: 0; }
+    .cta__bg img {
+      width: 100%; height: 100%; object-fit: cover;
+      object-position: 60% center;
+      filter: brightness(.62);
+      transition: transform .9s var(--ease);
+    }
+    .cta:hover .cta__bg img { transform: scale(1.03); }
+    .cta__vignette {
+      position: absolute; inset: 0;
+      background: linear-gradient(100deg,
+        rgba(8,8,8,.78) 30%, rgba(8,8,8,.2) 72%, rgba(8,8,8,.02) 100%);
+    }
+    .cta__cnt { position: relative; z-index: 2; }
+    .cta__h {
+      font-family: var(--serif); font-style: italic; font-weight: 400;
+      font-size: clamp(36px, 6.5vw, 76px);
+      color: var(--gold); line-height: 1.04; margin-bottom: 10px;
+    }
+    .cta__s { font-size: 17px; font-weight: 400; color: var(--muted); }
+
+    /* ══ FOOTER ══ */
+    .foot {
+      border-top: 1px solid var(--bdr);
+      padding: 32px var(--px);
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 12px 32px;
+    }
+    .foot a {
+      font-family: var(--serif);
+      font-size: clamp(18px, 2.2vw, 22px);
+      font-weight: 400;
+      letter-spacing: .01em;
+      color: var(--muted);
+      transition: color .3s;
+    }
+    .foot a[href*="dribbble"]:hover { color: #EA4C89; }
+    .foot a[href^="mailto"]:hover { color: #30CFD7; }
+    .foot a[href^="tel"]:hover { color: #65E24F; }
+
+    /* ══ RESPONSIVE ══ */
+    @media (max-width: 900px) {
+      .about__grid { grid-template-columns: 1fr; }
+      .about__img { max-width: 420px; }
+      .process__grid { grid-template-columns: 1fr; gap: 56px; }
+      .step { grid-template-columns: 24px 1fr 1fr; }
+    }
+    @media (max-width: 660px) {
+      .hdr__nav, .hdr__contact { display: none; }
+      .lang-sw { display: none; }
+      .burg { display: flex; }
+      .works__grid { grid-template-columns: 1fr 1fr; }
+      .works__grid .wcard:last-child { grid-column: 1/-1; aspect-ratio: 16/9; }
+      /* on mobile: icon + title on row 1, desc spans full width on row 2 */
+      .step {
+        grid-template-columns: 22px 1fr;
+        grid-template-rows: auto auto;
+        gap: 8px 14px;
+      }
+      .step__desc { grid-column: 1 / -1; padding-top: 4px; }
+      .foot { flex-direction: column; align-items: flex-start; }
+    }
+    @media (max-width: 400px) {
+      .works__grid { grid-template-columns: 1fr; }
+      .works__grid .wcard:last-child { grid-column: auto; aspect-ratio: 3/4; }
+    }
+  </style>
+  <script id="img-data">
+        const IMG = {
+      about: 'images/about.png',
+      cta: 'images/cta.jpg',
+      jem: 'images/jem.jpg',
+      jemredesign: 'images/jemredesign.jpg',
+      jemcards: 'images/jemcards.jpg',
+      jemshirts2: 'images/jemshirts2.jpg',
+      jemshirts3: 'images/jemshirts3.jpg',
+      jemenv1: 'images/jemenv1.jpg',
+      jemenv2: 'images/jemenv2.jpg',
+      jemenv3: 'images/jemenv3.jpg',
+      jemdigital1: 'images/jemdigital1.jpg',
+      jemdigital2: 'images/jemdigital2.jpg',
+      jemdigital3: 'images/jemdigital3.jpg',
+      jemcampaign1: 'images/jemcampaign1.jpg',
+      jemcampaign2: 'images/jemcampaign2.jpg',
+      jemcampaign3: 'images/jemcampaign3.jpg',
+      jemdigital2b: 'images/jemdigital2b.jpg',
+      jemdigital3b: 'images/jemdigital3b.jpg',
+      jembrand1: 'images/jembrand1.jpg',
+      jembrand2: 'images/jembrand2.jpg',
+      jembrand3: 'images/jembrand3.jpg',
+      jemcards1: 'images/jemcards1.jpg',
+      jemcards2: 'images/jemcards2.jpg',
+      jemcards3: 'images/jemcards3.jpg',
+      jemcards1b: 'images/jemcards1b.jpg',
+      jemCover: 'images/jemCover.jpg',
+      hubCover: 'images/hubCover.jpg',
+      collagenCover: 'images/collagenCover.jpg',
+      jemHero: 'images/jemHero.jpg',
+      hubHero: 'images/hubHero.jpg',
+      collagenHero: 'images/collagenHero.jpg',
+      collagenooh1: 'images/collagenooh1.jpg',
+      collagenooh2: 'images/collagenooh2.jpg',
+      collagenooh3: 'images/collagenooh3.jpg',
+      collagenads2: 'images/collagenads2.jpg',
+      collagenads3: 'images/collagenads3.jpg',
+      collagenmail: 'images/collagenmail.jpg',
+      hubbrand1: 'images/hubbrand1.jpg',
+      hubbrand2: 'images/hubbrand2.jpg',
+      hubsocial: 'images/hubsocial.jpg',
+      hubweb2: 'images/hubweb2.jpg',
+      collagenmail2: 'images/collagenmail2.jpg',
+      jemshirts: 'images/jemshirts.jpg',
+      hub: 'images/hub.jpg',
+      hubguideline: 'images/hubguideline.jpg',
+      hubweb: 'images/hubweb.jpg',
+      hubvinyl: 'images/hubvinyl.jpg',
+      collagen: 'images/collagen.jpg',
+      collagenads: 'images/collagenads.jpg',
+      collagenweb: 'images/collagenweb.jpg',
+      collagenmagazine: 'images/collagenmagazine.jpg',
+    };;
+  </script>
+  <script>
+    /* inject base64 src into static img tags */
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('img[data-img]').forEach(function (img) {
+        var key = img.getAttribute('data-img');
+        if (IMG[key]) img.src = IMG[key];
+      });
+    });
+  </script>
+</head>
+<body>
+
+  <!-- ─── CURSOR ─── -->
+  <div id="cur-dot"></div>
+  <div id="cur-ring"></div>
+
+  <!-- ─── MOBILE NAV ─── -->
+  <nav class="mob" id="mob">
+    <a href="#about"   onclick="closeMob()" data-i18n="nav.about">About</a>
+    <a href="#works"   onclick="closeMob()" data-i18n="nav.works">Works</a>
+    <a href="#process" onclick="closeMob()" data-i18n="nav.process">Process</a>
+    <a href="#contact" onclick="closeMob()" data-i18n="nav.contact">Contact</a>
+    <div class="mob__lang">
+      <button class="mob-lang-btn active" data-lang="en">EN</button>
+      <button class="mob-lang-btn" data-lang="ru">RU</button>
+    </div>
+  </nav>
+
+  <!-- ─── HEADER ─── -->
+  <header class="hdr" id="hdr">
+    <a href="#" class="hdr__logo">Kirya Verb</a>
+    <div class="hdr__right">
+      <nav class="hdr__nav">
+        <a href="#about"   data-i18n="nav.about">About</a>
+        <a href="#works"   data-i18n="nav.works">Works</a>
+        <a href="#process" data-i18n="nav.process">Process</a>
+        <a href="#contact" class="hdr__contact" data-i18n="nav.contact">Contact</a>
+      </nav>
+      <div class="lang-sw">
+        <button class="lang-btn active" data-lang="en">EN</button>
+        <span>/</span>
+        <button class="lang-btn" data-lang="ru">RU</button>
+      </div>
+    </div>
+    <button class="burg" id="burg" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </header>
+
+  <!-- ─── HERO ─── -->
+  <section class="hero">
+    <div class="hero__bg">
+      <img
+        src="https://images.unsplash.com/photo-1505682634904-d7c8d95cdc50?w=1800&auto=format&q=55"
+        alt="" aria-hidden="true" fetchpriority="high"
+      >
+    </div>
+    <div class="hero__fade"></div>
+    <div class="hero__body">
+      <button class="hero__play" aria-label="Play video">
+        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <p class="hero__label">Тут будет видео 16:9</p>
+    </div>
+    <div class="hero__scroll" aria-hidden="true">
+      <span data-i18n="hero.scroll">Scroll</span>
+      <div class="hero__scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- ─── ABOUT ─── -->
+  <section class="about" id="about">
+    <div class="wrap">
+      <div class="about__grid">
+        <div class="about__img" data-r>
+          <img src="" data-img="about" alt="Kirya Verb" loading="lazy">
+        </div>
+        <div class="about__copy">
+          <div class="about__title-row" data-r style="--d:1">
+            <h2 class="about__h" data-i18n="about.h">About me</h2>
+            <span class="about__sig" aria-hidden="true">Verbetsky</span>
+          </div>
+          <p class="about__text" data-r style="--d:2" data-i18n="about.text">
+            I'm a digital designer who creates clear and expressive visual solutions through simple forms. Drawing on research and user insight, I help make digital products clearer, more user-friendly, and visually cohesive.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── WORKS ─── -->
+  <section class="works" id="works">
+    <div class="wrap">
+      <h2 class="works__h" data-r data-i18n="works.h">My Latest Works</h2>
+      <div class="works__grid">
+        <div class="wcard" data-r style="--d:1" data-work="jem" role="button" tabindex="0" aria-label="Open JEM Camp project">
+          <img src="" data-img="jemCover" alt="JSM Camp — Apparel Branding" loading="lazy"
+               style="object-position: center top;">
+          <div class="wcard__over">
+            <span class="wcard__tag" data-i18n="wcard1.tag">Branding</span>
+            <span class="wcard__name">JEM Camp</span>
+            <div class="wcard__arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </div>
+          </div>
+        </div>
+        <div class="wcard" data-r style="--d:2" data-work="hub" role="button" tabindex="0" aria-label="Open HUB project">
+          <img src="" data-img="hubCover" alt="HUB — Brand Guideline" loading="lazy"
+               style="object-position: 55% center;">
+          <div class="wcard__over">
+            <span class="wcard__tag" data-i18n="wcard2.tag">Brand Guide</span>
+            <span class="wcard__name">HUB Community</span>
+            <div class="wcard__arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </div>
+          </div>
+        </div>
+        <div class="wcard" data-r style="--d:3" data-work="collagen" role="button" tabindex="0" aria-label="Open 21 Collagen project">
+          <img src="" data-img="collagenCover" alt="21 Collagen — OOH Advertising" loading="lazy"
+               style="object-position: center 30%;">
+          <div class="wcard__over">
+            <span class="wcard__tag" data-i18n="wcard3.tag">Advertising</span>
+            <span class="wcard__name">21Collagen</span>
+            <div class="wcard__arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="works__foot" data-r>
+        <a href="https://dribbble.com/KiryaVerb?work_availability_modal=true" target="_blank" rel="noopener" class="btn-border" data-i18n="works.more">See more works</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── PROCESS ─── -->
+  <section class="process" id="process">
+    <div class="wrap">
+      <div class="process__grid">
+        <div data-r>
+          <h2 class="process__h" data-i18n-html="process.h">How it<br>works</h2>
+          <p class="process__sub" data-i18n="process.sub">
+            Design is a way to solve problems through visual and user experience. A designer's job is to transform complex ideas and processes into clear, accessible, and functional digital solutions.
+          </p>
+        </div>
+        <div class="steps">
+          <div class="step" data-r style="--d:1">
+            <div class="step__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+            </div>
+            <div class="step__head">
+              <div class="step__title-row">
+                <span class="step__n">01.</span>
+                <h3 class="step__ttl" data-i18n="step1.ttl">Briefing</h3>
+              </div>
+            </div>
+            <p class="step__desc" data-i18n="step1.desc">Defining the project goals, business objectives and expectations that the design should address.</p>
+          </div>
+          <div class="step" data-r style="--d:2">
+            <div class="step__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="20" y1="20" x2="15.8" y2="15.8"/></svg>
+            </div>
+            <div class="step__head">
+              <div class="step__title-row">
+                <span class="step__n">02.</span>
+                <h3 class="step__ttl" data-i18n="step2.ttl">Research</h3>
+              </div>
+            </div>
+            <p class="step__desc" data-i18n="step2.desc">Study the product, audience, and context of use to identify problems and opportunities.</p>
+          </div>
+          <div class="step" data-r style="--d:3">
+            <div class="step__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0018 8 6 6 0 006 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 018.91 14"/></svg>
+            </div>
+            <div class="step__head">
+              <div class="step__title-row">
+                <span class="step__n">03.</span>
+                <h3 class="step__ttl" data-i18n="step3.ttl">Concept</h3>
+              </div>
+            </div>
+            <p class="step__desc" data-i18n="step3.desc">Formation of an idea and a general direction that determines the logic and nature of the future solution.</p>
+          </div>
+          <div class="step" data-r style="--d:4">
+            <div class="step__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+            </div>
+            <div class="step__head">
+              <div class="step__title-row">
+                <span class="step__n">04.</span>
+                <h3 class="step__ttl" data-i18n="step4.ttl">Design</h3>
+              </div>
+            </div>
+            <p class="step__desc" data-i18n="step4.desc">Creating a structure, interface, and visual language that provides a clear and consistent user experience.</p>
+          </div>
+          <div class="step" data-r style="--d:5">
+            <div class="step__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </div>
+            <div class="step__head">
+              <div class="step__title-row">
+                <span class="step__n">05.</span>
+                <h3 class="step__ttl" data-i18n="step5.ttl">The Finale</h3>
+              </div>
+            </div>
+            <p class="step__desc" data-i18n="step5.desc">Preparation of design materials for the correct implementation of the product and file transfer.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── CTA ─── -->
+  <div class="cta-outer" id="contact">
+    <div class="cta" data-r>
+      <div class="cta__bg">
+        <img src="" data-img="cta" alt="" aria-hidden="true" loading="lazy">
+      </div>
+      <div class="cta__vignette"></div>
+      <div class="cta__cnt">
+        <h2 class="cta__h" data-i18n="cta.h">Got a clear Vision?</h2>
+        <p class="cta__s" data-i18n="cta.s">Let's make it reality.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── FOOTER ─── -->
+  <footer class="foot">
+    <a href="https://dribbble.com" target="_blank" rel="noopener">Dribbble</a>
+    <a href="mailto:kiryaverb@icloud.com">kiryaverb@icloud.com</a>
+    <a href="tel:+079969974">079969974</a>
+  </footer>
+
+  <!-- ═══════════════════════════════════════
+       WORK PAGES (SPA overlay)
+  ════════════════════════════════════════ -->
+  <div id="work-page" role="dialog" aria-modal="true" aria-label="Project page">
+    <div id="work-content"></div>
+  </div>
+
+  <script>
+    /* ══ WORK DATA — matching reference screenshots ══ */
+    const WORKS = {
+      jem: {
+        title:  'JEM Camp',
+        next:   'hub',
+        prev:   'collagen',
+        hero:   IMG.jemHero,
+        dribbble: 'https://dribbble.com/shots/24630754-JEM-Camp-Moldova',
+        desc: {
+          en: 'JEM Camp is an informal Jewish educational camp in Moldova. I developed a visual identity redesign and extended the project into merchandise, printed materials, environmental graphics and interactive camp experiences.',
+          ru: 'JEM Camp — неформальный еврейский образовательный лагерь в Молдове. Я разработал редизайн визуальной айдентики и расширил проект до мерча, печатных материалов, средовой графики и интерактивных лагерных активностей.'
+        },
+        items: [
+          {
+            img: IMG.jembrand1,
+            imgs: [IMG.jembrand1, IMG.jembrand2, IMG.jembrand3],
+            title: { en: 'Brand Identity', ru: 'Айдентика бренда' },
+            sub: {
+              en: 'The existing identity did not fully communicate the meaning behind the JEM name. The typography created a more formal impression, while the logo existed in only one configuration regardless of the context.\n\nI reworked the typography, removed unnecessary elements and developed multiple logo configurations for different use cases. I also created a flexible pattern system and repositioned the Star of David from the main logo into the broader visual language.\n\nThe redesign created a more coherent and flexible identity system, giving JEM a clearer visual expression and defined principles for its future applications.',
+              ru: 'Существующая айдентика не в полной мере передавала смысл, стоящий за названием JEM. Типографика создавала более официальное впечатление, а логотип существовал в единственной конфигурации вне зависимости от контекста.\n\nЯ переработал типографику, убрал лишние элементы и разработал несколько конфигураций логотипа для разных применений. Также создал гибкую систему паттернов и переместил Звезду Давида из основного логотипа в более широкий визуальный язык.\n\nРедизайн создал более целостную и гибкую систему айдентики, дав JEM более чёткое визуальное выражение и определив принципы для будущих применений.'
+            }
+          },
+          {
+            img: IMG.jemcards1b,
+            imgs: [IMG.jemcards1b, IMG.jemcards2, IMG.jemcards3],
+            title: { en: 'Experience Design', ru: 'Дизайн опыта' },
+            sub: {
+              en: 'I wanted to turn ordinary staff introductions and camp communication into part of the experience itself.\n\nI designed 25 collectible staff cards with a rarity system based on color, staff roles and accessibility. Completing the collection unlocked a second level: 80–85 unique participant cards.\n\nA separate system included 400 communication cards across four categories: conversation starters, challenges, name-finding cards and personal farewell messages from staff.\n\nThe collectible system became an active social mechanic: around 50% of participants completed the full staff collection, unlocking the second set of cards.',
+              ru: 'Я хотел превратить обычные знакомства с персоналом и лагерную коммуникацию в часть самого опыта.\n\nЯ разработал 25 коллекционных карточек сотрудников с системой редкости, основанной на цвете, ролях и доступности. Сбор полной коллекции открывал второй уровень: 80–85 уникальных карточек участников.\n\nОтдельная система включала 400 карточек общения четырёх категорий: разговорники, челленджи, карточки поиска имён и личные прощальные послания от персонала.\n\nКоллекционная система стала активной социальной механикой: около 50% участников собрали полную коллекцию персонала, открыв второй набор карточек.'
+            }
+          },
+          {
+            img: IMG.jemshirts,
+            imgs: [IMG.jemshirts, IMG.jemshirts2, IMG.jemshirts3],
+            title: { en: 'Merchandise', ru: 'Мерч' },
+            sub: {
+              en: 'Staff T-shirts needed to feel personal rather than simply function as branded uniforms.\n\nI designed 25 individual staff T-shirts, incorporating each person\'s name and visual elements reflecting their personality while maintaining a shared visual language.\n\nFor participants, I created one unified design for 80+ campers, emphasizing collective identity.\n\nThe merchandise created two distinct expressions of the camp: individuality for staff and collective identity for participants.',
+              ru: 'Футболки персонала должны были ощущаться личными, а не просто функционировать как брендированная форма.\n\nЯ разработал 25 индивидуальных футболок для сотрудников, включая имя каждого и визуальные элементы, отражающие их личность, при сохранении общего визуального языка.\n\nДля участников я создал единый дизайн для 80+ человек, акцентируя коллективную идентичность.\n\nМерч создал два различных выражения лагеря: индивидуальность для персонала и коллективная идентичность для участников.'
+            }
+          },
+
+          {
+            img: IMG.jemcampaign1,
+            imgs: [IMG.jemcampaign1, IMG.jemcampaign2, IMG.jemcampaign3],
+            title: { en: 'Campaign Materials', ru: 'Кампейн-материалы' },
+            sub: {
+              en: 'I designed approximately four flyer concepts combining narrative elements with practical calls to action, such as directing participants to the camp\'s social channels for photo reports and exclusive content.\n\nThe materials supported the fictional atmosphere of the shift while communicating information in a visually consistent way.',
+              ru: 'Я разработал около четырёх концепций флаеров, совмещающих нарративные элементы с практическими призывами к действию — например, направляя участников в социальные каналы лагеря для фотоотчётов и эксклюзивного контента.\n\nМатериалы поддерживали вымышленную атмосферу смены, передавая информацию визуально последовательным способом.'
+            }
+          },
+          {
+            img: IMG.jemdigital1,
+            imgs: [IMG.jemdigital1, IMG.jemdigital2b, IMG.jemdigital3b],
+            title: { en: 'Digital Experience', ru: 'Цифровой опыт' },
+            sub: {
+              en: 'I developed a website concept as a digital extension of the redesigned identity, combining its typography, colors and visual language with a structured information architecture.\n\nThe concept brought together the camp\'s photo archive, history, organizational context and key information into a single intuitive interface.\n\nStatus: Concept — not yet launched.',
+              ru: 'Я разработал концепцию сайта как цифровое продолжение обновлённой айдентики, совмещая её типографику, цвета и визуальный язык со структурированной информационной архитектурой.\n\nКонцепт объединил фотоархив лагеря, историю, организационный контекст и ключевую информацию в единый интуитивный интерфейс.\n\nСтатус: Концепт — ещё не запущен.'
+            }
+          }
+        ],
+        results: [
+          { value: '3',   label: { en: 'Camp shifts', ru: 'Смены лагеря' } },
+          { value: '25',  label: { en: 'Individual staff T-shirts', ru: 'Индивидуальных футболок персонала' } },
+          { value: '400', label: { en: 'Unique communication cards', ru: 'Уникальных карточек общения' } },
+          { value: '80+', label: { en: 'Participant cards', ru: 'Карточек участников' } },
+          { value: '80+', label: { en: 'Participant T-shirts', ru: 'Футболок участников' } },
+          { value: '50%', label: { en: 'Participants completed the full staff-card collection', ru: 'Участников собрали полный набор карточек' } },
+        ]
+      },
+      hub: {
+        title:  'HUB Community',
+        next:   'collagen',
+        prev:   'jem',
+        hero:   IMG.hubHero,
+        dribbble: 'https://dribbble.com/shots/26441718-HUB-Community',
+        desc: {
+          en: 'The initial concept for HUB started with someone else, who didn\'t take it further. I picked it up and developed it into a full brand and product case — identity, web and mobile product design, and social media.',
+          ru: 'Изначальная концепция HUB началась с другого человека, который не стал развивать её дальше. Я подхватил проект и развил его в полноценный бренд- и продуктовый кейс — айдентику, дизайн веб- и мобильного продукта и социальные сети.'
+        },
+        items: [
+          {
+            img: IMG.hubbrand1,
+            imgs: [IMG.hubbrand1, IMG.hubbrand2],
+            title: { en: 'Brand Identity', ru: 'Айдентика бренда' },
+            sub:   {
+              en: 'I designed the logo, a supporting pattern built on a hexagonal grid, and paired typography for display and body use — tested across both digital applications and print mockups.',
+              ru: 'Я разработал логотип, поддерживающий паттерн на основе шестиугольной сетки и парную типографику для заголовков и основного текста — протестированную как в цифровых приложениях, так и на печатных макетах.'
+            }
+          },
+          {
+            img: IMG.hubweb,
+            imgs: [IMG.hubweb, IMG.hubweb2],
+            title: { en: 'Digital Experience', ru: 'Цифровой опыт' },
+            sub:   {
+              en: 'I designed the desktop and mobile product end-to-end, structured around dedicated thematic blocks: Old Chisinau; News; Marketplace; Private Events; Chat. The site also accounted for Google Ads placements for monetization.',
+              ru: 'Я спроектировал десктопный и мобильный продукт от начала до конца, выстроив его вокруг отдельных тематических блоков: Старый Кишинёв; Новости; Маркетплейс; Приватные мероприятия; Чат. Сайт также учитывал размещение рекламы Google Ads для монетизации.'
+            }
+          },
+          {
+            img: IMG.hubsocial,
+            title: { en: 'Social Media', ru: 'Социальные сети' },
+            sub:   {
+              en: 'I extended the visual system into social media — from identity-driven banners to dedicated layouts for specific content series, such as one on old Chisinau.',
+              ru: 'Я расширил визуальную систему на социальные сети — от баннеров на основе айдентики до отдельных макетов под конкретные серии контента, например серию о старом Кишинёве.'
+            }
+          }
+        ]
+      },
+      collagen: {
+        title:  '21Collagen',
+        next:   'jem',
+        prev:   'hub',
+        hero:   IMG.collagenHero,
+        dribbble: 'https://dribbble.com/shots/25054542-21Collagen',
+        desc: {
+          en: 'Created digital and print marketing materials, including advertising creatives, email campaigns, promotional visuals, and branded assets for offline events.',
+          ru: 'Создавал цифровые и печатные маркетинговые материалы, включая рекламные креативы, email-рассылки, промовизуалы и брендированные материалы для офлайн-мероприятий.'
+        },
+        items: [
+          {
+            img: IMG.collagenads,
+            imgs: [IMG.collagenads, IMG.collagenads2, IMG.collagenads3],
+            title: { en: 'Google & Meta Ads', ru: 'Google и Meta реклама' },
+            sub:   {
+              en: 'An ongoing series of performance creatives for Google and Meta, covering the brand\'s core product line — each design adapted into an average of ten different sizes across placements.',
+              ru: 'Серия перформанс-креативов для Google и Meta по основной продуктовой линейке бренда — каждый дизайн адаптирован в среднем под десять разных размеров под разные плейсменты.'
+            }
+          },
+          {
+            img: IMG.collagenmail,
+            imgs: [IMG.collagenmail, IMG.collagenmail2],
+            title: { en: 'Email Newsletter', ru: 'Email-рассылки' },
+            sub:   {
+              en: 'I designed 30+ unique email layouts covering different messages and customer scenarios — post-purchase discount offers, general newsletters, and other points in the customer journey.',
+              ru: 'Я разработал 30+ уникальных email-макетов под разные сообщения и сценарии клиента — скидки после покупки, общие рассылки и другие точки пути клиента.'
+            }
+          },
+          {
+            img: IMG.collagen,
+            imgs: [IMG.collagenooh1, IMG.collagenooh2, IMG.collagenooh3],
+            title: { en: 'OOH & Print Advertising', ru: 'Наружная и печатная реклама' },
+            sub:   {
+              en: 'Beyond digital, I worked across a range of print and physical formats for the brand — from large-format outdoor billboards to a two-page magazine spread, an exhibition stand, redeemable vouchers, and full-window ad wraps on Bucharest metro cars.',
+              ru: 'Помимо digital, я работал с широким спектром печатных и физических форматов бренда — от крупноформатных наружных билбордов до разворота в журнале, стенда на выставке, купонов и полноразмерных рекламных обклеек на вагонах метро в Бухаресте.'
+            }
+          },
+          {
+            img: IMG.collagenweb,
+            title: { en: 'Redesign for Web', ru: 'Редизайн сайта' },
+            sub:   {
+              en: 'I proposed a set of digital-specific adjustments to the brand\'s visual system — refining typography, color and layout for on-screen use, closer to the brand\'s original design intent.\n\nSome of these changes were adopted into the live site; others remain part of an ongoing conversation about the brand\'s digital direction.',
+              ru: 'Я предложил ряд адаптаций визуальной системы бренда под цифровую среду — уточнил типографику, цвет и композицию для экрана, ближе к изначальному замыслу бренда.\n\nЧасть изменений внедрили на сайте; остальное остаётся частью открытого разговора о цифровом направлении бренда.'
+            }
+          }
+        ]
+      }
+    };
+
+        const LOGOS = {
+      jemSvg: `<svg width="258" height="64" viewBox="0 0 258 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M22.1089 3.25392C23.2335 3.25392 24.3272 3.10707 25.3899 2.81337C26.4488 2.51967 27.5192 2.20664 28.6013 1.86656C29.6834 1.52648 30.7654 1.21346 31.8475 0.919758C32.9296 0.626054 34.0541 0.479197 35.229 0.479197C37.3003 0.479197 38.9041 1.00864 40.0326 2.06752C41.161 3.1264 41.7252 4.64902 41.7252 6.63152C41.7252 8.20824 41.3851 9.47193 40.7127 10.4187C40.0364 11.3655 39.136 11.8409 38.0075 11.8409C37.2849 11.8409 36.5622 11.6708 35.8434 11.3346C35.1208 10.9946 34.4213 10.6158 33.745 10.183C33.0687 9.75405 32.4388 9.37146 31.8514 9.03138C31.264 8.6913 30.7925 8.52513 30.4331 8.52513C29.7104 8.52513 29.351 8.88839 29.351 9.60719C29.351 10.013 29.5752 10.8245 30.0273 12.0418C30.4795 13.2592 31.0089 14.6118 31.6156 16.0996C32.2224 17.5874 32.8446 19.0869 33.4745 20.5979C34.1044 22.1089 34.599 23.361 34.9623 24.3503C35.8627 26.7425 36.5622 29.3665 37.0569 32.2301C37.5515 35.0937 37.7989 37.8762 37.7989 40.5813C37.7989 44.098 37.3699 47.2669 36.5158 50.0842C35.6579 52.9014 34.4174 55.3129 32.7982 57.3224C31.1751 59.3281 29.2235 60.8623 26.9473 61.9212C24.6711 62.9801 22.1128 63.5095 19.2724 63.5095C16.4319 63.5095 13.9625 63.0264 11.5974 62.0565C9.23234 61.0865 7.19187 59.7339 5.47602 57.9987C3.76018 56.2635 2.42305 54.2115 1.45306 51.8425C0.483063 49.4774 0 46.8959 0 44.098C0 41.845 0.313025 39.7466 0.946806 37.8066C1.57672 35.8705 2.43464 34.1778 3.51671 32.7363C4.59878 31.2949 5.8818 30.1664 7.36964 29.3549C8.85748 28.5433 10.4574 28.1376 12.1732 28.1376C14.2021 28.1376 15.7672 28.6902 16.8725 29.7955C17.9777 30.9007 18.5304 32.4658 18.5304 34.4947C18.5304 35.8473 18.3178 36.9178 17.8889 37.7061C17.4599 38.4945 16.9962 39.1592 16.5015 39.7002C16.003 40.2412 15.5431 40.7398 15.1141 41.188C14.6852 41.6402 14.4726 42.2006 14.4726 42.8807C14.4726 43.9203 14.9905 44.7743 16.03 45.4506C17.0657 46.1269 18.3719 46.4631 19.9525 46.4631C21.5331 46.4631 22.9823 46.0921 24.3156 45.3463C25.645 44.6043 26.8043 43.5763 27.7975 42.2701C28.7868 40.9639 29.5558 39.4065 30.0969 37.6018C30.6379 35.8009 30.9084 33.8377 30.9084 31.7161C30.9084 29.2815 30.5258 26.669 29.7568 23.8711C29.1694 21.7534 28.381 19.7477 27.3917 17.8502C26.3985 15.9566 25.3165 14.3103 24.1455 12.9152C22.9707 11.5201 21.7534 10.411 20.4935 9.60333C19.2299 8.79179 18.0125 8.386 16.8416 8.386C15.7595 8.386 14.7547 8.71449 13.8311 9.36759C12.9075 10.0207 12.0032 10.7434 11.126 11.5317C10.2448 12.3201 9.33281 13.0428 8.38601 13.6959C7.4392 14.349 6.40351 14.6775 5.27507 14.6775C3.69834 14.6775 2.43464 14.0475 1.48784 12.7838C0.541029 11.524 0.0656961 9.85453 0.0656961 7.77928C0.0656961 5.34463 0.753579 3.43942 2.12935 2.06365C3.50512 0.687883 5.36395 0 7.70972 0C8.92704 0 10.1328 0.170038 11.3269 0.506251C12.521 0.846329 13.7152 1.21732 14.9093 1.62309C16.1035 2.02887 17.2976 2.39987 18.4917 2.73994C19.6859 3.08002 20.8916 3.24619 22.1089 3.24619V3.25392Z" fill="white"/>
+<path d="M62.0464 0.648438C65.08 0.648438 67.8895 0.818483 70.4749 1.16243C73.0603 1.50637 75.3017 2.05899 77.203 2.82803C79.1044 3.59707 80.5883 4.61344 81.6588 5.87328C82.7254 7.13311 83.2626 8.7021 83.2626 10.5841C83.2626 12.6787 82.9612 14.3443 82.366 15.5809C81.767 16.8215 81.0714 17.7721 80.283 18.433C79.4908 19.0977 78.7025 19.5228 77.9102 19.716C77.118 19.9092 76.5538 20.0058 76.2137 20.0058C74.5056 20.0058 73.1801 19.7701 72.241 19.3025C71.3019 18.831 70.6179 18.2359 70.1889 17.5093C69.76 16.7828 69.5049 16.0022 69.4199 15.1713C69.3349 14.3366 69.2924 13.5598 69.2924 12.8333C69.2924 12.0217 69.2382 11.3068 69.1339 10.6846C69.0257 10.0663 68.7822 9.5407 68.3958 9.1156C68.0132 8.6905 67.476 8.36975 66.792 8.15334C66.108 7.94079 65.1882 7.83259 64.0366 7.83259C63.0975 7.83259 62.2087 8.04513 61.3778 8.47409C60.5431 8.90305 59.8088 9.49047 59.1673 10.2363C58.5258 10.986 58.0234 11.8478 57.6601 12.8333C57.2969 13.8149 57.1152 14.8853 57.1152 16.037C57.1152 17.0611 57.3085 18.004 57.6911 18.8581C58.0736 19.7121 58.5876 20.4502 59.2291 21.0686C59.8706 21.6869 60.6049 22.1699 61.4396 22.51C62.2744 22.854 63.1362 23.024 64.0366 23.024C64.6356 23.024 65.4781 22.9699 66.5679 22.8656C67.6577 22.7612 68.8209 22.7071 70.0614 22.7071C71.043 22.7071 72.0168 22.7728 72.9791 22.9003C73.9414 23.0279 74.807 23.2752 75.5761 23.6385C76.3451 24.0017 76.9634 24.5157 77.4349 25.1765C77.9064 25.8412 78.1382 26.703 78.1382 27.7735C78.1382 28.6701 77.9682 29.385 77.6243 29.9183C77.2803 30.4516 76.832 30.869 76.2794 31.1665C75.7229 31.4641 75.0814 31.6689 74.3587 31.7771C73.6322 31.8854 72.8864 31.9356 72.1173 31.9356C71.2633 31.9356 70.4092 31.9047 69.5551 31.839C68.7011 31.7733 67.9514 31.7424 67.3137 31.7424C66.2896 31.7424 65.1766 31.8931 63.9825 32.1907C62.7845 32.4882 61.687 32.9288 60.6822 33.5046C59.6774 34.0804 58.835 34.776 58.1509 35.5876C57.4669 36.3991 57.1268 37.3189 57.1268 38.343C57.1268 39.6685 57.3278 40.8433 57.7336 41.8674C58.1393 42.8915 58.6842 43.7572 59.3683 44.4644C60.0523 45.1677 60.8522 45.6933 61.772 46.0334C62.6917 46.3773 63.6424 46.5473 64.624 46.5473C65.9495 46.5473 67.1012 46.3116 68.0828 45.844C69.0643 45.3725 69.9532 44.7967 70.7415 44.1127C71.5299 43.4287 72.2564 42.6828 72.9211 41.8713C73.582 41.0597 74.2428 40.3139 74.9075 39.6299C75.5683 38.9458 76.2871 38.37 77.0523 37.8985C77.8213 37.4271 78.7179 37.1952 79.7459 37.1952C81.6665 37.1952 83.1505 37.9952 84.1978 39.5989C85.2451 41.2027 85.7668 43.4557 85.7668 46.358C85.7668 51.9538 83.7147 56.2164 79.6145 59.1418C75.5142 62.0672 69.5088 63.5319 61.6058 63.5319C55.1984 63.5319 50.306 62.5696 46.9322 60.649C43.5585 58.7283 41.8272 55.9072 41.7422 52.1895V51.9345C41.7422 49.6274 42.2755 47.556 43.346 45.7165C44.4126 43.8808 45.6106 42.1186 46.9361 40.4298C48.2616 38.741 49.4674 37.0136 50.5572 35.2398C51.647 33.4659 52.1919 31.4912 52.1919 29.3116C52.1919 27.3909 51.7629 25.6828 50.9088 24.1834C50.0548 22.6878 49.1157 21.2463 48.0877 19.859C47.0636 18.4716 46.1207 17.0495 45.2666 15.5964C44.4126 14.1433 43.9836 12.5009 43.9836 10.6614C43.9836 7.3727 45.5101 4.88396 48.5669 3.19517C51.6199 1.50637 56.1182 0.663899 62.058 0.663899L62.0464 0.648438Z" fill="white"/>
+<path d="M95.1953 0.90625C96.9073 0.90625 98.4647 1.36612 99.8675 2.28974C101.27 3.2095 102.534 4.4075 103.651 5.87602C104.772 7.3484 105.757 9.00242 106.615 10.8458C107.469 12.6892 108.238 14.5441 108.918 16.4068C109.598 18.2734 110.178 20.0395 110.661 21.7051C111.144 23.3746 111.562 24.7774 111.913 25.9174C112.045 26.2691 112.188 26.6749 112.342 27.1347C112.497 27.5946 112.647 28.0236 112.802 28.4178C112.957 28.8119 113.119 29.152 113.297 29.438C113.471 29.724 113.625 29.867 113.757 29.867C113.888 29.867 114.054 29.7124 114.251 29.4071C114.448 29.1018 114.634 28.7385 114.812 28.3212C114.985 27.9038 115.163 27.4671 115.337 27.0033C115.511 26.5435 115.642 26.1802 115.731 25.9174C116.083 24.9977 116.497 23.7687 116.983 22.2307C117.467 20.6965 118.046 19.0386 118.726 17.2609C119.406 15.4832 120.164 13.6862 120.999 11.8622C121.833 10.042 122.73 8.39569 123.696 6.92331C124.662 5.45479 125.713 4.2452 126.857 3.30226C127.997 2.35931 129.203 1.88784 130.478 1.88784C131.97 1.88784 133.199 2.52549 134.165 3.79691C135.131 5.07221 135.614 6.71463 135.614 8.73577C135.614 10.0111 135.429 11.3366 135.054 12.7201C134.679 14.1036 134.266 15.5064 133.802 16.9324C133.342 18.3584 132.925 19.7728 132.55 21.1795C132.175 22.5862 131.989 23.9658 131.989 25.3261C131.989 26.8642 132.252 28.2323 132.778 29.4419C133.303 30.6476 133.964 31.7799 134.753 32.831C135.541 33.8861 136.387 34.9256 137.288 35.9574C138.188 36.9893 139.031 38.0984 139.823 39.2809C140.611 40.4673 141.272 41.7929 141.798 43.2652C142.323 44.7376 142.586 46.4573 142.586 48.4321C142.586 50.4069 142.288 52.2928 141.697 53.9622C141.106 55.6278 140.271 57.0654 139.197 58.275C138.122 59.4808 136.847 60.4237 135.379 61.1039C133.906 61.784 132.295 62.1241 130.54 62.1241C127.82 62.1241 125.733 61.3241 124.287 59.7204C122.838 58.1166 122.069 55.7592 121.984 52.6444V52.1846C121.984 49.6842 122.347 47.3887 123.07 45.3057C123.793 43.2227 124.604 41.2789 125.505 39.478C126.405 37.6772 127.217 35.9806 127.939 34.3768C128.662 32.7769 129.025 31.2079 129.025 29.6699C129.025 28.924 128.925 28.1666 128.728 27.3975C128.531 26.6285 128.276 25.9406 127.97 25.3223C127.661 24.7078 127.302 24.2132 126.884 23.8422C126.467 23.4712 126.061 23.2818 125.667 23.2818C125.053 23.2818 124.45 23.7417 123.858 24.6653C123.267 25.5851 122.684 26.7522 122.116 28.155C121.544 29.5617 120.975 31.0727 120.404 32.6958C119.832 34.3189 119.252 35.8338 118.661 37.2366C118.069 38.6433 117.463 39.8026 116.852 40.7263C116.238 41.6499 115.6 42.1098 114.943 42.1098C114.329 42.1098 113.726 41.7272 113.134 40.9581C112.543 40.1891 111.948 39.2346 111.357 38.0945C110.765 36.9545 110.182 35.714 109.614 34.3768C109.042 33.0397 108.493 31.7992 107.968 30.6592C107.442 29.5191 106.936 28.5646 106.453 27.7956C105.97 27.0265 105.51 26.644 105.069 26.644C104.544 26.644 104.091 27.2043 103.72 28.3212C103.346 29.4419 103.16 30.7674 103.16 32.3055C103.16 34.1063 103.392 35.8608 103.852 37.5728C104.312 39.2848 104.818 41.0277 105.367 42.8054C105.915 44.5831 106.422 46.4264 106.882 48.3355C107.341 50.2446 107.573 52.2966 107.573 54.4917C107.573 57.7379 106.936 60.0527 105.664 61.4362C104.393 62.8197 102.263 63.5115 99.2801 63.5115C95.6358 63.5115 92.7529 62.5994 90.6236 60.7792C88.4942 58.9591 87.3658 56.4433 87.2344 53.2434V52.7836C87.2344 50.1943 87.8141 47.837 88.9773 45.7076C90.1405 43.5783 91.4235 41.5726 92.8302 39.6828C94.233 37.7969 95.516 35.9536 96.6831 34.1527C97.8464 32.3518 98.426 30.4891 98.426 28.5569C98.426 26.6246 97.9004 24.8817 96.8454 23.0615C95.7904 21.2413 94.6388 19.4405 93.3906 17.6628C92.1423 15.8851 90.9868 14.1306 89.9357 12.3955C88.8807 10.6642 88.3551 8.94058 88.3551 7.2286C88.3551 5.38522 89.0005 3.87033 90.2989 2.68779C91.5936 1.50138 93.2282 0.910118 95.203 0.910118L95.1953 0.90625Z" fill="white"/>
+<path d="M160.359 16.8107L161.894 15.1026C162.527 15.7982 163.142 16.2079 163.919 16.2079C164.85 16.2079 165.406 15.6553 165.406 14.3722V7.24219H167.907V14.4843C167.907 15.8137 167.544 16.7605 166.863 17.4407C166.183 18.1208 165.186 18.4686 163.984 18.4686C162.261 18.4686 161.121 17.7112 160.363 16.8069L160.359 16.8107Z" fill="white"/>
+<path d="M170.383 7.24219H178.73V9.41019H172.802V11.6555H178.019V13.8235H172.802V16.1499H178.811V18.3179H170.383V7.24992V7.24219Z" fill="white"/>
+<path d="M180.129 7.24185H182.737L185.029 14.739L187.51 7.21094H189.597L192.078 14.739L194.37 7.24185H196.916L193.137 18.391H191.019L188.519 11.1489L186.022 18.391H183.905L180.125 7.24185H180.129Z" fill="white"/>
+<path d="M198.828 7.24219H201.263V18.3102H198.828V7.24219Z" fill="white"/>
+<path d="M203.269 16.697L204.707 14.9734C205.72 15.7966 206.748 16.3183 208.011 16.3183C209.024 16.3183 209.607 15.9241 209.607 15.2749V15.2439C209.607 14.6256 209.229 14.2933 207.377 13.8373C205.132 13.2846 203.71 12.6354 203.71 10.4519V10.421C203.71 8.41147 205.306 7.08594 207.582 7.08594C209.209 7.08594 210.554 7.5922 211.694 8.49263L210.43 10.3283C209.433 9.64812 208.502 9.23848 207.551 9.23848C206.601 9.23848 206.129 9.64812 206.129 10.2046V10.2355C206.129 10.9775 206.605 11.1862 208.517 11.6886C210.763 12.2914 212.026 13.0798 212.026 15.0082V15.0391C212.026 17.238 210.349 18.4708 207.961 18.4708C206.268 18.4708 204.591 17.9027 203.266 16.7009L203.269 16.697Z" fill="white"/>
+<path d="M214.148 7.24219H216.583V11.6207H221.074V7.24219H223.508V18.3102H221.074V13.866H216.583V18.3102H214.148V7.24219Z" fill="white"/>
+<path d="M161.469 26.2148H169.816V28.3828H163.888V30.6281H169.105V32.7961H163.888V35.1226H169.897V37.2906H161.469V26.2226V26.2148Z" fill="white"/>
+<path d="M172.062 26.2148H176.379C179.857 26.2148 182.261 28.6031 182.261 31.7179V31.7488C182.261 34.8636 179.857 37.2828 176.379 37.2828H172.062V26.2148ZM174.497 28.4138V35.0878H176.379C178.354 35.0878 179.714 33.7429 179.714 31.7836V31.7527C179.714 29.7934 178.354 28.4176 176.379 28.4176H174.497V28.4138Z" fill="white"/>
+<path d="M184.25 32.5411V26.2148H186.685V32.4754C186.685 34.2956 187.57 35.2114 189.073 35.2114C190.576 35.2114 191.461 34.3265 191.461 32.5565V26.2148H193.896V32.4599C193.896 35.8104 192.014 37.4567 189.042 37.4567C186.07 37.4567 184.25 35.8105 184.25 32.5372V32.5411Z" fill="white"/>
+<path d="M195.883 31.7816V31.7507C195.883 28.605 198.256 26.0273 201.656 26.0273C203.728 26.0273 205.007 26.723 206.019 27.7355L204.47 29.5209C203.6 28.748 202.762 28.2726 201.641 28.2726C199.774 28.2726 198.43 29.8223 198.43 31.7198V31.7507C198.43 33.6482 199.743 35.2288 201.641 35.2288C202.905 35.2288 203.681 34.738 204.551 33.9303L206.101 35.4954C204.961 36.7127 203.712 37.4702 201.564 37.4702C198.306 37.4702 195.887 34.9544 195.887 31.7778L195.883 31.7816Z" fill="white"/>
+<path d="M211.851 26.1406H214.096L218.842 37.2898H216.295L215.283 34.8087H210.603L209.59 37.2898H207.109L211.855 26.1406H211.851ZM214.413 32.6523L212.941 29.0622L211.469 32.6523H214.409H214.413Z" fill="white"/>
+<path d="M221.698 28.4601H218.328V26.2148H227.499V28.4601H224.129V37.2828H221.694V28.4601H221.698Z" fill="white"/>
+<path d="M229.477 26.2148H231.911V37.2828H229.477V26.2148Z" fill="white"/>
+<path d="M234.18 31.7816V31.7507C234.18 28.605 236.661 26.0273 240.077 26.0273C243.493 26.0273 245.943 28.5741 245.943 31.7198V31.7507C245.943 34.8964 243.462 37.474 240.046 37.474C236.63 37.474 234.18 34.9273 234.18 31.7816ZM243.4 31.7816V31.7507C243.4 29.8532 242.009 28.2726 240.05 28.2726C238.091 28.2726 236.73 29.8223 236.73 31.7198V31.7507C236.73 33.6482 238.121 35.2288 240.085 35.2288C242.048 35.2288 243.404 33.6791 243.404 31.7816H243.4Z" fill="white"/>
+<path d="M248.117 26.2148H250.362L255.549 33.0319V26.2148H257.952V37.2828H255.881L250.521 30.2455V37.2828H248.117V26.2148Z" fill="white"/>
+<path d="M161.469 45.1914H164.093L167.003 49.8713L169.913 45.1914H172.537V56.2594H170.118V49.0327L167.003 53.759H166.941L163.857 49.0791V56.2594H161.469V45.1914Z" fill="white"/>
+<path d="M174.703 50.7543V50.7234C174.703 47.5776 177.184 45 180.6 45C184.017 45 186.467 47.5467 186.467 50.6924V50.7234C186.467 53.8691 183.986 56.4467 180.569 56.4467C177.153 56.4467 174.703 53.9 174.703 50.7543ZM183.92 50.7543V50.7234C183.92 48.8259 182.529 47.2453 180.569 47.2453C178.61 47.2453 177.25 48.795 177.25 50.6924V50.7234C177.25 52.6208 178.641 54.2014 180.604 54.2014C182.567 54.2014 183.924 52.6517 183.924 50.7543H183.92Z" fill="white"/>
+<path d="M188.633 45.1914H191.067V54.045H196.586V56.2594H188.633V45.1914Z" fill="white"/>
+<path d="M198.414 45.1914H202.731C206.209 45.1914 208.613 47.5797 208.613 50.6945V50.7254C208.613 53.8402 206.209 56.2594 202.731 56.2594H198.414V45.1914ZM200.849 47.3903V54.0643H202.731C204.709 54.0643 206.066 52.7195 206.066 50.7602V50.7293C206.066 48.7699 204.705 47.3942 202.731 47.3942H200.849V47.3903Z" fill="white"/>
+<path d="M210.297 50.7543V50.7234C210.297 47.5776 212.778 45 216.194 45C219.61 45 222.06 47.5467 222.06 50.6924V50.7234C222.06 53.8691 219.579 56.4467 216.163 56.4467C212.747 56.4467 210.297 53.9 210.297 50.7543ZM219.514 50.7543V50.7234C219.514 48.8259 218.123 47.2453 216.163 47.2453C214.204 47.2453 212.844 48.795 212.844 50.6924V50.7234C212.844 52.6208 214.235 54.2014 216.198 54.2014C218.161 54.2014 219.518 52.6517 219.518 50.7543H219.514Z" fill="white"/>
+<path d="M222.57 45.1914H225.26L228.155 52.9861L231.049 45.1914H233.673L229.198 56.3405H227.049L222.574 45.1914H222.57Z" fill="white"/>
+<path d="M237.589 45.1094H239.835L244.576 56.2585H242.03L241.017 53.7775H236.337L235.325 56.2585H232.844L237.589 45.1094ZM240.152 51.6249L238.679 48.0348L237.207 51.6249H240.148H240.152Z" fill="white"/>
+</svg>`,
+      hubSvg: `<svg width="165" height="95" viewBox="0 0 165 95" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M20.4316 16.5502H24.344V0.00439573H44.7756V20.5709H56.7025V40.7137H59.8907C64.9246 40.7137 69.4508 42.5961 72.9966 46.1586C76.5248 49.7079 78.3794 54.1896 78.3794 59.1287C78.3794 61.6752 77.9114 64.0502 76.9973 66.2053C78.9932 69.1653 80 72.5299 80 76.2111C80 81.3086 78.0968 85.909 74.4847 89.5067C70.8727 93.1044 66.2538 95 61.1359 95H36.3106V74.1264C35.6527 74.1836 34.9859 74.21 34.3147 74.21C28.0488 74.21 22.5556 72.1648 18.4269 68.2812C14.5896 64.6748 12.3862 59.8676 12.002 54.2907H0V0H20.4316V16.5458V16.5502ZM8.50472 46.0046H12.2934V28.39H20.4316V52.4523C20.4316 56.547 21.7299 59.8236 24.3263 62.2602C26.9228 64.7056 30.3185 65.9238 34.4958 65.9238C38.6731 65.9238 42.0688 64.7056 44.6652 62.2602L44.8154 62.1106V86.7139H61.317C64.2402 86.7139 66.7263 85.6935 68.7796 83.6484C70.8329 81.6032 71.8574 79.1227 71.8574 76.2155C71.8574 74.166 71.3098 72.3451 70.2103 70.7442C69.1108 69.1433 67.6403 67.9514 65.799 67.1641C68.7619 65.3301 70.2368 62.656 70.2368 59.1331C70.2368 56.3711 69.2477 53.9873 67.265 51.9949C65.2779 49.9981 62.8802 49.0042 60.0673 49.0042H48.5599L48.5776 28.3813H44.7889L44.7712 52.4611C44.7712 55.4782 43.8704 57.8664 42.0644 59.6301C40.2671 61.385 37.7369 62.2646 34.4914 62.2646C31.2458 62.2646 28.7244 61.385 26.9184 59.6301C25.1123 57.8664 24.2115 55.4782 24.2115 52.4611V28.3988H32.8399V46.0134H36.6286V8.2993H32.8399V24.8451H12.2846V8.2993H8.49589V46.0134L8.50472 46.0046ZM61.317 69.2576C63.1893 69.2576 64.7878 69.9438 66.1037 71.3072C67.4195 72.675 68.0775 74.3067 68.0775 76.2155C68.0775 78.1199 67.4195 79.7956 66.1037 81.137C64.7878 82.4873 63.1893 83.1602 61.317 83.1602H48.5997V69.2576H61.317ZM60.0673 52.5535C61.838 52.5535 63.3482 53.2 64.5846 54.4931C65.8343 55.7861 66.4481 57.3343 66.4481 59.1287C66.4481 60.9231 65.8343 62.5197 64.5846 63.7863C63.3438 65.0618 61.838 65.6995 60.0673 65.6995H48.5997V52.5535H60.0673Z" fill="white"/>
+<path d="M104.993 43.2405C104.761 43.2405 104.61 43.098 104.539 42.813L100.638 26.8886C100.62 26.7995 100.575 26.755 100.504 26.755C100.433 26.755 100.379 26.7995 100.344 26.8886L97.1642 40.7022C97.0395 41.2009 97.0306 41.5839 97.1375 41.8511C97.2622 42.1005 97.5383 42.2608 97.9658 42.332L98.2864 42.3855C98.518 42.4033 98.6159 42.5102 98.5803 42.7061C98.5269 42.902 98.3666 43 98.0994 43H94.2786C94.0114 43 93.9045 42.902 93.958 42.7061C93.9936 42.5102 94.1272 42.4033 94.3588 42.3855L94.7328 42.332C95.2137 42.2608 95.57 42.1005 95.8016 41.8511C96.0331 41.5839 96.2112 41.2009 96.3359 40.7022L99.8361 25.5259C99.9252 25.1519 99.9252 24.9025 99.8361 24.7778C99.747 24.6531 99.5066 24.5552 99.1147 24.4839L98.5269 24.377C98.2953 24.3236 98.2062 24.2167 98.2597 24.0564C98.2953 23.8605 98.4467 23.7625 98.7139 23.7625H101.306C101.751 23.7625 102.018 23.9584 102.107 24.3503L105.474 38.1906C105.509 38.3153 105.563 38.3777 105.634 38.3777C105.723 38.3777 105.777 38.3153 105.794 38.1906L108.6 26.0603C108.742 25.4903 108.742 25.0984 108.6 24.8847C108.457 24.6531 108.235 24.5106 107.932 24.4572L107.478 24.377C107.246 24.3236 107.157 24.2167 107.21 24.0564C107.246 23.8605 107.397 23.7625 107.665 23.7625H111.485C111.753 23.7625 111.868 23.8605 111.833 24.0564C111.762 24.2523 111.619 24.3592 111.405 24.377L111.031 24.4305C110.55 24.5017 110.194 24.6531 109.962 24.8847C109.749 25.0984 109.571 25.4903 109.428 26.0603L105.607 42.6527C105.518 43.0445 105.313 43.2405 104.993 43.2405ZM112.615 43.2405C111.671 43.2405 110.914 42.8753 110.344 42.145C109.774 41.3969 109.489 40.3459 109.489 38.9922C109.489 37.8166 109.694 36.6498 110.103 35.492C110.531 34.3342 111.083 33.2833 111.76 32.3392C112.437 31.3952 113.176 30.6381 113.978 30.0681C114.797 29.4981 115.59 29.2131 116.356 29.2131C117.193 29.2131 117.789 29.418 118.146 29.8277C118.52 30.2195 118.707 30.7539 118.707 31.4308C118.707 32.2323 118.422 33.0339 117.852 33.8355C117.3 34.6192 116.516 35.3228 115.501 35.9463C114.503 36.5697 113.327 37.0328 111.974 37.3356C111.582 37.4247 111.377 37.6473 111.359 38.0036C111.341 38.1283 111.332 38.2619 111.332 38.4044C111.332 38.5291 111.332 38.6538 111.332 38.7784C111.332 39.7938 111.502 40.5597 111.84 41.0763C112.196 41.5928 112.677 41.8511 113.283 41.8511C113.96 41.8511 114.61 41.5394 115.233 40.9159C115.875 40.2925 116.409 39.4108 116.837 38.2708C116.89 38.1105 116.997 38.0303 117.157 38.0303C117.264 38.0303 117.326 38.0748 117.344 38.1639C117.38 38.253 117.38 38.3598 117.344 38.4845C116.774 40.052 116.079 41.2366 115.26 42.0381C114.459 42.8397 113.577 43.2405 112.615 43.2405ZM111.626 36.3203C111.591 36.445 111.609 36.5519 111.68 36.6409C111.769 36.7122 111.876 36.73 112 36.6944C113.105 36.3916 114.031 35.9373 114.779 35.3317C115.527 34.7083 116.088 34.0136 116.462 33.2477C116.854 32.4817 117.05 31.7336 117.05 31.0033C117.05 30.2552 116.756 29.8811 116.169 29.8811C115.652 29.8811 115.091 30.1839 114.485 30.7895C113.88 31.3952 113.319 32.1878 112.802 33.1675C112.285 34.1472 111.894 35.1981 111.626 36.3203ZM122.118 43.2405C121.387 43.2405 120.826 42.9555 120.434 42.3855C120.042 41.8155 119.971 41.0406 120.221 40.0609L122.358 31.9919C122.59 31.1547 122.447 30.7361 121.931 30.7361C121.557 30.7361 121.182 31.0033 120.808 31.5377C120.452 32.072 120.06 32.9448 119.633 34.1561C119.562 34.3698 119.437 34.4767 119.259 34.4767C119.17 34.4767 119.098 34.4411 119.045 34.3698C118.992 34.2808 118.983 34.1739 119.018 34.0492C120.051 30.8252 121.343 29.2131 122.892 29.2131C123.498 29.2131 123.908 29.4625 124.122 29.9613C124.335 30.46 124.326 31.1458 124.095 32.0186L121.85 40.5419C121.69 41.1475 121.681 41.5928 121.824 41.8778C121.966 42.1628 122.18 42.3053 122.465 42.3053C123.338 42.3053 124.309 41.2366 125.377 39.0991C126.464 36.9438 127.417 33.7998 128.236 29.6673C128.29 29.4714 128.414 29.3734 128.61 29.3734H129.652C129.902 29.3734 130 29.4892 129.946 29.7208L127.809 40.5419C127.684 41.1297 127.693 41.575 127.835 41.8778C127.996 42.1628 128.245 42.3053 128.584 42.3053C129.1 42.3053 129.626 42.0559 130.16 41.5572C130.694 41.0584 131.175 40.4083 131.603 39.6067C132.048 38.8052 132.404 37.9234 132.672 36.9616C132.939 35.9997 133.072 35.0556 133.072 34.1294C133.072 33.3813 133.01 32.7934 132.885 32.3659C132.778 31.9206 132.663 31.5466 132.538 31.2438C132.413 30.9409 132.351 30.6114 132.351 30.2552C132.351 29.5605 132.654 29.2131 133.259 29.2131C133.687 29.2131 133.963 29.4536 134.088 29.9345C134.212 30.3977 134.275 31.1013 134.275 32.0453C134.275 33.3991 134.105 34.7439 133.767 36.0798C133.446 37.398 133.001 38.6003 132.431 39.6869C131.879 40.7556 131.238 41.6195 130.507 42.2786C129.795 42.9198 129.038 43.2405 128.236 43.2405C127.47 43.2405 126.882 42.9466 126.473 42.3588C126.063 41.7531 125.974 40.8803 126.206 39.7403C126.241 39.6156 126.215 39.5444 126.125 39.5266C126.054 39.5088 125.992 39.5533 125.938 39.6602C125.44 40.6577 124.879 41.5038 124.255 42.1984C123.632 42.8931 122.919 43.2405 122.118 43.2405ZM137.838 43.2405C137.25 43.2405 136.627 43.1514 135.968 42.9733C135.327 42.7952 134.837 42.5725 134.498 42.3053C134.374 42.1984 134.32 42.0381 134.338 41.8244L134.926 38.3242C134.962 38.0927 135.068 37.9769 135.247 37.9769C135.443 37.9769 135.54 38.1016 135.54 38.3509L135.594 39.6334C135.63 40.6488 135.87 41.3969 136.315 41.8778C136.778 42.3409 137.34 42.5725 137.999 42.5725C138.569 42.5725 139.058 42.3944 139.468 42.0381C139.878 41.6641 140.083 41.1208 140.083 40.4083C140.083 39.9986 140.02 39.6245 139.896 39.2861C139.771 38.9298 139.575 38.5558 139.308 38.1639C139.041 37.7542 138.675 37.2644 138.212 36.6944C137.607 35.9106 137.153 35.2427 136.85 34.6905C136.565 34.1205 136.422 33.5327 136.422 32.927C136.422 31.8048 136.77 30.9053 137.464 30.2284C138.177 29.5516 139.076 29.2131 140.163 29.2131C140.644 29.2131 141.107 29.2844 141.552 29.4269C142.015 29.5694 142.398 29.7831 142.701 30.0681C142.861 30.1928 142.915 30.3531 142.861 30.5491L142.113 34.1294C142.06 34.3609 141.953 34.4767 141.793 34.4767C141.632 34.4767 141.534 34.352 141.499 34.1027L141.419 32.8202C141.347 31.7514 141.205 30.9855 140.991 30.5223C140.795 30.0592 140.377 29.8277 139.735 29.8277C139.165 29.8277 138.702 30.0236 138.346 30.4155C137.99 30.8073 137.812 31.2794 137.812 31.8316C137.812 32.4194 137.972 32.9627 138.293 33.4614C138.613 33.9423 139.05 34.5569 139.602 35.305C140.332 36.2669 140.822 37.0328 141.071 37.6028C141.338 38.1728 141.472 38.7517 141.472 39.3395C141.472 40.0877 141.303 40.7556 140.964 41.3434C140.644 41.9313 140.207 42.3944 139.655 42.7328C139.103 43.0712 138.497 43.2405 137.838 43.2405ZM94.4122 67C94.1628 67 94.0381 66.9109 94.0381 66.7328C94.0381 66.5369 94.2163 66.4122 94.5725 66.3588L95.1069 66.2786C95.4987 66.2252 95.7659 66.1361 95.9084 66.0114C96.0687 65.8689 96.1845 65.6106 96.2558 65.2366L99.8895 49.5259C99.9786 49.1519 99.9786 48.9025 99.8895 48.7778C99.8005 48.6531 99.5778 48.5552 99.2216 48.4839L98.6872 48.377C98.4556 48.3236 98.3398 48.2256 98.3398 48.0831C98.3398 47.8694 98.5002 47.7625 98.8208 47.7625H107.745C108.208 47.7625 108.395 47.9673 108.306 48.377L107.478 52.8123C107.424 53.1152 107.282 53.2666 107.05 53.2666C106.801 53.2666 106.694 53.1508 106.73 52.9192L106.81 51.9841C106.899 51.0756 106.819 50.3631 106.569 49.8466C106.338 49.33 105.981 48.9648 105.5 48.7511C105.037 48.5373 104.494 48.4305 103.871 48.4305C103.158 48.4305 102.642 48.5373 102.321 48.7511C102 48.947 101.778 49.3033 101.653 49.8198L100.183 56.2591C100.13 56.5084 100.228 56.6331 100.477 56.6331H101.84C102.624 56.6331 103.194 56.2145 103.55 55.3773L104.138 54.0414C104.227 53.8098 104.369 53.6941 104.565 53.6941C104.672 53.6941 104.752 53.7386 104.806 53.8277C104.877 53.8989 104.895 54.0058 104.859 54.1483L103.47 60.16C103.381 60.4628 103.229 60.6142 103.016 60.6142C102.802 60.6142 102.695 60.4984 102.695 60.2669L102.722 58.9577C102.74 58.3342 102.659 57.9245 102.481 57.7286C102.321 57.5327 102.036 57.4347 101.626 57.4347H100.29C100.023 57.4347 99.8628 57.5594 99.8094 57.8088L98.2597 64.5152C98.1172 65.1564 98.1795 65.6195 98.4467 65.9045C98.7139 66.1895 99.2839 66.332 100.157 66.332C100.691 66.332 101.217 66.2519 101.733 66.0916C102.267 65.9134 102.766 65.5839 103.229 65.103C103.71 64.622 104.147 63.9273 104.539 63.0189L105.18 61.5227C105.269 61.2911 105.411 61.1753 105.607 61.1753C105.875 61.1753 105.964 61.3267 105.875 61.6295L104.512 66.3855C104.405 66.7952 104.138 67 103.71 67H94.4122ZM110.515 67.2405C109.642 67.2405 108.992 66.9109 108.565 66.2519C108.137 65.5928 108.057 64.7467 108.324 63.7136L110.382 55.9919C110.613 55.1547 110.471 54.7361 109.954 54.7361C109.58 54.7361 109.206 55.0033 108.832 55.5377C108.476 56.072 108.084 56.9448 107.656 58.1561C107.585 58.3698 107.46 58.4767 107.282 58.4767C107.193 58.4767 107.122 58.4411 107.069 58.3698C107.015 58.2808 107.006 58.1739 107.042 58.0492C108.075 54.8252 109.366 53.2131 110.916 53.2131C111.522 53.2131 111.931 53.4625 112.145 53.9613C112.359 54.46 112.35 55.1458 112.118 56.0186L110.008 63.9808C109.812 64.7289 109.794 65.3078 109.954 65.7175C110.132 66.1094 110.444 66.3053 110.889 66.3053C111.406 66.3053 111.949 66.0559 112.519 65.5572C113.107 65.0584 113.659 64.4083 114.176 63.6067C114.692 62.8052 115.111 61.9234 115.431 60.9616C115.752 59.9997 115.912 59.0556 115.912 58.1294C115.912 57.3813 115.832 56.7934 115.672 56.3659C115.512 55.9206 115.342 55.5466 115.164 55.2438C115.004 54.9409 114.924 54.6114 114.924 54.2552C114.924 53.5605 115.227 53.2131 115.832 53.2131C116.687 53.2131 117.115 54.1572 117.115 56.0453C117.115 57.3991 116.919 58.7439 116.527 60.0798C116.135 61.398 115.619 62.6003 114.977 63.6869C114.336 64.7556 113.624 65.6195 112.84 66.2786C112.074 66.9198 111.299 67.2405 110.515 67.2405ZM120.938 67.2405C119.994 67.2405 119.237 66.8753 118.667 66.145C118.097 65.3969 117.812 64.3459 117.812 62.9922C117.812 61.8166 118.017 60.6498 118.427 59.492C118.854 58.3342 119.407 57.2833 120.083 56.3392C120.76 55.3952 121.5 54.6381 122.301 54.0681C123.121 53.4981 123.913 53.2131 124.679 53.2131C125.516 53.2131 126.113 53.418 126.469 53.8277C126.843 54.2195 127.03 54.7539 127.03 55.4308C127.03 56.2323 126.745 57.0339 126.175 57.8355C125.623 58.6192 124.839 59.3228 123.824 59.9463C122.827 60.5697 121.651 61.0328 120.297 61.3356C119.905 61.4247 119.701 61.6473 119.683 62.0036C119.665 62.1283 119.656 62.2619 119.656 62.4044C119.656 62.5291 119.656 62.6538 119.656 62.7784C119.656 63.7938 119.825 64.5597 120.164 65.0763C120.52 65.5928 121.001 65.8511 121.606 65.8511C122.283 65.8511 122.933 65.5394 123.557 64.9159C124.198 64.2925 124.733 63.4108 125.16 62.2708C125.213 62.1105 125.32 62.0303 125.481 62.0303C125.588 62.0303 125.65 62.0748 125.668 62.1639C125.703 62.253 125.703 62.3598 125.668 62.4845C125.098 64.052 124.403 65.2366 123.584 66.0381C122.782 66.8397 121.9 67.2405 120.938 67.2405ZM119.95 60.3203C119.914 60.445 119.932 60.5519 120.003 60.6409C120.092 60.7122 120.199 60.73 120.324 60.6944C121.428 60.3916 122.355 59.9373 123.103 59.3317C123.851 58.7083 124.412 58.0136 124.786 57.2477C125.178 56.4817 125.374 55.7336 125.374 55.0033C125.374 54.2552 125.08 53.8811 124.492 53.8811C123.976 53.8811 123.414 54.1839 122.809 54.7895C122.203 55.3952 121.642 56.1878 121.126 57.1675C120.609 58.1472 120.217 59.1981 119.95 60.3203ZM128.197 66.6527L130.735 55.9919C130.824 55.6 130.833 55.2972 130.762 55.0834C130.708 54.8519 130.548 54.7361 130.281 54.7361C129.96 54.7361 129.604 54.9766 129.212 55.4575C128.838 55.9206 128.411 56.8113 127.93 58.1294C127.858 58.3609 127.734 58.4767 127.556 58.4767C127.288 58.4767 127.217 58.3164 127.342 57.9958C127.734 56.7667 128.143 55.8048 128.571 55.1102C129.016 54.4155 129.461 53.9256 129.907 53.6406C130.352 53.3556 130.762 53.2131 131.136 53.2131C131.724 53.2131 132.142 53.4358 132.392 53.8811C132.641 54.3086 132.65 55.0211 132.418 56.0186L131.75 58.9042C131.733 59.0289 131.759 59.1002 131.831 59.118C131.902 59.1358 131.964 59.0913 132.018 58.9844C132.712 57.5416 133.38 56.4016 134.021 55.5644C134.663 54.7094 135.268 54.1038 135.838 53.7475C136.408 53.3913 136.925 53.2131 137.388 53.2131C138.047 53.2131 138.528 53.4803 138.831 54.0147C139.134 54.5491 139.134 55.3684 138.831 56.4728L136.8 64.2213C136.676 64.72 136.667 65.0941 136.774 65.3434C136.88 65.5928 137.076 65.7175 137.361 65.7175C137.718 65.7175 138.065 65.4859 138.403 65.0228C138.76 64.5419 139.125 63.6423 139.499 62.3242C139.552 62.1283 139.668 62.0303 139.846 62.0303C139.989 62.0303 140.069 62.0838 140.087 62.1906C140.122 62.2975 140.122 62.4222 140.087 62.5647C139.748 63.7759 139.383 64.7289 138.991 65.4236C138.599 66.1005 138.199 66.5725 137.789 66.8397C137.397 67.1069 136.996 67.2405 136.586 67.2405C135.945 67.2405 135.464 66.9733 135.144 66.4389C134.823 65.9045 134.805 65.0763 135.09 63.9541L137.148 56.2056C137.344 55.5109 137.37 55.03 137.228 54.7628C137.103 54.4956 136.916 54.362 136.667 54.362C136.275 54.362 135.829 54.6114 135.331 55.1102C134.832 55.5911 134.324 56.2591 133.808 57.1141C133.291 57.9513 132.784 58.9042 132.285 59.973C131.786 61.0417 131.332 62.155 130.922 63.3128C130.53 64.4706 130.21 65.6017 129.96 66.7061C129.907 66.902 129.782 67 129.586 67H128.491C128.241 67 128.143 66.8842 128.197 66.6527ZM143.439 67.2405C142.834 67.2405 142.362 67 142.023 66.5191C141.685 66.0381 141.631 65.2633 141.863 64.1945L144.081 54.5223C144.134 54.2552 144.027 54.1216 143.76 54.1216H142.745C142.495 54.1216 142.371 54.0058 142.371 53.7742C142.371 53.6495 142.415 53.5516 142.504 53.4803C142.593 53.4091 142.7 53.3734 142.825 53.3734H143.787C144.196 53.3734 144.437 53.1864 144.508 52.8123L145.149 49.9534C145.203 49.7575 145.328 49.6595 145.523 49.6595H146.619C146.868 49.6595 146.966 49.7753 146.913 50.0069L146.245 52.9727C146.191 53.2398 146.298 53.3734 146.566 53.3734H148.088C148.391 53.3734 148.543 53.4892 148.543 53.7208C148.543 53.988 148.356 54.1216 147.982 54.1216H146.539C146.147 54.1216 145.906 54.3086 145.817 54.6827L143.573 64.4617C143.484 64.8536 143.493 65.1653 143.6 65.3969C143.724 65.6106 143.929 65.7175 144.214 65.7175C144.624 65.7175 144.998 65.4859 145.336 65.0228C145.693 64.5597 146.067 63.678 146.459 62.3777C146.53 62.1461 146.646 62.0303 146.806 62.0303C146.931 62.0303 147.011 62.0838 147.046 62.1906C147.082 62.2975 147.055 62.4934 146.966 62.7784C146.628 63.9897 146.254 64.9159 145.844 65.5572C145.452 66.1984 145.051 66.6438 144.642 66.8931C144.232 67.1247 143.831 67.2405 143.439 67.2405ZM151.093 67.2405C150.505 67.2405 149.882 67.1514 149.223 66.9733C148.582 66.7952 148.092 66.5725 147.753 66.3053C147.629 66.1984 147.575 66.0381 147.593 65.8244L148.181 62.3242C148.217 62.0927 148.323 61.9769 148.502 61.9769C148.698 61.9769 148.795 62.1016 148.795 62.3509L148.849 63.6334C148.885 64.6488 149.125 65.3969 149.57 65.8778C150.033 66.3409 150.595 66.5725 151.254 66.5725C151.824 66.5725 152.313 66.3944 152.723 66.0381C153.133 65.6641 153.338 65.1208 153.338 64.4083C153.338 63.9986 153.275 63.6245 153.151 63.2861C153.026 62.9298 152.83 62.5558 152.563 62.1639C152.296 61.7542 151.93 61.2644 151.467 60.6944C150.862 59.9106 150.408 59.2427 150.105 58.6905C149.82 58.1205 149.677 57.5327 149.677 56.927C149.677 55.8048 150.025 54.9053 150.719 54.2284C151.432 53.5516 152.331 53.2131 153.418 53.2131C153.899 53.2131 154.362 53.2844 154.807 53.4269C155.27 53.5694 155.653 53.7831 155.956 54.0681C156.116 54.1928 156.17 54.3531 156.116 54.5491L155.368 58.1294C155.315 58.3609 155.208 58.4767 155.048 58.4767C154.887 58.4767 154.789 58.352 154.754 58.1027L154.674 56.8202C154.602 55.7514 154.46 54.9855 154.246 54.5223C154.05 54.0592 153.632 53.8277 152.99 53.8277C152.42 53.8277 151.957 54.0236 151.601 54.4155C151.245 54.8073 151.067 55.2794 151.067 55.8316C151.067 56.4194 151.227 56.9627 151.548 57.4614C151.868 57.9423 152.305 58.5569 152.857 59.305C153.587 60.2669 154.077 61.0328 154.326 61.6028C154.593 62.1728 154.727 62.7517 154.727 63.3395C154.727 64.0877 154.558 64.7556 154.219 65.3434C153.899 65.9313 153.462 66.3944 152.91 66.7328C152.358 67.0712 151.752 67.2405 151.093 67.2405ZM101.92 90.7328C101.831 90.7328 101.751 90.7061 101.68 90.6527C101.608 90.5992 101.573 90.4834 101.573 90.3053L101.306 74.0069C101.306 73.8822 101.261 73.8198 101.172 73.8198C101.101 73.8198 101.047 73.8733 101.012 73.9802L97.0841 88.7022C96.9594 89.2009 96.9505 89.5839 97.0573 89.8511C97.182 90.1005 97.4581 90.2608 97.8856 90.332L98.2062 90.3855C98.42 90.4033 98.5269 90.5013 98.5269 90.6794C98.5269 90.8931 98.3577 91 98.0192 91H94.2519C93.9847 91 93.8511 90.9109 93.8511 90.7328C93.8511 90.5369 93.9936 90.4211 94.2786 90.3855L94.6527 90.332C95.1336 90.2608 95.4898 90.1005 95.7214 89.8511C95.953 89.5839 96.1311 89.2009 96.2558 88.7022L100.29 73.5259C100.379 73.1519 100.379 72.9025 100.29 72.7778C100.201 72.6531 99.9608 72.5552 99.5689 72.4839L99.1147 72.4038C98.8297 72.3503 98.6872 72.2345 98.6872 72.0564C98.6872 71.8605 98.8475 71.7625 99.1681 71.7625H102.374C102.891 71.7625 103.149 72.0297 103.149 72.5641L103.31 85.8433C103.31 85.968 103.345 86.0392 103.416 86.057C103.505 86.057 103.577 86.0036 103.63 85.8967L110.096 72.4305C110.31 71.9852 110.648 71.7625 111.111 71.7625H114.344C114.558 71.7625 114.665 71.8516 114.665 72.0297C114.665 72.2078 114.514 72.3236 114.211 72.377L113.57 72.4839C113.178 72.5552 112.91 72.6531 112.768 72.7778C112.625 72.9025 112.51 73.1519 112.421 73.5259L109.321 89.2366C109.25 89.6106 109.25 89.86 109.321 89.9847C109.41 90.1094 109.633 90.2073 109.989 90.2786L110.443 90.3588C110.622 90.3766 110.737 90.4211 110.791 90.4923C110.844 90.5458 110.871 90.6081 110.871 90.6794C110.871 90.8931 110.711 91 110.39 91H105.634C105.385 91 105.26 90.9109 105.26 90.7328C105.26 90.5547 105.402 90.4389 105.687 90.3855L106.329 90.2786C106.721 90.2073 106.988 90.1094 107.13 89.9847C107.291 89.86 107.406 89.6106 107.478 89.2366L110.497 74.087C110.532 73.9623 110.506 73.8911 110.417 73.8733C110.328 73.8377 110.256 73.8733 110.203 73.9802L102.401 90.3053C102.33 90.4834 102.25 90.5992 102.161 90.6527C102.089 90.7061 102.009 90.7328 101.92 90.7328ZM115.147 91.2405C114.506 91.2405 114.007 90.9644 113.651 90.4122C113.294 89.86 113.116 89.0495 113.116 87.9808C113.116 86.9655 113.259 85.9502 113.544 84.9348C113.829 83.9017 114.221 82.922 114.719 81.9958C115.218 81.0695 115.779 80.2502 116.403 79.5377C117.044 78.8252 117.712 78.2641 118.407 77.8544C119.119 77.4269 119.823 77.2131 120.517 77.2131C120.856 77.2131 121.177 77.2844 121.479 77.4269C121.782 77.5516 122.032 77.7564 122.227 78.0414C122.334 78.2017 122.441 78.2819 122.548 78.2819C122.655 78.2819 122.762 78.2017 122.869 78.0414C123.065 77.7564 123.225 77.5783 123.35 77.507C123.474 77.418 123.59 77.3734 123.697 77.3734C123.929 77.3734 124.018 77.4981 123.964 77.7475L121.586 87.9808C121.319 89.1386 121.497 89.7175 122.121 89.7175C122.53 89.7175 122.895 89.4414 123.216 88.8892C123.554 88.337 123.893 87.482 124.231 86.3242C124.285 86.1283 124.401 86.0303 124.579 86.0303C124.703 86.0303 124.784 86.0838 124.819 86.1906C124.855 86.2975 124.855 86.4222 124.819 86.5647C124.481 88.2391 124.027 89.4414 123.457 90.1717C122.887 90.8842 122.201 91.2405 121.399 91.2405C120.704 91.2405 120.206 90.9466 119.903 90.3588C119.618 89.7709 119.591 88.9694 119.823 87.9541L120.17 86.4845C120.206 86.3598 120.179 86.2886 120.09 86.2708C120.019 86.253 119.956 86.2975 119.903 86.4044C118.923 88.2034 118.05 89.4592 117.284 90.1717C116.536 90.8842 115.824 91.2405 115.147 91.2405ZM115.815 89.8778C116.242 89.8778 116.714 89.6195 117.231 89.103C117.748 88.5864 118.255 87.9184 118.754 87.0991C119.271 86.2797 119.743 85.398 120.17 84.4539C120.598 83.5098 120.936 82.6014 121.185 81.7286C121.453 80.8558 121.586 80.1166 121.586 79.5109C121.586 78.4244 121.203 77.8811 120.437 77.8811C119.974 77.8811 119.484 78.0948 118.968 78.5223C118.451 78.932 117.952 79.4931 117.472 80.2056C117.008 80.9181 116.581 81.7286 116.189 82.637C115.815 83.5277 115.512 84.4628 115.281 85.4425C115.049 86.4044 114.933 87.3484 114.933 88.2747C114.933 88.8981 115.004 89.3256 115.147 89.5572C115.307 89.7709 115.53 89.8778 115.815 89.8778ZM127.134 91C126.885 91 126.787 90.8842 126.84 90.6527L129.378 79.9919C129.467 79.6 129.476 79.2972 129.405 79.0834C129.352 78.8519 129.191 78.7361 128.924 78.7361C128.603 78.7361 128.247 78.9766 127.855 79.4575C127.481 79.9206 127.054 80.8113 126.573 82.1294C126.502 82.3609 126.377 82.4767 126.199 82.4767C125.932 82.4767 125.86 82.3164 125.985 81.9958C126.377 80.7667 126.787 79.8048 127.214 79.1102C127.659 78.4155 128.105 77.9256 128.55 77.6406C128.995 77.3556 129.405 77.2131 129.779 77.2131C130.367 77.2131 130.785 77.4358 131.035 77.8811C131.284 78.3086 131.293 79.0211 131.062 80.0186L130.768 81.2744C130.75 81.3991 130.777 81.4703 130.848 81.4881C130.919 81.5059 130.981 81.4614 131.035 81.3545C131.712 79.8048 132.326 78.7272 132.878 78.1216C133.431 77.5159 134.063 77.2131 134.775 77.2131C135.256 77.2131 135.613 77.3467 135.844 77.6139C136.094 77.8633 136.218 78.2106 136.218 78.6559C136.218 79.1013 136.111 79.4575 135.898 79.7247C135.684 79.9919 135.408 80.1255 135.069 80.1255C134.784 80.1255 134.58 80.0542 134.455 79.9117C134.33 79.7692 134.232 79.6089 134.161 79.4308C134.107 79.2348 134.045 79.0656 133.974 78.9231C133.903 78.7806 133.787 78.7094 133.627 78.7094C133.359 78.7094 133.012 79.0478 132.585 79.7247C132.157 80.4016 131.694 81.3189 131.195 82.4767C130.714 83.6167 130.242 84.8992 129.779 86.3242C129.334 87.7492 128.942 89.2098 128.603 90.7061C128.55 90.902 128.425 91 128.229 91H127.134ZM143.757 91.2405C142.849 91.2405 142.11 90.5013 141.54 89.0228L140.07 85.1486C139.892 84.7211 139.669 84.5073 139.402 84.5073C139.135 84.5073 138.903 84.73 138.707 85.1753C138.529 85.5672 138.333 86.1016 138.12 86.7784C137.924 87.4375 137.737 88.1589 137.559 88.9427L137.158 90.7061C137.104 90.902 136.98 91 136.784 91H135.742C135.492 91 135.394 90.8842 135.448 90.6527L139.349 73.9C139.42 73.5972 139.42 73.3834 139.349 73.2588C139.277 73.1163 139.117 73.0361 138.868 73.0183L138.066 72.9381C137.799 72.9025 137.683 72.7867 137.719 72.5908C137.755 72.4305 137.879 72.3325 138.093 72.2969C138.859 72.1722 139.473 72.0297 139.937 71.8694C140.4 71.7091 140.756 71.522 141.005 71.3083C141.148 71.2014 141.272 71.148 141.379 71.148C141.611 71.148 141.7 71.2816 141.647 71.5488L139.162 82.1294C139.144 82.2541 139.171 82.3253 139.242 82.3431C139.313 82.3609 139.375 82.3164 139.429 82.2095L140.311 80.6331C141.593 78.3531 143.036 77.2131 144.639 77.2131C145.245 77.2131 145.726 77.3734 146.082 77.6941C146.438 78.0147 146.616 78.4511 146.616 79.0033C146.616 79.8761 146.189 80.7489 145.334 81.6217C144.497 82.4945 143.392 83.207 142.021 83.7592C141.593 83.9195 141.468 84.2045 141.647 84.6142L143.196 88.5686C143.374 89.0139 143.552 89.3345 143.731 89.5305C143.909 89.7086 144.131 89.7977 144.399 89.7977C144.808 89.7977 145.12 89.5483 145.334 89.0495C145.547 88.533 145.735 87.6423 145.895 86.3777C145.93 86.1461 146.037 86.0303 146.215 86.0303C146.411 86.0303 146.5 86.2084 146.483 86.5647C146.394 88.0609 146.109 89.2188 145.628 90.0381C145.165 90.8397 144.541 91.2405 143.757 91.2405ZM139.669 83.305C139.598 83.4653 139.589 83.59 139.643 83.6791C139.714 83.7503 139.83 83.7681 139.99 83.7325C141.468 83.3584 142.662 82.7439 143.57 81.8889C144.479 81.0339 144.933 80.0898 144.933 79.0567C144.933 78.3798 144.675 78.0414 144.158 78.0414C143.552 78.0414 142.849 78.5134 142.047 79.4575C141.246 80.3838 140.453 81.6663 139.669 83.305ZM150.397 91.2405C149.453 91.2405 148.696 90.8753 148.126 90.145C147.556 89.3969 147.271 88.3459 147.271 86.9922C147.271 85.8166 147.476 84.6498 147.885 83.492C148.313 82.3342 148.865 81.2833 149.542 80.3392C150.219 79.3952 150.958 78.6381 151.76 78.0681C152.579 77.4981 153.372 77.2131 154.138 77.2131C154.975 77.2131 155.571 77.418 155.928 77.8277C156.302 78.2195 156.489 78.7539 156.489 79.4308C156.489 80.2323 156.204 81.0339 155.634 81.8355C155.082 82.6192 154.298 83.3228 153.283 83.9463C152.285 84.5697 151.109 85.0328 149.756 85.3356C149.364 85.4247 149.159 85.6473 149.141 86.0036C149.123 86.1283 149.114 86.2619 149.114 86.4044C149.114 86.5291 149.114 86.6538 149.114 86.7784C149.114 87.7938 149.284 88.5597 149.622 89.0763C149.978 89.5928 150.459 89.8511 151.065 89.8511C151.742 89.8511 152.392 89.5394 153.015 88.9159C153.657 88.2925 154.191 87.4108 154.618 86.2708C154.672 86.1105 154.779 86.0303 154.939 86.0303C155.046 86.0303 155.108 86.0748 155.126 86.1639C155.162 86.253 155.162 86.3598 155.126 86.4845C154.556 88.052 153.861 89.2366 153.042 90.0381C152.241 90.8397 151.359 91.2405 150.397 91.2405ZM149.408 84.3203C149.373 84.445 149.391 84.5519 149.462 84.6409C149.551 84.7122 149.658 84.73 149.782 84.6944C150.887 84.3916 151.813 83.9373 152.561 83.3317C153.309 82.7083 153.87 82.0136 154.244 81.2477C154.636 80.4817 154.832 79.7336 154.832 79.0033C154.832 78.2552 154.538 77.8811 153.951 77.8811C153.434 77.8811 152.873 78.1839 152.267 78.7895C151.662 79.3952 151.101 80.1878 150.584 81.1675C150.067 82.1472 149.676 83.1981 149.408 84.3203ZM158.964 91.2405C158.359 91.2405 157.887 91 157.548 90.5191C157.21 90.0381 157.157 89.2633 157.388 88.1945L159.606 78.5223C159.659 78.2552 159.552 78.1216 159.285 78.1216H158.27C158.02 78.1216 157.896 78.0058 157.896 77.7742C157.896 77.6495 157.94 77.5516 158.029 77.4803C158.118 77.4091 158.225 77.3734 158.35 77.3734H159.312C159.722 77.3734 159.962 77.1864 160.033 76.8123L160.674 73.9534C160.728 73.7575 160.853 73.6595 161.049 73.6595H162.144C162.393 73.6595 162.491 73.7753 162.438 74.0069L161.77 76.9727C161.717 77.2398 161.823 77.3734 162.091 77.3734H163.614C163.916 77.3734 164.068 77.4892 164.068 77.7208C164.068 77.988 163.881 78.1216 163.507 78.1216H162.064C161.672 78.1216 161.432 78.3086 161.342 78.6827L159.098 88.4617C159.009 88.8536 159.018 89.1653 159.125 89.3969C159.249 89.6106 159.454 89.7175 159.739 89.7175C160.149 89.7175 160.523 89.4859 160.862 89.0228C161.218 88.5597 161.592 87.678 161.984 86.3777C162.055 86.1461 162.171 86.0303 162.331 86.0303C162.456 86.0303 162.536 86.0838 162.572 86.1906C162.607 86.2975 162.58 86.4934 162.491 86.7784C162.153 87.9897 161.779 88.9159 161.369 89.5572C160.977 90.1984 160.577 90.6438 160.167 90.8931C159.757 91.1247 159.356 91.2405 158.964 91.2405Z" fill="white"/>
+</svg>`,
+      collagenSvg: `<svg width="233" height="62" viewBox="0 0 233 62" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M21.2113 40.4238H30.7621H44.4218V45.0881H13.3265V41.7564L24.654 31.3174C26.653 29.3184 28.7631 27.8747 28.7631 24.8762C28.7631 21.8778 26.7641 19.4345 23.6546 19.4345C20.3229 19.4345 18.1019 22.2108 17.6577 25.4315L17.5466 26.6531L13.1044 25.7647L13.2155 24.6541C13.8818 19.3235 18.1019 14.9923 23.6546 14.9923C29.3183 14.9923 33.4274 19.2124 33.4274 24.8762C33.4274 29.6515 30.651 31.7616 27.4305 34.8711L21.2113 40.4238ZM176.133 41.2012C172.357 41.2012 169.58 38.4248 169.58 34.7601C169.58 31.0952 172.357 28.3189 176.133 28.3189C179.909 28.3189 182.684 31.0952 182.684 34.7601C182.795 38.4248 179.909 41.2012 176.133 41.2012ZM182.795 24.543V27.6525C181.241 25.4315 178.797 24.0988 175.577 24.0988C169.802 24.0988 165.138 28.8741 165.138 34.7601C165.138 40.6458 169.691 45.4213 175.577 45.4213C178.797 45.4213 181.241 44.0886 182.795 41.8674V44.4217C182.795 47.9755 180.464 50.0856 176.688 50.0856C173.134 50.0856 171.579 48.6418 170.69 46.8649L166.804 49.086C168.581 52.4177 172.023 54.0835 176.577 54.0835C182.018 54.0835 187.237 50.974 187.237 44.3107V24.543H182.795ZM133.488 45.1991H137.93V15.1034H133.488V45.1991ZM224.885 24.0988C222.109 24.0988 219.888 25.0983 218.444 27.3193V24.543H214.002V45.1991H218.444V34.0937C218.444 29.8736 220.776 28.0967 223.664 28.0967C226.44 28.0967 228.328 29.7626 228.328 32.8721V45.0881H232.77V32.539C232.77 27.2083 229.549 24.0988 224.885 24.0988ZM194.567 33.2052C195.233 30.0958 197.455 28.0967 200.787 28.0967C203.451 28.0967 206.117 29.6515 206.672 33.2052H194.567ZM194.567 36.8701H211.003C211.114 36.3147 211.114 35.6485 211.114 34.9821C211.114 28.9852 206.894 24.0988 200.787 24.0988C194.345 24.0988 189.903 28.8741 189.903 34.9821C189.903 41.2012 194.345 45.8655 201.12 45.8655C205.118 45.8655 208.227 44.1997 210.115 41.3122L206.45 39.2022C205.451 40.6458 203.562 41.7564 201.12 41.7564C197.899 41.6454 195.344 40.0906 194.567 36.8701ZM151.7 41.5344C148.035 41.5344 145.149 38.758 145.149 34.8711C145.149 30.9842 147.924 28.2078 151.7 28.2078C155.365 28.2078 158.253 30.9842 158.253 34.8711C158.253 38.758 155.476 41.5344 151.7 41.5344ZM158.253 24.543V27.4305C156.697 25.3204 154.255 23.9877 151.034 23.9877C145.371 23.9877 140.705 28.652 140.705 34.8711C140.705 40.979 145.371 45.7543 151.034 45.7543C154.255 45.7543 156.697 44.4217 158.253 42.2006V45.1991H162.695V24.543H158.253ZM124.27 45.1991H128.712V15.1034H124.27V45.1991ZM110.61 41.4232C106.945 41.4232 104.169 38.6469 104.169 34.8711C104.169 31.0952 106.945 28.3189 110.61 28.3189C114.275 28.3189 117.051 31.0952 117.051 34.8711C117.051 38.6469 114.164 41.4232 110.61 41.4232ZM110.61 45.7543C116.718 45.7543 121.493 40.979 121.493 34.8711C121.493 28.7631 116.607 23.9877 110.61 23.9877C104.613 23.9877 99.7268 28.652 99.7268 34.8711C99.6158 40.979 104.502 45.7543 110.61 45.7543ZM84.7345 45.7543C90.065 45.7543 94.7293 42.978 97.1726 38.758L93.0635 36.4259C91.6198 39.3132 88.3992 41.0902 84.7345 41.0902C78.5154 41.0902 74.4065 36.6479 74.4065 30.762C74.4065 24.7651 78.5154 20.434 84.7345 20.434C88.3992 20.434 91.5088 22.2108 93.0635 25.0983L97.1726 22.655C94.7293 18.435 90.065 15.7697 84.7345 15.7697C75.9611 15.7697 69.6311 22.433 69.6311 30.762C69.6311 39.0912 75.9611 45.7543 84.7345 45.7543ZM57.3041 45.9765L53.6392 43.8665C49.086 51.7513 40.5348 57.0819 30.651 57.0819C15.9918 57.0819 4.10901 45.1991 4.10901 30.651C4.10901 15.9919 15.9918 4.22006 30.651 4.22006C40.4238 4.22006 48.9749 9.55067 53.6392 17.4355L57.3041 15.3255C51.9734 6.108 42.0896 0 30.7621 0C13.7708 0 0 13.6596 0 30.651C0 47.6423 13.7708 61.302 30.651 61.302C42.0896 61.4131 51.9734 55.1939 57.3041 45.9765ZM39.7575 22.0998L35.5374 25.4315V19.6566L41.0901 15.3255H44.4218V35.7595H39.7575V22.0998Z" fill="white"/>
+</svg>`,
+    };;
+
+    const WLABELS = {
+      en: { back: 'All works', next: 'Next', prev: 'Prev' },
+      ru: { back: 'Все работы', next: 'Следующий', prev: 'Предыдущий' }
+    };
+
+  </script>
+
+  <script>
+    /* ── TRANSLATIONS ── */
+    const T = {
+      en: {
+        'nav.about':    'About',
+        'nav.works':    'Works',
+        'nav.process':  'Process',
+        'nav.contact':  'Contact',
+        'hero.scroll':  'Scroll',
+        'about.h':      'About me',
+        'about.text':   'I\'m a digital designer who creates clear and expressive visual solutions through simple forms. Drawing on research and user insight, I help make digital products clearer, more user-friendly, and visually cohesive.',
+        'works.h':      'My Latest Works',
+        'wcard1.tag':   'Branding',
+        'wcard2.tag':   'Brand Guide',
+        'wcard3.tag':   'Advertising',
+        'works.more':   'View on Dribbble',
+        'process.h':    'How it<br>works',
+        'process.sub':  'Design is a way to solve problems through visual and user experience. A designer\'s job is to transform complex ideas and processes into clear, accessible, and functional digital solutions.',
+        'step1.ttl':    'Briefing',
+        'step1.desc':   'Defining the project goals, business objectives and expectations that the design should address.',
+        'step2.ttl':    'Research',
+        'step2.desc':   'Study the product, audience, and context of use to identify problems and opportunities.',
+        'step3.ttl':    'Concept',
+        'step3.desc':   'Formation of an idea and a general direction that determines the logic and nature of the future solution.',
+        'step4.ttl':    'Design',
+        'step4.desc':   'Creating a structure, interface, and visual language that provides a clear and consistent user experience.',
+        'step5.ttl':    'The Finale',
+        'step5.desc':   'Preparation of design materials for the correct implementation of the product and file transfer.',
+        'cta.h':        'Got a clear Vision?',
+        'cta.s':        'Let\'s make it reality.',
+      },
+      ru: {
+        'nav.about':    'О себе',
+        'nav.works':    'Работы',
+        'nav.process':  'Процесс',
+        'nav.contact':  'Контакт',
+        'hero.scroll':  'Скролл',
+        'about.h':      'О себе',
+        'about.text':   'Я цифровой дизайнер, создающий чёткие и выразительные визуальные решения через простые формы. Опираясь на исследования и понимание пользователей, я помогаю делать цифровые продукты яснее, удобнее и визуально целостнее.',
+        'works.h':      'Последние работы',
+        'wcard1.tag':   'Брендинг',
+        'wcard2.tag':   'Гайдлайн',
+        'wcard3.tag':   'Реклама',
+        'works.more':   'Смотреть на Dribbble',
+        'process.h':    'Как это<br>работает',
+        'process.sub':  'Дизайн — это способ решать проблемы через визуальный и пользовательский опыт. Задача дизайнера — превращать сложные идеи и процессы в понятные, доступные и функциональные цифровые решения.',
+        'step1.ttl':    'Брифинг',
+        'step1.desc':   'Определение целей проекта, бизнес-задач и ожиданий, которые должен решить дизайн.',
+        'step2.ttl':    'Исследование',
+        'step2.desc':   'Изучение продукта, аудитории и контекста использования для выявления проблем и возможностей.',
+        'step3.ttl':    'Концепция',
+        'step3.desc':   'Формирование идеи и общего направления, определяющего логику и характер будущего решения.',
+        'step4.ttl':    'Дизайн',
+        'step4.desc':   'Создание структуры, интерфейса и визуального языка, обеспечивающего ясный и последовательный пользовательский опыт.',
+        'step5.ttl':    'Финал',
+        'step5.desc':   'Подготовка дизайн-материалов для корректной реализации продукта и передача файлов заказчику.',
+        'cta.h':        'Есть чёткое видение?',
+        'cta.s':        'Давай воплотим это.',
+      }
+    };
+
+    let currentLang = 'en';
+
+    function applyLang(lang) {
+      currentLang = lang;
+      const dict = T[lang];
+
+      /* save scroll before any re-render */
+      const savedScroll = window.scrollY;
+
+      /* plain text */
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const k = el.dataset.i18n;
+        if (dict[k] !== undefined) el.textContent = dict[k];
+      });
+
+      /* innerHTML (for <br> etc.) */
+      document.querySelectorAll('[data-i18n-html]').forEach(el => {
+        const k = el.dataset.i18nHtml;
+        if (dict[k] !== undefined) el.innerHTML = dict[k];
+      });
+
+      /* active state on all lang buttons */
+      document.querySelectorAll('.lang-btn, .mob-lang-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.lang === lang);
+      });
+
+      document.documentElement.lang = lang;
+      localStorage.setItem('kv-lang', lang);
+
+      /* re-render open work page in new language — preserve scroll */
+      const page = document.getElementById('work-page');
+      if (page && page.classList.contains('active')) {
+        const currentHash = window.location.hash.replace('#', '');
+        if (currentHash && window.WORKS && window.WORKS[currentHash]) {
+          const wpScroll = page.scrollTop;
+          window.renderWork(currentHash);
+          page.scrollTop = wpScroll;
+          if (window.initSliders) window.initSliders();
+        }
+      } else {
+        /* main page — restore scroll after micro-task */
+        requestAnimationFrame(() => window.scrollTo(0, savedScroll));
+      }
+    }
+
+    /* wire up all lang buttons */
+    document.querySelectorAll('.lang-btn, .mob-lang-btn').forEach(btn => {
+      btn.addEventListener('click', () => applyLang(btn.dataset.lang));
+    });
+
+    /* restore saved lang */
+    const saved = localStorage.getItem('kv-lang');
+    if (saved && saved !== 'en') applyLang(saved);
+
+    /* ── READY ── */
+    window.addEventListener('load', () => document.body.classList.add('ready'));
+
+    /* ── CURSOR ── */
+    (function () {
+      const dot  = document.getElementById('cur-dot');
+      const ring = document.getElementById('cur-ring');
+      if (!dot || !ring || !window.matchMedia('(hover:hover)').matches) return;
+
+      let mx = -200, my = -200;
+      let rx = -200, ry = -200;
+      const LERP = 0.11;
+
+      /* dot: instant position */
+      document.addEventListener('mousemove', e => {
+        mx = e.clientX; my = e.clientY;
+        dot.style.left = mx + 'px';
+        dot.style.top  = my + 'px';
+      });
+
+      /* visibility */
+      document.addEventListener('mouseleave', () => {
+        dot.style.opacity = '0'; ring.style.opacity = '0';
+      });
+      document.addEventListener('mouseenter', () => {
+        dot.style.opacity = '1'; ring.style.opacity = '1';
+      });
+
+      /* click pulse */
+      document.addEventListener('mousedown', () => document.body.classList.add('is-click'));
+      document.addEventListener('mouseup',   () => document.body.classList.remove('is-click'));
+
+      /* ring: lerp trailing loop */
+      (function loop() {
+        rx += (mx - rx) * LERP;
+        ry += (my - ry) * LERP;
+        ring.style.left = rx + 'px';
+        ring.style.top  = ry + 'px';
+        requestAnimationFrame(loop);
+      })();
+
+      /* hover state for interactive elements */
+      const hovSel = 'a, button, .wcard, .about__img, .cta, .step, .hdr__logo, .btn-border, .lang-btn, .mob-lang-btn';
+      document.querySelectorAll(hovSel).forEach(el => {
+        el.addEventListener('mouseenter', () => document.body.classList.add('is-hov'));
+        el.addEventListener('mouseleave', () => document.body.classList.remove('is-hov'));
+      });
+    })();
+
+    /* ── HEADER SCROLL ── */
+    (function () {
+      const h = document.getElementById('hdr');
+      const fn = () => h.classList.toggle('scrolled', window.scrollY > 56);
+      window.addEventListener('scroll', fn, { passive: true });
+      fn();
+    })();
+
+    /* ── BURGER ── */
+    (function () {
+      const burg = document.getElementById('burg');
+      const mob  = document.getElementById('mob');
+      let open = false;
+      burg.addEventListener('click', () => {
+        open = !open;
+        burg.classList.toggle('open', open);
+        mob.classList.toggle('open', open);
+        burg.setAttribute('aria-expanded', open);
+        document.body.style.overflow = open ? 'hidden' : '';
+      });
+      window.closeMob = function () {
+        open = false;
+        burg.classList.remove('open');
+        mob.classList.remove('open');
+        burg.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+      };
+    })();
+
+    /* ── SCROLL REVEAL ── */
+    (function () {
+      const io = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) { e.target.classList.add('on'); io.unobserve(e.target); }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -44px 0px' });
+      document.querySelectorAll('[data-r]').forEach(el => io.observe(el));
+    })();
+
+    /* ── HERO PARALLAX ── */
+    (function () {
+      const bg = document.querySelector('.hero__bg img');
+      if (!bg || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      let tick = false;
+      window.addEventListener('scroll', () => {
+        if (!tick) {
+          requestAnimationFrame(() => {
+            if (window.scrollY < window.innerHeight)
+              bg.style.transform = `scale(1) translateY(${window.scrollY * 0.22}px)`;
+            tick = false;
+          });
+          tick = true;
+        }
+      }, { passive: true });
+    })();
+
+    /* ── WORK PAGE ROUTER ── */
+    (function () {
+      const page    = document.getElementById('work-page');
+      const content = document.getElementById('work-content');
+      let   scrollY = 0;
+
+      function renderWork(key) {
+        window.renderWork = renderWork;
+        const w   = WORKS[key];
+        const lng = currentLang;
+        const lbl = WLABELS[lng];
+        if (!w) return;
+
+        const nw = WORKS[w.next];
+        const pw = WORKS[w.prev];
+
+        const itemsHTML = w.items.map((item, itemIdx) => {
+          const images = item.imgs || [item.img];
+          const isSlider = images.length > 1;
+          const slideId = `slider-${key}-${itemIdx}`;
+          /* restore last-known slide position immediately in the markup itself —
+             avoids briefly painting slide 0 then crossfading to the real one */
+          const savedIdx = (window._sliderPositions && window._sliderPositions[slideId]) || 0;
+          const startIdx = savedIdx < images.length ? savedIdx : 0;
+
+          const imgHTML = isSlider ? `
+            <div class="wp-item__slides" id="${slideId}">
+              ${images.map((src, i) => `
+                <div class="wp-item__slide ${i === startIdx ? 'active' : ''}">
+                  <img src="${src}" alt="${item.title[lng]}" loading="lazy">
+                </div>
+              `).join('')}
+              ${images.length > 1 ? `
+                <div class="wp-item__dots">
+                  ${images.map((_, i) => `<div class="wp-item__dot" data-slider="${slideId}" data-idx="${i}"><div class="wp-item__dot-fill"></div></div>`).join('')}
+                </div>
+                <div class="wp-item__zone wp-item__zone--prev" data-slider="${slideId}" data-dir="-1"></div>
+                <div class="wp-item__zone wp-item__zone--next" data-slider="${slideId}" data-dir="1"></div>
+              ` : ''}
+            </div>
+          ` : `
+            <img src="${item.img}" alt="${item.title[lng]}" loading="lazy"
+              style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;display:block;">
+          `;
+
+          return `
+            <div class="wp-item">
+              <div class="wp-item__img">
+                ${imgHTML}
+              </div>
+              <div class="wp-item__txt">
+                <h2 class="wp-item__title">${item.title[lng]}</h2>
+                <div class="wp-item__sub">${item.sub[lng].split('\n\n').map(p => `<p>${p}</p>`).join('')}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        const resultsHTML = w.results ? `
+          <div class="wp-results">
+            <p class="wp-results__label">Results</p>
+            <div class="wp-results__grid">
+              ${w.results.map(r => `
+                <div class="wp-results__item">
+                  <span class="wp-results__value">${r.value}</span>
+                  <span class="wp-results__desc">${r.label[lng]}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : '';
+
+        content.innerHTML = `
+          <nav class="wp-nav">
+            <button class="wp-nav__left" onclick="closeWork()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              ${lbl.back}
+            </button>
+            <div class="wp-nav__projects">
+              ${Object.keys(WORKS).map(k => `
+                <button class="wp-proj-btn ${k === key ? 'active' : ''}" onclick="openWork('${k}')">
+                  ${WORKS[k].title}
+                </button>
+              `).join('')}
+            </div>
+            <div class="wp-nav__lang">
+              <button class="lang-btn ${lng === 'en' ? 'active' : ''}" data-lang="en" onclick="applyLang('en')">EN</button>
+              <span>/</span>
+              <button class="lang-btn ${lng === 'ru' ? 'active' : ''}" data-lang="ru" onclick="applyLang('ru')">RU</button>
+            </div>
+          </nav>
+
+          <div class="wp-hero">
+            <img src="${w.hero}" alt="${w.title}">
+            <div class="wp-hero__bar">
+              <div class="wp-hero__logo ${key === 'hub' ? 'wp-hero__logo--hub' : ''}">${LOGOS[key + 'Svg'] || LOGOS[key === 'collagen' ? 'collagenSvg' : key + 'Svg'] || ''}</div>
+              <p class="wp-hero__desc">${w.desc[lng]}</p>
+            </div>
+          </div>
+          <p class="wp-hero-desc-mob">${w.desc[lng]}</p>
+
+          <div class="wp-dribbble-btn">
+            <a href="${w.dribbble}" target="_blank" rel="noopener" class="btn-border">
+              ${lng === 'ru' ? 'Полный кейс на Dribbble' : 'See the FULL case on Dribbble'}
+            </a>
+          </div>
+            <div class="wp-scroll-line"></div>
+          </div>
+
+          <div class="wp-items">
+            ${itemsHTML}
+          </div>
+
+          ${resultsHTML}
+
+          <footer class="wp-foot">
+            <a href="https://dribbble.com" target="_blank" rel="noopener">Dribbble</a>
+            <a href="mailto:kiryaverb@icloud.com">kiryaverb@icloud.com</a>
+            <a href="tel:+079969974">079969974</a>
+          </footer>
+        `;
+      }
+
+      window.openWork = function (key) {
+        if (!WORKS[key]) return;
+        window.WORKS = WORKS;
+        const isSwitch = page.classList.contains('active');
+
+        if (isSwitch) {
+          /* determine direction: right if new project index > current */
+          const keys = Object.keys(WORKS);
+          const curKey = window.location.hash.replace('#', '') || keys[0];
+          const curIdx = keys.indexOf(curKey);
+          const newIdx = keys.indexOf(key);
+          const dir = newIdx > curIdx ? 1 : -1; /* 1 = slide left, -1 = slide right */
+          const outX  = dir * -60;  /* current slides out opposite direction */
+          const inX   = dir * 60;   /* new slides in from this side */
+
+          /* quick fade out, render, smooth fade in — professional approach */
+          content.style.transition = 'opacity .15s var(--ease)';
+          content.style.opacity    = '0';
+          setTimeout(() => {
+            renderWork(key);
+            page.scrollTop = 0;
+            window.location.hash = key;
+            content.style.transition = 'none';
+            content.style.opacity    = '0';
+            content.style.transform  = `translateX(${inX}px)`;
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+              content.style.transition = 'opacity .5s var(--ease), transform .5s var(--ease)';
+              content.style.opacity    = '1';
+              content.style.transform  = 'translateX(0)';
+              initSliders();
+            }));
+          }, 180);
+        } else {
+          /* first open from main page */
+          scrollY = window.scrollY;
+          renderWork(key);
+          page.scrollTop = 0;
+          document.body.style.overflow = 'hidden';
+          window.location.hash = key;
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            page.classList.add('active');
+            initSliders();
+          }));
+        }
+      };
+
+      function initSliders() {
+        window.initSliders = initSliders;
+        window._sliderPositions = window._sliderPositions || {};
+        document.querySelectorAll('[id^="slider-"]').forEach(slider => {
+          if (slider._sliderInit) return;
+          slider._sliderInit = true;
+          const slides = slider.querySelectorAll('.wp-item__slide');
+          const dots   = slider.querySelectorAll('.wp-item__dot');
+          if (slides.length < 2) return;
+
+          /* resume from last known position for this slider (survives re-render);
+             the correct slide is already marked active in the freshly rendered markup */
+          let cur   = window._sliderPositions[slider.id] || 0;
+          if (cur >= slides.length) cur = 0;
+          let timer = null;
+
+          function updateDots() {
+            dots.forEach((dot, i) => {
+              dot.classList.remove('filled', 'active');
+              if (i < cur)   dot.classList.add('filled');
+              if (i === cur) dot.classList.add('active');
+            });
+          }
+
+          function goTo(n) {
+            slides[cur].classList.remove('active');
+            cur = (n + slides.length) % slides.length;
+            slides[cur].classList.add('active');
+            updateDots();
+            window._sliderPositions[slider.id] = cur;
+            /* whenever the slide changes — auto or manual — restart the
+               auto-advance timer so it stays perfectly synced with the
+               freshly-restarted 3.5s progress bar animation */
+            if (timer) start();
+          }
+
+          function start() {
+            slider.classList.remove('wp-paused');
+            clearInterval(timer);
+            timer = setInterval(() => goTo(cur + 1), 3500);
+          }
+          function stop() {
+            slider.classList.add('wp-paused');
+            clearInterval(timer);
+            timer = null;
+          }
+
+          dots.forEach(dot => dot.addEventListener('click', () => goTo(+dot.dataset.idx)));
+
+          /* invisible left/right tap zones — Instagram-style manual navigation,
+             works identically on desktop click and mobile tap */
+          const zones = slider.querySelectorAll('.wp-item__zone');
+          zones.forEach(zone => {
+            zone.addEventListener('click', (e) => {
+              e.stopPropagation();
+              goTo(cur + (+zone.dataset.dir));
+            });
+          });
+
+          /* only run this slider's cycle while it's actually visible on screen —
+             prevents blocks below the fold from silently advancing */
+          const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => entry.isIntersecting ? start() : stop());
+          }, { threshold: 0.35 });
+          observer.observe(slider);
+
+          /* defer first activation one frame so the keyframe fill animation
+             actually plays from 0% instead of snapping straight to 100% */
+          requestAnimationFrame(() => requestAnimationFrame(updateDots));
+        });
+      }
+
+      window.closeWork = function () {
+        page.classList.remove('active');
+        history.replaceState(null, '', window.location.pathname);
+        setTimeout(() => {
+          document.body.style.overflow = '';
+          window.scrollTo({ top: scrollY, behavior: 'instant' });
+          content.innerHTML = '';
+        }, 520);
+      };
+
+      /* keyboard Escape */
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && page.classList.contains('active')) closeWork();
+      });
+
+      /* hash on load */
+      const h = window.location.hash.replace('#', '');
+      if (WORKS[h]) openWork(h);
+
+      /* wire cards */
+      document.querySelectorAll('[data-work]').forEach(card => {
+        card.addEventListener('click', () => openWork(card.dataset.work));
+        card.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') openWork(card.dataset.work);
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
