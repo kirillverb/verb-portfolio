@@ -113,9 +113,10 @@
       border-color: var(--bdr);
     }
     .hdr__logo {
-      font-family: var(--script); font-size: 26px; letter-spacing: .01em;
+      display: flex; align-items: center;
       transition: opacity .3s;
     }
+    .hdr__logo svg { height: 26px; width: auto; display: block; }
     .hdr__logo:hover { opacity: .6; }
 
     .hdr__right {
@@ -157,16 +158,21 @@
 
     /* Burger */
     .burg {
-      display: none; flex-direction: column; gap: 6px;
-      width: 28px; padding: 2px 0;
+      display: none; position: relative;
+      width: 28px; height: 20px;
     }
     .burg span {
-      display: block; height: 1px; background: var(--text);
-      transition: transform .35s var(--ease), opacity .35s;
+      position: absolute; left: 0;
+      width: 28px; height: 1px;
+      background: var(--text);
+      transition: top .35s var(--ease), transform .35s var(--ease), opacity .3s var(--ease);
     }
-    .burg.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .burg span:nth-child(1) { top: 0; }
+    .burg span:nth-child(2) { top: 9px; }
+    .burg span:nth-child(3) { top: 18px; }
+    .burg.open span:nth-child(1) { top: 9px; transform: rotate(45deg); }
     .burg.open span:nth-child(2) { opacity: 0; }
-    .burg.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    .burg.open span:nth-child(3) { top: 9px; transform: rotate(-45deg); }
 
     /* Mobile nav */
     .mob {
@@ -709,7 +715,7 @@
 
       /* footer */
       .wp-foot { flex-direction: column; align-items: flex-start; gap: 8px; }
-      .wp-foot a { font-size: 16px; }
+      .wp-foot a { font-size: 20px; }
     }
     }
 
@@ -859,6 +865,7 @@
       }
       .step__desc { grid-column: 1 / -1; padding-top: 4px; }
       .foot { flex-direction: column; align-items: flex-start; }
+      .foot a { font-size: 20px; }
     }
     @media (max-width: 400px) {
       .works__grid { grid-template-columns: 1fr; }
@@ -950,7 +957,11 @@
 
   <!-- ─── HEADER ─── -->
   <header class="hdr" id="hdr">
-    <a href="#" class="hdr__logo">Kirya Verb</a>
+    <a href="#" class="hdr__logo" aria-label="Kirya Verb">
+      <svg width="138" height="138" viewBox="0 0 138 138" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M23.7285 0C12.2438 20.7679 11.1716 51.7955 23.0586 82.2227C32.7878 107.128 49.1759 126.44 67.1533 136.738C67.8491 137.134 68.5518 137.523 69.2539 137.887C69.1582 137.063 69.0814 136.246 69.0176 135.423C66.0299 98.7645 83.4705 66.1727 112.658 58.2881C121.021 56.0281 129.576 56.0091 137.895 57.918V137.899H0V0H23.7285ZM137.896 0C136.459 0.0702217 135.023 0.185154 133.574 0.344727C127.663 1.00867 121.981 2.44534 116.593 4.58398C80.4401 18.8783 57.1952 64.2705 62.8643 114.872C63.5027 120.58 64.4858 126.134 65.7881 131.516C53.0392 114.763 46.7129 89.8326 50.3965 63.2295C54.2525 35.3879 68.1438 12.2961 86.1211 0H137.896Z" fill="white"/>
+      </svg>
+    </a>
     <div class="hdr__right">
       <nav class="hdr__nav">
         <a href="#about"   data-i18n="nav.about">About</a>
@@ -1688,6 +1699,8 @@
               ${lng === 'ru' ? 'Полный кейс на Dribbble' : 'See the FULL case on Dribbble'}
             </a>
           </div>
+          <div class="wp-scroll" aria-hidden="true">
+            <span>Scroll</span>
             <div class="wp-scroll-line"></div>
           </div>
 
