@@ -562,9 +562,10 @@
     .wp-item__slides.wp-paused .wp-item__dot.active .wp-item__dot-fill {
       animation-play-state: paused;
     }
-    /* invisible tap zones — left half = prev, right half = next, story-style */
+    /* invisible tap zones — left 30% = prev, right 30% = next,
+       middle 40% is a safe zone: press-and-hold pauses but never navigates */
     .wp-item__zone {
-      position: absolute; top: 0; bottom: 0; width: 50%;
+      position: absolute; top: 0; bottom: 0; width: 30%;
       z-index: 1;
     }
     .wp-item__zone--prev { left: 0; }
