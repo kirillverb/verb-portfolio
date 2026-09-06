@@ -1181,7 +1181,7 @@
 
   <!-- ─── FOOTER ─── -->
   <footer class="foot">
-    <a href="https://dribbble.com" target="_blank" rel="noopener">Dribbble</a>
+    <a href="https://dribbble.com/KiryaVerb" target="_blank" rel="noopener">Dribbble</a>
     <a href="mailto:kiryaverb@icloud.com">kiryaverb@icloud.com</a>
     <a href="tel:+079969974">079969974</a>
   </footer>
@@ -1726,7 +1726,7 @@
           ${resultsHTML}
 
           <footer class="wp-foot">
-            <a href="https://dribbble.com" target="_blank" rel="noopener">Dribbble</a>
+            <a href="https://dribbble.com/KiryaVerb" target="_blank" rel="noopener">Dribbble</a>
             <a href="mailto:kiryaverb@icloud.com">kiryaverb@icloud.com</a>
             <a href="tel:+079969974">079969974</a>
           </footer>
@@ -1796,6 +1796,8 @@
           let cur   = window._sliderPositions[slider.id] || 0;
           if (cur >= slides.length) cur = 0;
           let timer = null;
+          let isVisible = false;
+          let isHeld    = false;
 
           function updateDots() {
             dots.forEach((dot, i) => {
@@ -1812,9 +1814,9 @@
             updateDots();
             window._sliderPositions[slider.id] = cur;
             /* whenever the slide changes — auto or manual — restart the
-               auto-advance timer so it stays perfectly synced with the
-               freshly-restarted 3.5s progress bar animation */
-            if (timer) start();
+               auto-advance timer (respecting hold/visibility state) so it
+               stays perfectly synced with the freshly-restarted progress bar */
+            if (timer) updateRunning();
           }
 
           function start() {
@@ -1826,6 +1828,10 @@
             slider.classList.add('wp-paused');
             clearInterval(timer);
             timer = null;
+          }
+          /* single source of truth: only run when on-screen AND not being held */
+          function updateRunning() {
+            if (isVisible && !isHeld) start(); else stop();
           }
 
           dots.forEach(dot => dot.addEventListener('click', () => goTo(+dot.dataset.idx)));
@@ -1840,10 +1846,17 @@
             });
           });
 
+          /* press-and-hold to pause and inspect a slide — Instagram-style.
+             Pointer Events unify mouse + touch in one listener. */
+          slider.addEventListener('pointerdown', () => { isHeld = true;  updateRunning(); });
+          ['pointerup', 'pointerleave', 'pointercancel'].forEach(evt =>
+            slider.addEventListener(evt, () => { isHeld = false; updateRunning(); })
+          );
+
           /* only run this slider's cycle while it's actually visible on screen —
              prevents blocks below the fold from silently advancing */
           const observer = new IntersectionObserver(entries => {
-            entries.forEach(entry => entry.isIntersecting ? start() : stop());
+            entries.forEach(entry => { isVisible = entry.isIntersecting; updateRunning(); });
           }, { threshold: 0.35 });
           observer.observe(slider);
 
