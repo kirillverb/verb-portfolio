@@ -1756,7 +1756,7 @@
             page.scrollTop = 0;
             /* browser back/forward already changed the hash for us —
                only push a new entry when the user triggered this via our own UI */
-            if (!_fromPop) window.location.hash = key;
+            if (!_fromPop) history.pushState(null, '', '#' + key);
             content.style.transition = 'none';
             content.style.opacity    = '0';
             content.style.transform  = `translateX(${inX}px)`;
@@ -1773,7 +1773,7 @@
           renderWork(key);
           page.scrollTop = 0;
           document.body.style.overflow = 'hidden';
-          if (!_fromPop) window.location.hash = key;
+          if (!_fromPop) history.pushState(null, '', '#' + key);
           requestAnimationFrame(() => requestAnimationFrame(() => {
             page.classList.add('active');
             initSliders();
