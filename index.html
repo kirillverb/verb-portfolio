@@ -1733,7 +1733,7 @@
         `;
       }
 
-      window.openWork = function (key) {
+      window.openWork = function (key, _fromPop) {
         if (!WORKS[key]) return;
         window.WORKS = WORKS;
         const isSwitch = page.classList.contains('active');
@@ -1754,7 +1754,9 @@
           setTimeout(() => {
             renderWork(key);
             page.scrollTop = 0;
-            window.location.hash = key;
+            /* browser back/forward already changed the hash for us —
+               only push a new entry when the user triggered this via our own UI */
+            if (!_fromPop) window.location.hash = key;
             content.style.transition = 'none';
             content.style.opacity    = '0';
             content.style.transform  = `translateX(${inX}px)`;
@@ -1771,7 +1773,7 @@
           renderWork(key);
           page.scrollTop = 0;
           document.body.style.overflow = 'hidden';
-          window.location.hash = key;
+          if (!_fromPop) window.location.hash = key;
           requestAnimationFrame(() => requestAnimationFrame(() => {
             page.classList.add('active');
             initSliders();
@@ -1851,15 +1853,26 @@
         });
       }
 
-      window.closeWork = function () {
+      window.closeWork = function (_fromPop) {
         page.classList.remove('active');
-        history.replaceState(null, '', window.location.pathname);
+        if (!_fromPop) history.replaceState(null, '', window.location.pathname);
         setTimeout(() => {
           document.body.style.overflow = '';
           window.scrollTo({ top: scrollY, behavior: 'instant' });
           content.innerHTML = '';
         }, 520);
       };
+
+      /* browser back/forward buttons — works alongside our own "← All works"
+         button and project-switcher tabs, doesn't replace them */
+      window.addEventListener('popstate', () => {
+        const key = window.location.hash.replace('#', '');
+        if (WORKS[key]) {
+          openWork(key, true);
+        } else if (page.classList.contains('active')) {
+          closeWork(true);
+        }
+      });
 
       /* keyboard Escape */
       document.addEventListener('keydown', e => {
