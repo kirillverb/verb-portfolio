@@ -1837,19 +1837,31 @@
 
           dots.forEach(dot => dot.addEventListener('click', () => goTo(+dot.dataset.idx)));
 
-          /* invisible left/right tap zones — Instagram-style manual navigation,
-             works identically on desktop click and mobile tap */
+          /* invisible left/right tap zones — Instagram-style manual navigation.
+             A quick tap navigates; a deliberate hold-then-release must NOT
+             trigger navigation, even if released inside a zone. */
+          let pressStart = 0;
+          const HOLD_THRESHOLD = 220; /* ms — below this = quick tap */
+
           const zones = slider.querySelectorAll('.wp-item__zone');
           zones.forEach(zone => {
             zone.addEventListener('click', (e) => {
               e.stopPropagation();
-              goTo(cur + (+zone.dataset.dir));
+              if (Date.now() - pressStart < HOLD_THRESHOLD) {
+                goTo(cur + (+zone.dataset.dir));
+              }
+              /* else: this was a hold, not a tap — pause/resume already
+                 handled it, releasing must not also advance the slide */
             });
           });
 
           /* press-and-hold to pause and inspect a slide — Instagram-style.
              Pointer Events unify mouse + touch in one listener. */
-          slider.addEventListener('pointerdown', () => { isHeld = true;  updateRunning(); });
+          slider.addEventListener('pointerdown', () => {
+            pressStart = Date.now();
+            isHeld = true;
+            updateRunning();
+          });
           ['pointerup', 'pointerleave', 'pointercancel'].forEach(evt =>
             slider.addEventListener(evt, () => { isHeld = false; updateRunning(); })
           );
