@@ -1799,6 +1799,9 @@
           let timer = null;
           let isVisible = false;
           let isHeld    = false;
+          const SLIDE_DURATION = 3500;
+          let remaining = SLIDE_DURATION;   /* time left on the current slide */
+          let segStart  = 0;                /* when the current running segment began */
 
           function updateDots() {
             dots.forEach((dot, i) => {
@@ -1814,20 +1817,27 @@
             slides[cur].classList.add('active');
             updateDots();
             window._sliderPositions[slider.id] = cur;
-            /* whenever the slide changes — auto or manual — restart the
-               auto-advance timer (respecting hold/visibility state) so it
-               stays perfectly synced with the freshly-restarted progress bar */
-            if (timer) updateRunning();
+            /* fresh full countdown for the newly active slide — matches the
+               progress-bar keyframe animation restarting from 0% on the new dot */
+            remaining = SLIDE_DURATION;
+            updateRunning();
           }
 
           function start() {
             slider.classList.remove('wp-paused');
-            clearInterval(timer);
-            timer = setInterval(() => goTo(cur + 1), 3500);
+            clearTimeout(timer);
+            segStart = Date.now();
+            /* only the REMAINING time — not a fresh 3.5s — so the JS-triggered
+               advance lands exactly when the resumed progress bar visually completes */
+            timer = setTimeout(() => goTo(cur + 1), remaining);
           }
           function stop() {
             slider.classList.add('wp-paused');
-            clearInterval(timer);
+            clearTimeout(timer);
+            if (segStart) {
+              remaining -= (Date.now() - segStart);
+              if (remaining < 0) remaining = 0;
+            }
             timer = null;
           }
           /* single source of truth: only run when on-screen AND not being held */
