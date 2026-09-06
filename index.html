@@ -1056,26 +1056,26 @@
             </div>
           </div>
         </div>
-        <div class="wcard" data-r style="--d:2" data-work="hub" role="button" tabindex="0" aria-label="Open HUB project">
-          <img src="" data-img="hubCover" alt="HUB — Brand Guideline" loading="lazy"
-               style="object-position: 55% center;">
-          <div class="wcard__over">
-            <div class="wcard__text">
-              <span class="wcard__tag" data-i18n="wcard2.tag">Brand Guide</span>
-              <span class="wcard__name">HUB Community</span>
-            </div>
-            <div class="wcard__arrow">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            </div>
-          </div>
-        </div>
-        <div class="wcard" data-r style="--d:3" data-work="collagen" role="button" tabindex="0" aria-label="Open 21 Collagen project">
+        <div class="wcard" data-r style="--d:2" data-work="collagen" role="button" tabindex="0" aria-label="Open 21 Collagen project">
           <img src="" data-img="collagenCover" alt="21 Collagen — OOH Advertising" loading="lazy"
                style="object-position: center 30%;">
           <div class="wcard__over">
             <div class="wcard__text">
               <span class="wcard__tag" data-i18n="wcard3.tag">Advertising</span>
               <span class="wcard__name">21Collagen</span>
+            </div>
+            <div class="wcard__arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </div>
+          </div>
+        </div>
+        <div class="wcard" data-r style="--d:3" data-work="hub" role="button" tabindex="0" aria-label="Open HUB project">
+          <img src="" data-img="hubCover" alt="HUB — Brand Guideline" loading="lazy"
+               style="object-position: 55% center;">
+          <div class="wcard__over">
+            <div class="wcard__text">
+              <span class="wcard__tag" data-i18n="wcard2.tag">Brand Guide</span>
+              <span class="wcard__name">HUB Community</span>
             </div>
             <div class="wcard__arrow">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -1198,8 +1198,8 @@
     const WORKS = {
       jem: {
         title:  'JEM Camp',
-        next:   'hub',
-        prev:   'collagen',
+        next:   'collagen',
+        prev:   'hub',
         hero:   IMG.jemHero,
         dribbble: 'https://dribbble.com/shots/24630754-JEM-Camp-Moldova',
         desc: {
@@ -1255,49 +1255,10 @@
           }
         ]
       },
-      hub: {
-        title:  'HUB Community',
-        next:   'collagen',
-        prev:   'jem',
-        hero:   IMG.hubHero,
-        dribbble: 'https://dribbble.com/shots/26441718-HUB-Community',
-        desc: {
-          en: 'The initial concept for HUB started with someone else, who didn\'t take it further. I picked it up and developed it into a full brand and product case — identity, web and mobile product design, and social media.',
-          ru: 'Изначальная концепция HUB началась с другого человека, который не стал развивать её дальше. Я подхватил проект и развил его в полноценный бренд- и продуктовый кейс — айдентику, дизайн веб- и мобильного продукта и социальные сети.'
-        },
-        items: [
-          {
-            img: IMG.hubbrand1,
-            imgs: [IMG.hubbrand1, IMG.hubbrand2],
-            title: { en: 'Brand Identity', ru: 'Айдентика бренда' },
-            sub:   {
-              en: 'The identity included a logo, a supporting pattern built on a hexagonal grid, and paired typography for display and body use — tested across both digital applications and print mockups.',
-              ru: 'Айдентика включала логотип, поддерживающий паттерн на основе шестиугольной сетки и парную типографику для заголовков и основного текста — протестированную как в цифровых приложениях, так и на печатных макетах.'
-            }
-          },
-          {
-            img: IMG.hubweb,
-            imgs: [IMG.hubweb, IMG.hubweb2],
-            title: { en: 'Digital Experience', ru: 'Цифровой опыт' },
-            sub:   {
-              en: 'The desktop and mobile product was structured end-to-end around dedicated thematic blocks: Old Chisinau; News; Marketplace; Private Events; Chat. The site also accounted for Google Ads placements for monetization.',
-              ru: 'Десктопный и мобильный продукт был выстроен от начала до конца вокруг отдельных тематических блоков: Старый Кишинёв; Новости; Маркетплейс; Приватные мероприятия; Чат. Сайт также учитывал размещение рекламы Google Ads для монетизации.'
-            }
-          },
-          {
-            img: IMG.hubsocial,
-            title: { en: 'Social Media', ru: 'Социальные сети' },
-            sub:   {
-              en: 'The visual system extended into social media — from identity-driven banners to dedicated layouts for specific content series, such as one on old Chisinau.',
-              ru: 'Визуальная система расширилась на социальные сети — от баннеров на основе айдентики до отдельных макетов под конкретные серии контента, например серию о старом Кишинёве.'
-            }
-          }
-        ]
-      },
       collagen: {
         title:  '21Collagen',
-        next:   'jem',
-        prev:   'hub',
+        next:   'hub',
+        prev:   'jem',
         hero:   IMG.collagenHero,
         dribbble: 'https://dribbble.com/shots/25054542-21Collagen',
         desc: {
@@ -1341,8 +1302,47 @@
             }
           }
         ]
-      }
-    };
+      },
+      hub: {
+        title:  'HUB Community',
+        next:   'jem',
+        prev:   'collagen',
+        hero:   IMG.hubHero,
+        dribbble: 'https://dribbble.com/shots/26441718-HUB-Community',
+        desc: {
+          en: 'The initial concept for HUB started with someone else, who didn\'t take it further. I picked it up and developed it into a full brand and product case — identity, web and mobile product design, and social media.',
+          ru: 'Изначальная концепция HUB началась с другого человека, который не стал развивать её дальше. Я подхватил проект и развил его в полноценный бренд- и продуктовый кейс — айдентику, дизайн веб- и мобильного продукта и социальные сети.'
+        },
+        items: [
+          {
+            img: IMG.hubbrand1,
+            imgs: [IMG.hubbrand1, IMG.hubbrand2],
+            title: { en: 'Brand Identity', ru: 'Айдентика бренда' },
+            sub:   {
+              en: 'The identity included a logo, a supporting pattern built on a hexagonal grid, and paired typography for display and body use — tested across both digital applications and print mockups.',
+              ru: 'Айдентика включала логотип, поддерживающий паттерн на основе шестиугольной сетки и парную типографику для заголовков и основного текста — протестированную как в цифровых приложениях, так и на печатных макетах.'
+            }
+          },
+          {
+            img: IMG.hubweb,
+            imgs: [IMG.hubweb, IMG.hubweb2],
+            title: { en: 'Digital Experience', ru: 'Цифровой опыт' },
+            sub:   {
+              en: 'The desktop and mobile product was structured end-to-end around dedicated thematic blocks: Old Chisinau; News; Marketplace; Private Events; Chat. The site also accounted for Google Ads placements for monetization.',
+              ru: 'Десктопный и мобильный продукт был выстроен от начала до конца вокруг отдельных тематических блоков: Старый Кишинёв; Новости; Маркетплейс; Приватные мероприятия; Чат. Сайт также учитывал размещение рекламы Google Ads для монетизации.'
+            }
+          },
+          {
+            img: IMG.hubsocial,
+            title: { en: 'Social Media', ru: 'Социальные сети' },
+            sub:   {
+              en: 'The visual system extended into social media — from identity-driven banners to dedicated layouts for specific content series, such as one on old Chisinau.',
+              ru: 'Визуальная система расширилась на социальные сети — от баннеров на основе айдентики до отдельных макетов под конкретные серии контента, например серию о старом Кишинёве.'
+            }
+          }
+        ]
+      },
+      };
 
         const LOGOS = {
       jemSvg: `<svg width="258" height="64" viewBox="0 0 258 64" fill="none" xmlns="http://www.w3.org/2000/svg">
