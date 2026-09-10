@@ -8,7 +8,7 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20138%20138%22%3E%3Cpath%20d%3D%22M23.7285%200C12.2438%2020.7679%2011.1716%2051.7955%2023.0586%2082.2227C32.7878%20107.128%2049.1759%20126.44%2067.1533%20136.738C67.8491%20137.134%2068.5518%20137.523%2069.2539%20137.887C69.1582%20137.063%2069.0814%20136.246%2069.0176%20135.423C66.0299%2098.7645%2083.4705%2066.1727%20112.658%2058.2881C121.021%2056.0281%20129.576%2056.0091%20137.895%2057.918V137.899H0V0H23.7285ZM137.896%200C136.459%200.0702217%20135.023%200.185154%20133.574%200.344727C127.663%201.00867%20121.981%202.44534%20116.593%204.58398C80.4401%2018.8783%2057.1952%2064.2705%2062.8643%20114.872C63.5027%20120.58%2064.4858%20126.134%2065.7881%20131.516C53.0392%20114.763%2046.7129%2089.8326%2050.3965%2063.2295C54.2525%2035.3879%2068.1438%2012.2961%2086.1211%200H137.896Z%22%20fill%3D%22%23ffffff%22/%3E%3C/svg%3E" media="(prefers-color-scheme: dark)">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Playfair+Display:ital@0;1&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&family=Alex+Brush&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Playfair+Display:ital@0;1&family=Inter:wght@300;400;500;600;700&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&family=Alex+Brush&display=swap" rel="stylesheet">
   <style>
     /* ══ RESET ══ */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -29,7 +29,7 @@
       --bdr2:    rgba(255,255,255,.14);
 
       --serif:  'Instrument Serif', 'Playfair Display', Georgia, 'Times New Roman', serif;
-      --sans:   'Gotham', 'Montserrat', Arial, sans-serif;
+      --sans:   'Inter', 'Montserrat', Arial, sans-serif;
       --script: 'Alex Brush', cursive;
 
       --ease: cubic-bezier(.22,1,.36,1);
@@ -110,7 +110,7 @@
     }
     .hdr.scrolled {
       padding-block: 17px;
-      background: rgba(8,8,8,.86);
+      background: rgba(8,8,8,.55);
       backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
       border-color: var(--bdr);
     }
@@ -127,20 +127,24 @@
     .hdr__nav {
       display: flex; align-items: center; gap: 36px;
     }
-    .hdr__nav a {
+    /* nav links + Contact share the same plain style — Contact is no longer
+       boxed with a stroke, it just blends in like any other nav link */
+    .hdr__nav a, .hdr__contact {
+      position: relative;
       font-size: 11px; font-weight: 500; letter-spacing: .15em;
       text-transform: uppercase; color: var(--muted); transition: color .3s;
+      padding-bottom: 4px;
     }
-    .hdr__nav a:hover { color: var(--text); }
-    .hdr__contact {
-      font-size: 11px; font-weight: 500; letter-spacing: .15em;
-      text-transform: uppercase; color: var(--text);
-      padding: 12px 28px; border: 1px solid var(--bdr2);
-      transition: background .3s, border-color .3s;
+    /* underline that fills in on hover — the "progress" animation */
+    .hdr__nav a::after, .hdr__contact::after {
+      content: '';
+      position: absolute; left: 0; bottom: 0;
+      width: 0%; height: 1px;
+      background: currentColor;
+      transition: width .4s var(--ease);
     }
-    .hdr__contact:hover {
-      background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.35);
-    }
+    .hdr__nav a:hover, .hdr__contact:hover { color: var(--text); }
+    .hdr__nav a:hover::after, .hdr__contact:hover::after { width: 100%; }
 
     /* Language switcher */
     .lang-sw {
@@ -279,7 +283,7 @@
     .wp-foot a,
     .wp-pnav__name,
     .wp-proj-btn { color: var(--text-serif); }
-    .about { padding-block: clamp(40px, 6vw, 72px); }
+    .about { padding-block: clamp(52px, 7vw, 92px); }
     .about__grid {
       display: grid; grid-template-columns: .88fr 1fr;
       gap: clamp(44px, 7vw, 100px); align-items: center;
@@ -313,7 +317,7 @@
     }
 
     /* ══ WORKS ══ */
-    .works { padding-block: clamp(40px, 6vw, 72px); }
+    .works { padding-block: clamp(52px, 7vw, 92px); }
     .works__h {
       font-family: var(--serif); font-size: clamp(44px, 7.5vw, 84px);
       font-weight: 400; line-height: .95; margin-bottom: clamp(36px, 5.5vw, 68px);
@@ -724,7 +728,7 @@
 
     /* ══ PROCESS ══ */
     .process {
-      padding-block: clamp(40px, 6vw, 72px);
+      padding-block: clamp(52px, 7vw, 92px);
     }
     .process__grid {
       display: grid; grid-template-columns: .9fr 1.1fr;
@@ -748,10 +752,13 @@
       padding: 26px 0;
       border-bottom: 1px solid var(--bdr);
       align-items: start;
-      transition: border-color .3s;
+      transition: border-color .3s, opacity .35s var(--ease);
     }
     .step:first-child { border-top: 1px solid var(--bdr); }
     .step:hover { border-bottom-color: var(--bdr2); }
+    /* hovering one step dims all the others for visual contrast —
+       untouched (no hover anywhere) leaves everything at full brightness */
+    .steps:hover .step:not(:hover) { opacity: .4; }
 
     /* col 1: icon */
     .step__icon {
@@ -799,13 +806,13 @@
     /* ══ CTA ══ */
     .cta-outer {
       padding-inline: var(--px);
-      padding-top: clamp(40px, 6vw, 72px);
-      padding-bottom: clamp(40px, 6vw, 72px);
+      padding-top: clamp(52px, 7vw, 92px);
+      padding-bottom: clamp(52px, 7vw, 92px);
     }
     .cta {
       position: relative; overflow: hidden;
       min-height: 380px; display: flex; align-items: flex-end;
-      padding: clamp(40px, 6vw, 72px);
+      padding: clamp(52px, 7vw, 92px);
     }
     .cta__bg { position: absolute; inset: 0; }
     .cta__bg img {
@@ -1584,11 +1591,18 @@
 
     /* ── SCROLL REVEAL ── */
     (function () {
+      /* mobile gets a generous positive bottom margin so cards (like the
+         work cards) reveal well before they'd naturally scroll into view —
+         desktop keeps the original tight margin */
+      const isMobile = window.matchMedia('(max-width: 660px)').matches;
       const io = new IntersectionObserver(entries => {
         entries.forEach(e => {
           if (e.isIntersecting) { e.target.classList.add('on'); io.unobserve(e.target); }
         });
-      }, { threshold: 0.1, rootMargin: '0px 0px -44px 0px' });
+      }, {
+        threshold: 0.1,
+        rootMargin: isMobile ? '0px 0px 20% 0px' : '0px 0px -44px 0px'
+      });
       document.querySelectorAll('[data-r]').forEach(el => io.observe(el));
     })();
 
