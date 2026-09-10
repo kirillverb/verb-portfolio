@@ -29,7 +29,7 @@
       --bdr2:    rgba(255,255,255,.14);
 
       --serif:  'Instrument Serif', 'Playfair Display', Georgia, 'Times New Roman', serif;
-      --sans:   'Inter', 'Montserrat', Arial, sans-serif;
+      --sans:   'Gotham', 'Montserrat', Arial, sans-serif;
       --script: 'Alex Brush', cursive;
 
       --ease: cubic-bezier(.22,1,.36,1);
@@ -110,9 +110,11 @@
     }
     .hdr.scrolled {
       padding-block: 17px;
-      background: rgba(8,8,8,.55);
-      backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
-      border-color: var(--bdr);
+      background: rgba(20,20,24,.38);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border-color: transparent;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 8px 32px rgba(0,0,0,.22);
     }
     .hdr__logo {
       display: flex; align-items: center;
@@ -127,24 +129,40 @@
     .hdr__nav {
       display: flex; align-items: center; gap: 36px;
     }
-    /* nav links + Contact share the same plain style — Contact is no longer
-       boxed with a stroke, it just blends in like any other nav link */
-    .hdr__nav a, .hdr__contact {
+    /* nav links: always-visible dim bar under the label + a dot indicator.
+       Brightness/fill state reflects which section is currently active
+       while scrolling (driven by JS), not just hover. */
+    .hdr__navlink {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .hdr__dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      border: 1px solid var(--muted); background: transparent;
+      flex-shrink: 0;
+      transition: background .3s, border-color .3s;
+    }
+    .hdr__navlabel {
       position: relative;
-      font-size: 11px; font-weight: 500; letter-spacing: .15em;
-      text-transform: uppercase; color: var(--muted); transition: color .3s;
       padding-bottom: 4px;
+      font-size: 11px; font-weight: 500; letter-spacing: .15em;
+      text-transform: uppercase; color: var(--muted);
+      transition: color .3s;
     }
-    /* underline that fills in on hover — the "progress" animation */
-    .hdr__nav a::after, .hdr__contact::after {
+    /* the bar itself — always present, dim by default */
+    .hdr__navlabel::after {
       content: '';
-      position: absolute; left: 0; bottom: 0;
-      width: 0%; height: 1px;
-      background: currentColor;
-      transition: width .4s var(--ease);
+      position: absolute; left: 0; right: 0; bottom: 0;
+      height: 1px;
+      background: rgba(255,255,255,.15);
+      transition: background .4s var(--ease);
     }
-    .hdr__nav a:hover, .hdr__contact:hover { color: var(--text); }
-    .hdr__nav a:hover::after, .hdr__contact:hover::after { width: 100%; }
+    .hdr__navlink:hover .hdr__navlabel { color: var(--text); }
+    /* active section: bright dot (filled) + bright full-strength bar —
+       this is the color-emphasis hierarchy between current vs other sections */
+    .hdr__navlink.active .hdr__navlabel { color: var(--text); }
+    .hdr__navlink.active .hdr__navlabel::after { background: var(--text); }
+    .hdr__navlink.active .hdr__dot { background: var(--text); border-color: var(--text); }
+    .hdr__contact { padding-bottom: 0; }
 
     /* Language switcher */
     .lang-sw {
@@ -989,10 +1007,22 @@
     </a>
     <div class="hdr__right">
       <nav class="hdr__nav">
-        <a href="#about"   data-i18n="nav.about">About</a>
-        <a href="#works"   data-i18n="nav.works">Works</a>
-        <a href="#process" data-i18n="nav.process">Process</a>
-        <a href="#contact" class="hdr__contact" data-i18n="nav.contact">Contact</a>
+        <a href="#about" class="hdr__navlink">
+          <span class="hdr__dot"></span>
+          <span class="hdr__navlabel" data-i18n="nav.about">About</span>
+        </a>
+        <a href="#works" class="hdr__navlink">
+          <span class="hdr__dot"></span>
+          <span class="hdr__navlabel" data-i18n="nav.works">Works</span>
+        </a>
+        <a href="#process" class="hdr__navlink">
+          <span class="hdr__dot"></span>
+          <span class="hdr__navlabel" data-i18n="nav.process">Process</span>
+        </a>
+        <a href="#contact" class="hdr__navlink hdr__contact">
+          <span class="hdr__dot"></span>
+          <span class="hdr__navlabel" data-i18n="nav.contact">Contact</span>
+        </a>
       </nav>
       <div class="lang-sw">
         <button class="lang-btn active" data-lang="en">EN</button>
@@ -1587,6 +1617,34 @@
         burg.setAttribute('aria-expanded', 'false');
         document.body.style.overflow = '';
       };
+    })();
+
+    /* ── NAV SCROLLSPY ── */
+    (function () {
+      const navLinks = document.querySelectorAll('.hdr__navlink');
+      const map = {};
+      navLinks.forEach(link => {
+        map[link.getAttribute('href').replace('#', '')] = link;
+      });
+      const sections = Object.keys(map)
+        .map(id => document.getElementById(id))
+        .filter(Boolean);
+
+      const spy = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            navLinks.forEach(l => l.classList.remove('active'));
+            const link = map[entry.target.id];
+            if (link) link.classList.add('active');
+          }
+        });
+      }, { rootMargin: '-45% 0px -45% 0px', threshold: 0 });
+
+      sections.forEach(sec => spy.observe(sec));
+
+      /* default to the first nav item while still at the very top,
+         before any section has crossed the viewport center */
+      if (map['about']) map['about'].classList.add('active');
     })();
 
     /* ── SCROLL REVEAL ── */
