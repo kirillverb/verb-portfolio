@@ -110,11 +110,43 @@
     }
     .hdr.scrolled {
       padding-block: 17px;
-      background: rgba(20,20,24,.38);
-      backdrop-filter: blur(24px) saturate(180%);
-      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      position: relative;
+      background: rgba(20,20,24,.32);
       border-color: transparent;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 8px 32px rgba(0,0,0,.22);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 8px 32px rgba(0,0,0,.22);
+      overflow: hidden;
+    }
+    /* Chromium: genuine refraction/distortion via the SVG displacement filter */
+    @supports (backdrop-filter: url(#liquidGlassFilter)) {
+      .hdr.scrolled {
+        backdrop-filter: url(#liquidGlassFilter) saturate(190%) brightness(1.05);
+      }
+    }
+    /* Safari / Firefox: backdrop-filter: url() isn't supported there — if we
+       didn't set an explicit fallback, the whole property would be dropped
+       and the header would show no glass effect at all */
+    @supports not (backdrop-filter: url(#liquidGlassFilter)) {
+      .hdr.scrolled {
+        backdrop-filter: blur(24px) saturate(180%);
+        -webkit-backdrop-filter: blur(24px) saturate(180%);
+      }
+    }
+    /* slow ambient specular sweep — approximates glass "catching the light"
+       since we can't track real device motion on the web */
+    .hdr.scrolled::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(100deg,
+        transparent 25%, rgba(255,255,255,.07) 46%,
+        rgba(255,255,255,.13) 50%, rgba(255,255,255,.07) 54%, transparent 75%);
+      background-size: 250% 100%;
+      animation: liquidShimmer 9s ease-in-out infinite;
+      mix-blend-mode: overlay;
+      pointer-events: none;
+    }
+    @keyframes liquidShimmer {
+      0%, 100% { background-position: 130% 0; }
+      50%      { background-position: -30% 0; }
     }
     .hdr__logo {
       display: flex; align-items: center;
@@ -133,13 +165,7 @@
        Brightness/fill state reflects which section is currently active
        while scrolling (driven by JS), not just hover. */
     .hdr__navlink {
-      display: flex; align-items: center; gap: 8px;
-    }
-    .hdr__dot {
-      width: 5px; height: 5px; border-radius: 50%;
-      border: 1px solid var(--muted); background: transparent;
-      flex-shrink: 0;
-      transition: background .3s, border-color .3s;
+      display: flex; align-items: center;
     }
     .hdr__navlabel {
       position: relative;
@@ -148,20 +174,23 @@
       text-transform: uppercase; color: var(--muted);
       transition: color .3s;
     }
-    /* the bar itself — always present, dim by default */
+    /* dim track — always present, full width, never moves */
     .hdr__navlabel::after {
       content: '';
       position: absolute; left: 0; right: 0; bottom: 0;
       height: 1px;
       background: rgba(255,255,255,.15);
-      transition: background .4s var(--ease);
+    }
+    /* bright fill sitting on top of the track — its WIDTH is set directly by
+       JS on every scroll frame, tracking exactly how far the user has
+       scrolled through that specific section (0% → 100% and back) */
+    .hdr__navfill {
+      position: absolute; left: 0; bottom: 0;
+      width: 0%; height: 1px;
+      background: var(--text);
     }
     .hdr__navlink:hover .hdr__navlabel { color: var(--text); }
-    /* active section: bright dot (filled) + bright full-strength bar —
-       this is the color-emphasis hierarchy between current vs other sections */
     .hdr__navlink.active .hdr__navlabel { color: var(--text); }
-    .hdr__navlink.active .hdr__navlabel::after { background: var(--text); }
-    .hdr__navlink.active .hdr__dot { background: var(--text); border-color: var(--text); }
     .hdr__contact { padding-bottom: 0; }
 
     /* Language switcher */
@@ -981,6 +1010,17 @@
   </script>
 </head>
 <body>
+  <!-- Hidden SVG filter: real refraction (not just blur) for the header's
+       liquid-glass effect, via feDisplacementMap. Chromium-only; other
+       browsers fall back to plain blur via @supports in the CSS. -->
+  <svg width="0" height="0" style="position:absolute; overflow:hidden;">
+    <filter id="liquidGlassFilter" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.008 0.012" numOctaves="2" seed="8" result="noise"/>
+      <feGaussianBlur in="noise" stdDeviation="3" result="softNoise"/>
+      <feDisplacementMap in="SourceGraphic" in2="softNoise" scale="24" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </svg>
+
 
   <!-- ─── CURSOR ─── -->
   <div id="cur-dot"></div>
@@ -1008,20 +1048,28 @@
     <div class="hdr__right">
       <nav class="hdr__nav">
         <a href="#about" class="hdr__navlink">
-          <span class="hdr__dot"></span>
-          <span class="hdr__navlabel" data-i18n="nav.about">About</span>
+          <span class="hdr__navlabel">
+            <span data-i18n="nav.about">About</span>
+            <span class="hdr__navfill"></span>
+          </span>
         </a>
         <a href="#works" class="hdr__navlink">
-          <span class="hdr__dot"></span>
-          <span class="hdr__navlabel" data-i18n="nav.works">Works</span>
+          <span class="hdr__navlabel">
+            <span data-i18n="nav.works">Works</span>
+            <span class="hdr__navfill"></span>
+          </span>
         </a>
         <a href="#process" class="hdr__navlink">
-          <span class="hdr__dot"></span>
-          <span class="hdr__navlabel" data-i18n="nav.process">Process</span>
+          <span class="hdr__navlabel">
+            <span data-i18n="nav.process">Process</span>
+            <span class="hdr__navfill"></span>
+          </span>
         </a>
         <a href="#contact" class="hdr__navlink hdr__contact">
-          <span class="hdr__dot"></span>
-          <span class="hdr__navlabel" data-i18n="nav.contact">Contact</span>
+          <span class="hdr__navlabel">
+            <span data-i18n="nav.contact">Contact</span>
+            <span class="hdr__navfill"></span>
+          </span>
         </a>
       </nav>
       <div class="lang-sw">
@@ -1619,32 +1667,56 @@
       };
     })();
 
-    /* ── NAV SCROLLSPY ── */
+    /* ── NAV SCROLLSPY: real scroll-driven progress fill ── */
     (function () {
       const navLinks = document.querySelectorAll('.hdr__navlink');
-      const map = {};
-      navLinks.forEach(link => {
-        map[link.getAttribute('href').replace('#', '')] = link;
-      });
-      const sections = Object.keys(map)
-        .map(id => document.getElementById(id))
-        .filter(Boolean);
+      const items = Array.from(navLinks).map(link => {
+        const id = link.getAttribute('href').replace('#', '');
+        return {
+          link,
+          section: document.getElementById(id),
+          fill: link.querySelector('.hdr__navfill')
+        };
+      }).filter(it => it.section);
 
-      const spy = new IntersectionObserver(entries => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            navLinks.forEach(l => l.classList.remove('active'));
-            const link = map[entry.target.id];
-            if (link) link.classList.add('active');
+      let ticking = false;
+
+      function update() {
+        ticking = false;
+        const viewportMid = window.scrollY + window.innerHeight / 2;
+        let activeLink = null;
+
+        items.forEach(it => {
+          const top    = it.section.offsetTop;
+          const height = it.section.offsetHeight;
+          /* how far the viewport-center has moved through THIS section,
+             0 before it starts, 1 once fully passed — recalculated every
+             frame so scrolling back up genuinely empties the bar again */
+          let progress = (viewportMid - top) / height;
+          progress = Math.max(0, Math.min(1, progress));
+          it.fill.style.width = (progress * 100) + '%';
+
+          /* the "currently active" section — the one actually straddling
+             the viewport center right now — gets the brighter label color */
+          if (viewportMid >= top && viewportMid < top + height) {
+            activeLink = it.link;
           }
         });
-      }, { rootMargin: '-45% 0px -45% 0px', threshold: 0 });
 
-      sections.forEach(sec => spy.observe(sec));
+        navLinks.forEach(l => l.classList.remove('active'));
+        if (activeLink) activeLink.classList.add('active');
+        else if (window.scrollY < items[0].section.offsetTop) {
+          items[0].link.classList.add('active'); /* still above the first section */
+        }
+      }
 
-      /* default to the first nav item while still at the very top,
-         before any section has crossed the viewport center */
-      if (map['about']) map['about'].classList.add('active');
+      function onScroll() {
+        if (!ticking) { requestAnimationFrame(update); ticking = true; }
+      }
+
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll);
+      update(); /* set correct initial state on load */
     })();
 
     /* ── SCROLL REVEAL ── */
