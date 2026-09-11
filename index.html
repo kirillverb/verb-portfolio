@@ -1674,6 +1674,75 @@
       if (aboutImg) initMagnetic3D(aboutImg, { tilt: 11, move: 28, perspective: 1000, lerp: .1 });
     })();
 
+    /* ── MAGNETIC 3D BLOCKS — MOBILE / GYROSCOPE ──
+       Same visual family as initMagnetic3D above, but there's no cursor on
+       touch, so the "target" comes from the phone's real-world tilt instead
+       of a pointer position. Runs only when (hover:hover) does NOT match —
+       mutually exclusive with the desktop version, never bound to the same
+       element twice. iOS 13+ requires DeviceOrientationEvent.requestPermission()
+       to be called synchronously from within a user-gesture handler — it
+       cannot be requested silently on load — so instead of a visible "enable
+       motion" button, the request rides the user's first tap anywhere on the
+       page. Android generally needs no such prompt and starts immediately. */
+    function initGyroMagnetic3D(el, opts) {
+      const TILT = opts.tilt, MOVE = opts.move, PERSPECTIVE = opts.perspective || 900, LERP = opts.lerp || .12;
+      let tx = 0, ty = 0, cx = 0, cy = 0;
+      (function frame() {
+        cx += (tx - cx) * LERP;
+        cy += (ty - cy) * LERP;
+        el.style.transform =
+          `perspective(${PERSPECTIVE}px) rotateX(${-cy * TILT}deg) rotateY(${cx * TILT}deg) translate3d(${cx * MOVE}px, ${cy * MOVE}px, 0)`;
+        requestAnimationFrame(frame);
+      })();
+      return { setTarget(nx, ny) { tx = nx; ty = ny; } };
+    }
+
+    (function () {
+      if (window.matchMedia('(hover:hover)').matches) return;               /* desktop already covered above */
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      if (typeof DeviceOrientationEvent === 'undefined') return;             /* no sensor support at all */
+
+      const MAX_DEG = 16;   /* real-world degrees of tilt that map to the full -0.5..0.5 target range */
+      let baseBeta = null, baseGamma = null;
+      const targets = [];
+
+      function register(el, elOpts) { targets.push(initGyroMagnetic3D(el, elOpts)); }
+      /* exposed so initSliders() can also register the work-page photo
+         blocks once they exist — those are rendered on demand, long after
+         this IIFE runs. */
+      window._registerGyroMagnetic = register;
+
+      function handleOrientation(e) {
+        if (e.beta === null || e.gamma === null) return;
+        /* calibrate against however the phone happens to be held on the
+           first reading, rather than demanding it lie perfectly flat */
+        if (baseBeta === null) { baseBeta = e.beta; baseGamma = e.gamma; return; }
+        const dBeta  = Math.max(-MAX_DEG, Math.min(MAX_DEG, e.beta  - baseBeta));
+        const dGamma = Math.max(-MAX_DEG, Math.min(MAX_DEG, e.gamma - baseGamma));
+        const ny = dBeta  / MAX_DEG / 2;  /* -0.5 .. 0.5 */
+        const nx = dGamma / MAX_DEG / 2;
+        targets.forEach(t => t.setTarget(nx, ny));
+      }
+
+      function start() {
+        window.addEventListener('deviceorientation', handleOrientation);
+        document.querySelectorAll('.wcard').forEach(card => register(card, { tilt: 10, move: 20, perspective: 900, lerp: .12 }));
+        const aboutImg = document.querySelector('.about__img');
+        if (aboutImg) register(aboutImg, { tilt: 8, move: 16, perspective: 1000, lerp: .12 });
+      }
+
+      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        /* iOS — wait for the user's first tap anywhere, then ask once */
+        document.addEventListener('touchend', function grant() {
+          DeviceOrientationEvent.requestPermission()
+            .then(state => { if (state === 'granted') start(); })
+            .catch(() => {});
+        }, { once: true });
+      } else {
+        start(); /* Android / other — no permission gate */
+      }
+    })();
+
     /* ── HEADER SCROLL ── */
     (function () {
       const h = document.getElementById('hdr');
@@ -1989,6 +2058,13 @@
             if (img._magnetInit) return;
             img._magnetInit = true;
             initMagnetic3D(img, { tilt: 10, move: 24, perspective: 900, lerp: .11 });
+          });
+        }
+        if (window._registerGyroMagnetic) {
+          document.querySelectorAll('.wp-item__img').forEach(img => {
+            if (img._gyroInit) return;
+            img._gyroInit = true;
+            window._registerGyroMagnetic(img, { tilt: 7, move: 14, perspective: 900, lerp: .12 });
           });
         }
 
