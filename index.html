@@ -459,7 +459,7 @@
       transition: background .3s, border-color .3s;
     }
     .btn-border:hover {
-      background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.38);
+      background: rgba(var(--text-rgb),.05); border-color: rgba(var(--text-rgb),.38);
     }
 
     /* wcard arrow */
@@ -952,7 +952,6 @@
       font-size: clamp(36px, 6.5vw, 76px);
       color: var(--gold-photo); line-height: 1.04; margin-bottom: 10px;
     }
-    .cta__s { font-size: 17px; font-weight: 400; color: var(--muted-photo); }
 
     /* ══ FOOTER ══ */
     .foot {
@@ -1009,6 +1008,7 @@
       /* verified via actual headless-browser rendering at real mobile viewport —
          75% is the empirically confirmed sweet spot, not a calculation */
       .cta__bg img { object-position: 75% center; }
+      .cta { justify-content: center; text-align: center; }
     }
   </style>
   <script id="img-data">
@@ -1345,7 +1345,6 @@
       <div class="cta__vignette"></div>
       <div class="cta__cnt">
         <h2 class="cta__h" data-i18n="cta.h">Got a clear Vision?</h2>
-        <p class="cta__s" data-i18n="cta.s">Let's make it reality.</p>
       </div>
     </div>
   </div>
@@ -1587,8 +1586,7 @@
         'step4.desc':   'Creating a structure, interface, and visual language that provides a clear and consistent user experience.',
         'step5.ttl':    'The Finale',
         'step5.desc':   'Preparation of design materials for the correct implementation of the product and file transfer.',
-        'cta.h':        'Got a clear Vision?',
-        'cta.s':        'Let\'s make it reality.',
+        'cta.h':        "Let's talk.",
       },
       ru: {
         'nav.about':    'О себе',
@@ -1615,8 +1613,7 @@
         'step4.desc':   'Создание структуры, интерфейса и визуального языка, обеспечивающего ясный и последовательный пользовательский опыт.',
         'step5.ttl':    'Финал',
         'step5.desc':   'Подготовка дизайн-материалов для корректной реализации продукта и передача файлов заказчику.',
-        'cta.h':        'Есть чёткое видение?',
-        'cta.s':        'Давай воплотим это.',
+        'cta.h':        'Давай поговорим.',
       }
     };
 
