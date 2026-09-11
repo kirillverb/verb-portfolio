@@ -147,14 +147,30 @@
       position: fixed; inset: 0 0 auto; z-index: 100;
       display: flex; align-items: center; justify-content: space-between;
       padding: 26px var(--px);
-      transition: padding .4s, background .5s, border-color .5s;
       border-bottom: 1px solid transparent;
+      /* while unscrolled, the header sits directly over the hero photo
+         (permanently darkened via filter, regardless of site theme — see
+         .hero__bg img), so it needs a fixed light palette here, NOT the
+         theme tokens. Once .scrolled, the header has its own solid themed
+         backdrop, so it switches to the real theme tokens below. Every
+         header child reads --hdr-text/muted/dim/track (with a var(--text)
+         etc fallback for anything, like .theme-btn, that's shared with
+         markup outside the header where --hdr-* is never defined). */
+      --hdr-text:  #fff;
+      --hdr-muted: rgba(255,255,255,.68);
+      --hdr-dim:   rgba(255,255,255,.4);
+      --hdr-track: rgba(255,255,255,.15);
+      transition: padding .4s, background .5s, border-color .5s, color .4s;
     }
     .hdr.scrolled {
       padding-block: 17px;
       background: var(--hdr-scrolled-bg);
       backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
       border-color: var(--bdr);
+      --hdr-text:  var(--text);
+      --hdr-muted: var(--muted);
+      --hdr-dim:   var(--dim);
+      --hdr-track: var(--track);
     }
     .hdr__left {
       display: flex; align-items: center; gap: 44px;
@@ -164,7 +180,7 @@
       transition: opacity .3s;
     }
     .hdr__logo svg { height: 26px; width: auto; display: block; }
-    .hdr__logo svg path { fill: var(--text); transition: fill .4s; }
+    .hdr__logo svg path { fill: var(--hdr-text, var(--text)); transition: fill .4s; }
     .hdr__logo:hover { opacity: .6; }
 
     .hdr__right {
@@ -186,7 +202,7 @@
       text-align: left;
       padding-bottom: 10px;
       font-size: 10px; font-weight: 500; letter-spacing: .13em;
-      text-transform: uppercase; color: var(--muted);
+      text-transform: uppercase; color: var(--hdr-muted, var(--muted));
       line-height: 1;
       transition: color .3s;
     }
@@ -195,7 +211,7 @@
       content: '';
       position: absolute; left: 0; right: 0; bottom: 0;
       height: 1px;
-      background: var(--track);
+      background: var(--hdr-track, var(--track));
     }
     /* bright fill sitting on top of the track — its WIDTH is set directly by
        JS on every scroll frame, tracking exactly how far the user has
@@ -203,39 +219,43 @@
     .hdr__navfill {
       position: absolute; left: 0; bottom: 0;
       width: 0%; height: 1px;
-      background: var(--text);
+      background: var(--hdr-text, var(--text));
     }
-    .hdr__navlink:hover .hdr__navlabel { color: var(--text); }
-    .hdr__navlink.active .hdr__navlabel { color: var(--text); }
+    .hdr__navlink:hover .hdr__navlabel { color: var(--hdr-text, var(--text)); }
+    .hdr__navlink.active .hdr__navlabel { color: var(--hdr-text, var(--text)); }
     .hdr__contact { padding-bottom: 0; }
 
     /* Theme switcher — same interaction pattern as the language switcher:
-       both options always visible, the active one lit, the other dim. */
+       both options always visible, the active one lit, the other dim.
+       .theme-btn is shared markup (also used inside the mobile fullscreen
+       menu, which is NOT inside .hdr and sits on its own solid var(--bg) —
+       there --hdr-dim/--hdr-text are undefined, so the var() fallback
+       correctly resolves to the plain theme tokens instead). */
     .theme-sw {
       display: flex; align-items: center; gap: 14px;
     }
     .theme-btn {
-      display: flex; color: var(--dim);
+      display: flex; color: var(--hdr-dim, var(--dim));
       transition: color .3s;
     }
     .theme-btn svg { width: 16px; height: 16px; display: block; }
-    .theme-btn.active { color: var(--text); }
-    .theme-btn:hover:not(.active) { color: var(--muted); }
+    .theme-btn.active { color: var(--hdr-text, var(--text)); }
+    .theme-btn:hover:not(.active) { color: var(--hdr-muted, var(--muted)); }
 
     /* Language switcher */
     .lang-sw {
       display: flex; align-items: center; gap: 5px;
       font-size: 11px; font-weight: 500; letter-spacing: .12em;
     }
-    .lang-sw span { color: var(--dim); user-select: none; }
+    .lang-sw span { color: var(--hdr-dim, var(--dim)); user-select: none; }
     .lang-btn {
       font-size: 11px; font-weight: 500; letter-spacing: .12em;
-      text-transform: uppercase; color: var(--dim);
+      text-transform: uppercase; color: var(--hdr-dim, var(--dim));
       line-height: 1;
       transition: color .3s;
     }
-    .lang-btn.active { color: var(--text); }
-    .lang-btn:hover:not(.active) { color: var(--muted); }
+    .lang-btn.active { color: var(--hdr-text, var(--text)); }
+    .lang-btn:hover:not(.active) { color: var(--hdr-muted, var(--muted)); }
 
     /* Burger */
     .burg {
@@ -964,8 +984,7 @@
       .hdr__nav, .hdr__contact { display: none; }
       .lang-sw, .theme-sw { display: none; }
       .burg { display: flex; }
-      .works__grid { grid-template-columns: 1fr 1fr; gap: 18px; }
-      .works__grid .wcard:last-child { grid-column: 1/-1; aspect-ratio: 16/9; }
+      .works__grid { grid-template-columns: 1fr; gap: 20px; }
       /* on mobile: icon + title on row 1, desc spans full width on row 2 */
       .step {
         grid-template-columns: 22px 1fr;
@@ -990,10 +1009,6 @@
       /* verified via actual headless-browser rendering at real mobile viewport —
          75% is the empirically confirmed sweet spot, not a calculation */
       .cta__bg img { object-position: 75% center; }
-    }
-    @media (max-width: 400px) {
-      .works__grid { grid-template-columns: 1fr; gap: 20px; }
-      .works__grid .wcard:last-child { grid-column: auto; aspect-ratio: 3/4; }
     }
   </style>
   <script id="img-data">
