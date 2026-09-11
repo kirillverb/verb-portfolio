@@ -930,7 +930,7 @@
     }
     .cta {
       position: relative; overflow: hidden;
-      min-height: 380px; display: flex; align-items: flex-end;
+      min-height: 380px; display: flex; align-items: center;
       padding: clamp(52px, 7vw, 92px);
     }
     .cta__bg { position: absolute; inset: 0; }
@@ -1008,7 +1008,7 @@
       /* verified via actual headless-browser rendering at real mobile viewport —
          75% is the empirically confirmed sweet spot, not a calculation */
       .cta__bg img { object-position: 75% center; }
-      .cta { justify-content: center; text-align: center; }
+      .cta { justify-content: center; text-align: center; align-items: flex-end; }
     }
   </style>
   <script id="img-data">
@@ -1344,7 +1344,7 @@
       </div>
       <div class="cta__vignette"></div>
       <div class="cta__cnt">
-        <h2 class="cta__h" data-i18n="cta.h">Got a clear Vision?</h2>
+        <h2 class="cta__h" data-i18n="cta.h">Tell Me What You Need.</h2>
       </div>
     </div>
   </div>
@@ -1586,7 +1586,7 @@
         'step4.desc':   'Creating a structure, interface, and visual language that provides a clear and consistent user experience.',
         'step5.ttl':    'The Finale',
         'step5.desc':   'Preparation of design materials for the correct implementation of the product and file transfer.',
-        'cta.h':        "Let's talk.",
+        'cta.h':        'Tell Me What You Need.',
       },
       ru: {
         'nav.about':    'О себе',
@@ -1613,7 +1613,7 @@
         'step4.desc':   'Создание структуры, интерфейса и визуального языка, обеспечивающего ясный и последовательный пользовательский опыт.',
         'step5.ttl':    'Финал',
         'step5.desc':   'Подготовка дизайн-материалов для корректной реализации продукта и передача файлов заказчику.',
-        'cta.h':        'Давай поговорим.',
+        'cta.h':        'Расскажи, что тебе нужно.',
       }
     };
 
