@@ -318,6 +318,7 @@
     }
     .about__img {
       position: relative; overflow: hidden; will-change: transform;
+      transition: opacity .8s var(--ease); transition-delay: calc(var(--d,0) * 140ms);
     }
     .about__img::before { content: ''; display: block; padding-top: 118%; }
     .about__img img {
@@ -354,7 +355,13 @@
       display: grid; grid-template-columns: repeat(3, 1fr);
       gap: clamp(10px, 1.4vw, 18px);
     }
-    .wcard { position: relative; overflow: hidden; aspect-ratio: 3/4; background: var(--surface); will-change: transform; }
+    .wcard { position: relative; overflow: hidden; aspect-ratio: 3/4; background: var(--surface); will-change: transform; transition: opacity .8s var(--ease); transition-delay: calc(var(--d,0) * 140ms); }
+    /* .wcard/.about__img now own their transition (see above) instead of inheriting
+       it from [data-r], so the reduced-motion kill-switch needs restating here too —
+       otherwise it'd lose the cascade to these later, equal-specificity rules. */
+    @media (prefers-reduced-motion: reduce) {
+      .wcard, .about__img { transition: none; }
+    }
     .wcard img {
       width: 100%; height: 100%; object-fit: cover;
       transition: transform .85s var(--ease);
@@ -1659,11 +1666,12 @@
 
     (function () {
       if (!window.matchMedia('(hover:hover)').matches) return;
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       document.querySelectorAll('.wcard').forEach(card =>
-        initMagnetic3D(card, { tilt: 11, move: 26, perspective: 900, lerp: .14 })
+        initMagnetic3D(card, { tilt: 14, move: 34, perspective: 900, lerp: .1 })
       );
       const aboutImg = document.querySelector('.about__img');
-      if (aboutImg) initMagnetic3D(aboutImg, { tilt: 9, move: 22, perspective: 1000, lerp: .13 });
+      if (aboutImg) initMagnetic3D(aboutImg, { tilt: 11, move: 28, perspective: 1000, lerp: .1 });
     })();
 
     /* ── HEADER SCROLL ── */
@@ -1975,11 +1983,12 @@
            cards since this block also carries the invisible prev/next tap
            zones as children; they move with it (still hit-tested correctly
            at click time) but a huge drift would make deliberate taps feel floaty. */
-        if (window.matchMedia('(hover:hover)').matches) {
+        if (window.matchMedia('(hover:hover)').matches &&
+            !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
           document.querySelectorAll('.wp-item__img').forEach(img => {
             if (img._magnetInit) return;
             img._magnetInit = true;
-            initMagnetic3D(img, { tilt: 8, move: 18, perspective: 900, lerp: .14 });
+            initMagnetic3D(img, { tilt: 10, move: 24, perspective: 900, lerp: .11 });
           });
         }
 
@@ -2053,12 +2062,13 @@
              invisible hit extension above, so the effect ramps up exactly across the
              area the user can actually feel is "theirs"). Same target/current lerp loop
              as initMagnetic3D, so it gets the same "small resistance" release. */
-          if (window.matchMedia('(hover:hover)').matches) {
+          if (window.matchMedia('(hover:hover)').matches &&
+              !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
             const HIT_PAD  = 8;    /* px — mirrors .wp-item__dot::before top/bottom */
             const DOT_TILT = 24;   /* deg */
             const DOT_LIFT = 9;    /* px */
             const DOT_GROW = 1.4;  /* extra scaleY at full proximity */
-            const DOT_LERP = .16;
+            const DOT_LERP = .12;
             dots.forEach(dot => {
               let target = 0, cur = 0, raf = null, active = false;
               function frame() {
