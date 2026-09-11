@@ -1724,7 +1724,10 @@
         targets.forEach(t => t.setTarget(nx, ny));
       }
 
+      let started = false;
       function start() {
+        if (started) return;
+        started = true;
         window.addEventListener('deviceorientation', handleOrientation);
         document.querySelectorAll('.wcard').forEach(card => register(card, { tilt: 10, move: 20, perspective: 900, lerp: .12 }));
         const aboutImg = document.querySelector('.about__img');
@@ -1732,12 +1735,19 @@
       }
 
       if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-        /* iOS — wait for the user's first tap anywhere, then ask once */
-        document.addEventListener('touchend', function grant() {
+        /* iOS — wait for the user's first tap anywhere, then ask once.
+           Both touchend and click are wired since the permission grant must
+           be a direct, synchronous result of a user gesture — covering both
+           keeps this robust across WebKit versions that handle touch vs.
+           synthesized click slightly differently. Whichever fires first wins;
+           {once:true} on both means the loser is a harmless no-op. */
+        const grant = () => {
           DeviceOrientationEvent.requestPermission()
             .then(state => { if (state === 'granted') start(); })
             .catch(() => {});
-        }, { once: true });
+        };
+        document.addEventListener('touchend', grant, { once: true });
+        document.addEventListener('click', grant, { once: true });
       } else {
         start(); /* Android / other — no permission gate */
       }
