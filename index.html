@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>
+    /* must run before CSS is applied, or a light-theme visitor briefly sees
+       dark on load. Default is dark — data-theme is only ever set to "light". */
+    (function () {
+      try {
+        if (localStorage.getItem('theme') === 'light') {
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+      } catch (e) {}
+    })();
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Verb's Portfolio</title>
@@ -27,6 +38,9 @@
       --gold:    #C9A96E;
       --bdr:     rgba(255,255,255,.07);
       --bdr2:    rgba(255,255,255,.14);
+      --track:   rgba(255,255,255,.15);
+      --cursor-rgb: 255,255,255;
+      --hdr-scrolled-bg: rgba(8,8,8,.86);
 
       --serif:  'Instrument Serif', 'Playfair Display', Georgia, 'Times New Roman', serif;
       --sans:   'Gotham', 'Montserrat', Arial, sans-serif;
@@ -35,6 +49,27 @@
       --ease: cubic-bezier(.22,1,.36,1);
       --max:  1200px;
       --px:   clamp(22px, 5.5vw, 88px);
+    }
+
+    /* light theme — overrides page CHROME only (background/text/borders/cursor/
+       header). Overlays and text sitting directly on top of photos (hero
+       vignettes, card-thumbnail scrims, slider progress bar, work-page nav bar)
+       stay dark on purpose in both themes — that's a legibility scrim on an
+       image, not page chrome, and photos don't get lighter just because the
+       surrounding page did. */
+    :root[data-theme="light"] {
+      --bg:      #F5F1E8;
+      --surface: #EAE4D6;
+      --text:    #17140F;
+      --text-serif: #1B1710;
+      --muted:   rgba(23,20,15,.58);
+      --dim:     rgba(23,20,15,.32);
+      --gold:    #A3803F;
+      --bdr:     rgba(0,0,0,.09);
+      --bdr2:    rgba(0,0,0,.16);
+      --track:   rgba(0,0,0,.13);
+      --cursor-rgb: 23,20,15;
+      --hdr-scrolled-bg: rgba(245,241,232,.88);
     }
 
     /* ══ BASE ══ */
@@ -67,7 +102,7 @@
     #cur-ring {
       position: fixed; z-index: 9998; pointer-events: none;
       width: 40px; height: 40px; border-radius: 50%;
-      border: 1px solid rgba(255,255,255,.28);
+      border: 1px solid rgba(var(--cursor-rgb),.28);
       background: transparent;
       top: 0; left: 0;
       transform: translate(-50%, -50%);
@@ -78,13 +113,13 @@
     body.is-hov #cur-dot { width: 8px; height: 8px; }
     body.is-hov #cur-ring {
       width: 58px; height: 58px;
-      border-color: rgba(255,255,255,.68);
-      background: rgba(255,255,255,.055);
+      border-color: rgba(var(--cursor-rgb),.68);
+      background: rgba(var(--cursor-rgb),.055);
     }
     body.is-click #cur-ring {
       width: 24px; height: 24px;
-      border-color: rgba(255,255,255,.9);
-      background: rgba(255,255,255,.12);
+      border-color: rgba(var(--cursor-rgb),.9);
+      background: rgba(var(--cursor-rgb),.12);
       transition-duration: .1s;
     }
     @media (hover: none) { #cur-dot, #cur-ring { display: none; } }
@@ -110,19 +145,23 @@
     }
     .hdr.scrolled {
       padding-block: 17px;
-      background: rgba(8,8,8,.86);
+      background: var(--hdr-scrolled-bg);
       backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
       border-color: var(--bdr);
+    }
+    .hdr__left {
+      display: flex; align-items: center; gap: 44px;
     }
     .hdr__logo {
       display: flex; align-items: center;
       transition: opacity .3s;
     }
     .hdr__logo svg { height: 26px; width: auto; display: block; }
+    .hdr__logo svg path { fill: var(--text); transition: fill .4s; }
     .hdr__logo:hover { opacity: .6; }
 
     .hdr__right {
-      display: flex; align-items: center; gap: 36px;
+      display: flex; align-items: center; gap: 22px;
     }
     .hdr__nav {
       display: flex; align-items: center; gap: 36px;
@@ -149,7 +188,7 @@
       content: '';
       position: absolute; left: 0; right: 0; bottom: 0;
       height: 1px;
-      background: rgba(255,255,255,.15);
+      background: var(--track);
     }
     /* bright fill sitting on top of the track — its WIDTH is set directly by
        JS on every scroll frame, tracking exactly how far the user has
@@ -162,6 +201,19 @@
     .hdr__navlink:hover .hdr__navlabel { color: var(--text); }
     .hdr__navlink.active .hdr__navlabel { color: var(--text); }
     .hdr__contact { padding-bottom: 0; }
+
+    /* Theme switcher — same interaction pattern as the language switcher:
+       both options always visible, the active one lit, the other dim. */
+    .theme-sw {
+      display: flex; align-items: center; gap: 14px;
+    }
+    .theme-btn {
+      display: flex; color: var(--dim);
+      transition: color .3s;
+    }
+    .theme-btn svg { width: 16px; height: 16px; display: block; }
+    .theme-btn.active { color: var(--text); }
+    .theme-btn:hover:not(.active) { color: var(--muted); }
 
     /* Language switcher */
     .lang-sw {
@@ -239,6 +291,12 @@
     .mob.open .mob__lang {
       opacity: 1; transition-delay: .32s;
     }
+    .theme-sw--mob {
+      display: flex; gap: 16px; margin-top: 22px;
+      opacity: 0; transition: opacity .45s var(--ease);
+    }
+    .theme-sw--mob .theme-btn svg { width: 20px; height: 20px; }
+    .mob.open .theme-sw--mob { opacity: 1; transition-delay: .38s; }
 
     /* ══ HERO ══ */
     .hero {
@@ -429,7 +487,7 @@
       position: sticky; top: 0; z-index: 210;
       display: flex; align-items: center; justify-content: space-between;
       padding: 20px var(--px);
-      background: rgba(8,8,8,.92);
+      background: var(--hdr-scrolled-bg);
       backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
       border-bottom: 1px solid var(--bdr);
       opacity: 0; transition: opacity .4s .18s;
@@ -911,9 +969,9 @@
     }
     @media (max-width: 660px) {
       .hdr__nav, .hdr__contact { display: none; }
-      .lang-sw { display: none; }
+      .lang-sw, .theme-sw { display: none; }
       .burg { display: flex; }
-      .works__grid { grid-template-columns: 1fr 1fr; }
+      .works__grid { grid-template-columns: 1fr 1fr; gap: 18px; }
       .works__grid .wcard:last-child { grid-column: 1/-1; aspect-ratio: 16/9; }
       /* on mobile: icon + title on row 1, desc spans full width on row 2 */
       .step {
@@ -941,7 +999,7 @@
       .cta__bg img { object-position: 75% center; }
     }
     @media (max-width: 400px) {
-      .works__grid { grid-template-columns: 1fr; }
+      .works__grid { grid-template-columns: 1fr; gap: 20px; }
       .works__grid .wcard:last-child { grid-column: auto; aspect-ratio: 3/4; }
     }
   </style>
@@ -1027,16 +1085,29 @@
       <button class="mob-lang-btn active" data-lang="en">EN</button>
       <button class="mob-lang-btn" data-lang="ru">RU</button>
     </div>
+    <div class="theme-sw theme-sw--mob" id="themeSwMob">
+      <button class="theme-btn" data-theme-choice="dark" aria-label="Dark theme">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20.9 14.6A9 9 0 1 1 9.4 3.1a7 7 0 0 0 11.5 11.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button class="theme-btn" data-theme-choice="light" aria-label="Light theme">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M12 2.5v2.4M12 19.1v2.4M21.5 12h-2.4M4.9 12H2.5M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7M18.5 18.5l-1.7-1.7M7.2 7.2 5.5 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
   </nav>
 
   <!-- ─── HEADER ─── -->
   <header class="hdr" id="hdr">
-    <a href="#" class="hdr__logo" aria-label="Kirya Verb">
-      <svg width="138" height="138" viewBox="0 0 138 138" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M23.7285 0C12.2438 20.7679 11.1716 51.7955 23.0586 82.2227C32.7878 107.128 49.1759 126.44 67.1533 136.738C67.8491 137.134 68.5518 137.523 69.2539 137.887C69.1582 137.063 69.0814 136.246 69.0176 135.423C66.0299 98.7645 83.4705 66.1727 112.658 58.2881C121.021 56.0281 129.576 56.0091 137.895 57.918V137.899H0V0H23.7285ZM137.896 0C136.459 0.0702217 135.023 0.185154 133.574 0.344727C127.663 1.00867 121.981 2.44534 116.593 4.58398C80.4401 18.8783 57.1952 64.2705 62.8643 114.872C63.5027 120.58 64.4858 126.134 65.7881 131.516C53.0392 114.763 46.7129 89.8326 50.3965 63.2295C54.2525 35.3879 68.1438 12.2961 86.1211 0H137.896Z" fill="white"/>
-      </svg>
-    </a>
-    <div class="hdr__right">
+    <div class="hdr__left">
+      <a href="#" class="hdr__logo" aria-label="Kirya Verb">
+        <svg width="138" height="138" viewBox="0 0 138 138" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M23.7285 0C12.2438 20.7679 11.1716 51.7955 23.0586 82.2227C32.7878 107.128 49.1759 126.44 67.1533 136.738C67.8491 137.134 68.5518 137.523 69.2539 137.887C69.1582 137.063 69.0814 136.246 69.0176 135.423C66.0299 98.7645 83.4705 66.1727 112.658 58.2881C121.021 56.0281 129.576 56.0091 137.895 57.918V137.899H0V0H23.7285ZM137.896 0C136.459 0.0702217 135.023 0.185154 133.574 0.344727C127.663 1.00867 121.981 2.44534 116.593 4.58398C80.4401 18.8783 57.1952 64.2705 62.8643 114.872C63.5027 120.58 64.4858 126.134 65.7881 131.516C53.0392 114.763 46.7129 89.8326 50.3965 63.2295C54.2525 35.3879 68.1438 12.2961 86.1211 0H137.896Z" fill="white"/>
+        </svg>
+      </a>
       <nav class="hdr__nav">
         <a href="#about" class="hdr__navlink">
           <span class="hdr__navlabel">
@@ -1063,6 +1134,21 @@
           </span>
         </a>
       </nav>
+    </div>
+    <div class="hdr__right">
+      <div class="theme-sw" id="themeSw">
+        <button class="theme-btn" data-theme-choice="dark" aria-label="Dark theme">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20.9 14.6A9 9 0 1 1 9.4 3.1a7 7 0 0 0 11.5 11.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <button class="theme-btn" data-theme-choice="light" aria-label="Light theme">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.6"/>
+            <path d="M12 2.5v2.4M12 19.1v2.4M21.5 12h-2.4M4.9 12H2.5M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7M18.5 18.5l-1.7-1.7M7.2 7.2 5.5 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
       <div class="lang-sw">
         <button class="lang-btn active" data-lang="en">EN</button>
         <span>/</span>
@@ -1580,6 +1666,21 @@
     const saved = localStorage.getItem('kv-lang');
     if (saved && saved !== 'en') applyLang(saved);
 
+    /* ── THEME (dark/light) — default dark, matches the inline
+       FOUC-prevention script in <head> which only ever sets "light". */
+    function applyTheme(theme) {
+      if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+      else document.documentElement.removeAttribute('data-theme');
+      try { localStorage.setItem('theme', theme); } catch (e) {}
+      document.querySelectorAll('.theme-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.themeChoice === theme);
+      });
+    }
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+      btn.addEventListener('click', () => applyTheme(btn.dataset.themeChoice));
+    });
+    applyTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark');
+
     /* ── READY ── */
     window.addEventListener('load', () => document.body.classList.add('ready'));
 
@@ -1622,7 +1723,7 @@
       })();
 
       /* hover state for interactive elements */
-      const hovSel = 'a, button, .wcard, .about__img, .cta, .step, .hdr__logo, .btn-border, .lang-btn, .mob-lang-btn';
+      const hovSel = 'a, button, .wcard, .about__img, .cta, .step, .hdr__logo, .btn-border, .lang-btn, .mob-lang-btn, .theme-btn';
       document.querySelectorAll(hovSel).forEach(el => {
         el.addEventListener('mouseenter', () => document.body.classList.add('is-hov'));
         el.addEventListener('mouseleave', () => document.body.classList.remove('is-hov'));
@@ -1702,7 +1803,7 @@
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       if (typeof DeviceOrientationEvent === 'undefined') return;             /* no sensor support at all */
 
-      const MAX_DEG = 16;   /* real-world degrees of tilt that map to the full -0.5..0.5 target range */
+      const MAX_DEG = 9;   /* real-world degrees of tilt that map to the full -0.5..0.5 target range */
       let baseBeta = null, baseGamma = null;
       const targets = [];
 
@@ -1729,9 +1830,9 @@
         if (started) return;
         started = true;
         window.addEventListener('deviceorientation', handleOrientation);
-        document.querySelectorAll('.wcard').forEach(card => register(card, { tilt: 10, move: 20, perspective: 900, lerp: .12 }));
+        document.querySelectorAll('.wcard').forEach(card => register(card, { tilt: 16, move: 30, perspective: 900, lerp: .12 }));
         const aboutImg = document.querySelector('.about__img');
-        if (aboutImg) register(aboutImg, { tilt: 8, move: 16, perspective: 1000, lerp: .12 });
+        if (aboutImg) register(aboutImg, { tilt: 13, move: 24, perspective: 1000, lerp: .12 });
       }
 
       if (typeof DeviceOrientationEvent.requestPermission === 'function') {
@@ -2074,7 +2175,7 @@
           document.querySelectorAll('.wp-item__img').forEach(img => {
             if (img._gyroInit) return;
             img._gyroInit = true;
-            window._registerGyroMagnetic(img, { tilt: 7, move: 14, perspective: 900, lerp: .12 });
+            window._registerGyroMagnetic(img, { tilt: 11, move: 20, perspective: 900, lerp: .12 });
           });
         }
 
