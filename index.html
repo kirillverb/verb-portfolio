@@ -317,7 +317,7 @@
       gap: clamp(44px, 7vw, 100px); align-items: center;
     }
     .about__img {
-      position: relative; overflow: hidden;
+      position: relative; overflow: hidden; will-change: transform;
     }
     .about__img::before { content: ''; display: block; padding-top: 118%; }
     .about__img img {
@@ -354,7 +354,7 @@
       display: grid; grid-template-columns: repeat(3, 1fr);
       gap: clamp(10px, 1.4vw, 18px);
     }
-    .wcard { position: relative; overflow: hidden; aspect-ratio: 3/4; background: var(--surface); transition: transform .6s var(--ease); will-change: transform; }
+    .wcard { position: relative; overflow: hidden; aspect-ratio: 3/4; background: var(--surface); will-change: transform; }
     .wcard img {
       width: 100%; height: 100%; object-fit: cover;
       transition: transform .85s var(--ease);
@@ -546,6 +546,7 @@
       position: sticky;
       top: 80px;
       overflow: hidden;
+      will-change: transform;
     }
     .wp-item__img::before {
       content: ''; display: block; padding-top: 118%;
@@ -576,7 +577,6 @@
       overflow: visible;
       cursor: pointer;
       position: relative;
-      transition: transform .45s var(--ease);
       transform-origin: center;
       will-change: transform;
     }
@@ -1622,30 +1622,48 @@
       });
     })();
 
-    /* ── MAGNETIC 3D WORK CARDS ──
+    /* ── MAGNETIC 3D BLOCKS ──
        cursor-follow drag (Koffie?-style) + perspective tilt so the movement
-       reads as depth, not a flat slide. Desktop/mouse only — pointless on touch. */
+       reads as depth, not a flat slide. Desktop/mouse only — pointless on touch.
+       Uses the same target/current-lerp-loop pattern as the custom cursor ring
+       above (LERP toward a target each frame) instead of a CSS transition —
+       this is what gives the "small resistance, doesn't let go instantly" feel:
+       on mouseleave the target snaps to 0 but the current value keeps easing
+       toward it over several frames rather than jumping. */
+    function initMagnetic3D(el, opts) {
+      const TILT = opts.tilt, MOVE = opts.move, PERSPECTIVE = opts.perspective || 900, LERP = opts.lerp || .14;
+      let tx = 0, ty = 0, cx = 0, cy = 0, raf = null, active = false;
+      function frame() {
+        cx += (tx - cx) * LERP;
+        cy += (ty - cy) * LERP;
+        el.style.transform =
+          `perspective(${PERSPECTIVE}px) rotateX(${-cy * TILT}deg) rotateY(${cx * TILT}deg) translate3d(${cx * MOVE}px, ${cy * MOVE}px, 0)`;
+        if (active || Math.abs(tx - cx) > .0008 || Math.abs(ty - cy) > .0008) {
+          raf = requestAnimationFrame(frame);
+        } else { raf = null; }
+      }
+      function kick() { if (!raf) raf = requestAnimationFrame(frame); }
+      el.addEventListener('mousemove', e => {
+        const r = el.getBoundingClientRect();
+        tx = (e.clientX - r.left) / r.width  - .5; /* -0.5 .. 0.5 */
+        ty = (e.clientY - r.top)  / r.height - .5;
+        active = true;
+        kick();
+      });
+      el.addEventListener('mouseleave', () => {
+        tx = 0; ty = 0;
+        active = false;
+        kick();
+      });
+    }
+
     (function () {
       if (!window.matchMedia('(hover:hover)').matches) return;
-      const MAX_TILT = 7;      /* deg */
-      const MAX_MOVE  = 16;    /* px */
-      const PERSPECTIVE = 900; /* px */
-      const REST = `perspective(${PERSPECTIVE}px) rotateX(0deg) rotateY(0deg) translate3d(0,0,0)`;
-
-      document.querySelectorAll('.wcard').forEach(card => {
-        card.addEventListener('mousemove', e => {
-          const r  = card.getBoundingClientRect();
-          const px = (e.clientX - r.left) / r.width  - .5; /* -0.5 .. 0.5 */
-          const py = (e.clientY - r.top)  / r.height - .5;
-          card.style.transition = 'transform 80ms linear';
-          card.style.transform =
-            `perspective(${PERSPECTIVE}px) rotateX(${-py * MAX_TILT}deg) rotateY(${px * MAX_TILT}deg) translate3d(${px * MAX_MOVE}px, ${py * MAX_MOVE}px, 0)`;
-        });
-        card.addEventListener('mouseleave', () => {
-          card.style.transition = 'transform .6s var(--ease)';
-          card.style.transform  = REST;
-        });
-      });
+      document.querySelectorAll('.wcard').forEach(card =>
+        initMagnetic3D(card, { tilt: 11, move: 26, perspective: 900, lerp: .14 })
+      );
+      const aboutImg = document.querySelector('.about__img');
+      if (aboutImg) initMagnetic3D(aboutImg, { tilt: 9, move: 22, perspective: 1000, lerp: .13 });
     })();
 
     /* ── HEADER SCROLL ── */
@@ -1951,6 +1969,20 @@
       function initSliders() {
         window.initSliders = initSliders;
         window._sliderPositions = window._sliderPositions || {};
+
+        /* magnetic tilt on the photo block itself — covers both slider and
+           static single-image items. Kept a touch gentler than the main-page
+           cards since this block also carries the invisible prev/next tap
+           zones as children; they move with it (still hit-tested correctly
+           at click time) but a huge drift would make deliberate taps feel floaty. */
+        if (window.matchMedia('(hover:hover)').matches) {
+          document.querySelectorAll('.wp-item__img').forEach(img => {
+            if (img._magnetInit) return;
+            img._magnetInit = true;
+            initMagnetic3D(img, { tilt: 8, move: 18, perspective: 900, lerp: .14 });
+          });
+        }
+
         document.querySelectorAll('[id^="slider-"]').forEach(slider => {
           if (slider._sliderInit) return;
           slider._sliderInit = true;
@@ -2019,26 +2051,37 @@
              spans the full flex width). Instead it lifts + tilts toward the cursor based
              on vertical proximity within its own hit area (matches the ::before -8px/+8px
              invisible hit extension above, so the effect ramps up exactly across the
-             area the user can actually feel is "theirs"). */
+             area the user can actually feel is "theirs"). Same target/current lerp loop
+             as initMagnetic3D, so it gets the same "small resistance" release. */
           if (window.matchMedia('(hover:hover)').matches) {
-            const HIT_PAD  = 8;   /* px — mirrors .wp-item__dot::before top/bottom */
-            const DOT_TILT = 16;  /* deg */
-            const DOT_LIFT = 5;   /* px */
-            const DOT_GROW = .9;  /* extra scaleY at full proximity */
+            const HIT_PAD  = 8;    /* px — mirrors .wp-item__dot::before top/bottom */
+            const DOT_TILT = 24;   /* deg */
+            const DOT_LIFT = 9;    /* px */
+            const DOT_GROW = 1.4;  /* extra scaleY at full proximity */
+            const DOT_LERP = .16;
             dots.forEach(dot => {
+              let target = 0, cur = 0, raf = null, active = false;
+              function frame() {
+                cur += (target - cur) * DOT_LERP;
+                dot.style.transform =
+                  `perspective(300px) rotateX(${-DOT_TILT * cur}deg) translateY(${-DOT_LIFT * cur}px) scaleY(${1 + DOT_GROW * cur})`;
+                if (active || Math.abs(target - cur) > .0008) raf = requestAnimationFrame(frame);
+                else raf = null;
+              }
+              function kick() { if (!raf) raf = requestAnimationFrame(frame); }
               dot.addEventListener('mousemove', e => {
                 const r      = dot.getBoundingClientRect();
                 const top    = r.top - HIT_PAD;
                 const height = r.height + HIT_PAD * 2;
-                const py     = (e.clientY - top) / height - .5;          /* -0.5 .. 0.5 */
-                const near   = 1 - Math.min(Math.abs(py) * 2, 1);        /* 1 = centered, 0 = edge */
-                dot.style.transition = 'transform 80ms linear';
-                dot.style.transform =
-                  `perspective(300px) rotateX(${-DOT_TILT * near}deg) translateY(${-DOT_LIFT * near}px) scaleY(${1 + DOT_GROW * near})`;
+                const py     = (e.clientY - top) / height - .5;   /* -0.5 .. 0.5 */
+                target = 1 - Math.min(Math.abs(py) * 2, 1);       /* 1 = centered, 0 = edge */
+                active = true;
+                kick();
               });
               dot.addEventListener('mouseleave', () => {
-                dot.style.transition = 'transform .45s var(--ease)';
-                dot.style.transform  = 'perspective(300px) rotateX(0deg) translateY(0) scaleY(1)';
+                target = 0;
+                active = false;
+                kick();
               });
             });
           }
