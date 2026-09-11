@@ -354,7 +354,7 @@
       display: grid; grid-template-columns: repeat(3, 1fr);
       gap: clamp(10px, 1.4vw, 18px);
     }
-    .wcard { position: relative; overflow: hidden; aspect-ratio: 3/4; background: var(--surface); }
+    .wcard { position: relative; overflow: hidden; aspect-ratio: 3/4; background: var(--surface); transition: transform .6s var(--ease); will-change: transform; }
     .wcard img {
       width: 100%; height: 100%; object-fit: cover;
       transition: transform .85s var(--ease);
@@ -576,6 +576,9 @@
       overflow: visible;
       cursor: pointer;
       position: relative;
+      transition: transform .45s var(--ease);
+      transform-origin: center;
+      will-change: transform;
     }
     /* invisible larger hit area */
     .wp-item__dot::before {
@@ -1619,6 +1622,32 @@
       });
     })();
 
+    /* ── MAGNETIC 3D WORK CARDS ──
+       cursor-follow drag (Koffie?-style) + perspective tilt so the movement
+       reads as depth, not a flat slide. Desktop/mouse only — pointless on touch. */
+    (function () {
+      if (!window.matchMedia('(hover:hover)').matches) return;
+      const MAX_TILT = 7;      /* deg */
+      const MAX_MOVE  = 16;    /* px */
+      const PERSPECTIVE = 900; /* px */
+      const REST = `perspective(${PERSPECTIVE}px) rotateX(0deg) rotateY(0deg) translate3d(0,0,0)`;
+
+      document.querySelectorAll('.wcard').forEach(card => {
+        card.addEventListener('mousemove', e => {
+          const r  = card.getBoundingClientRect();
+          const px = (e.clientX - r.left) / r.width  - .5; /* -0.5 .. 0.5 */
+          const py = (e.clientY - r.top)  / r.height - .5;
+          card.style.transition = 'transform 80ms linear';
+          card.style.transform =
+            `perspective(${PERSPECTIVE}px) rotateX(${-py * MAX_TILT}deg) rotateY(${px * MAX_TILT}deg) translate3d(${px * MAX_MOVE}px, ${py * MAX_MOVE}px, 0)`;
+        });
+        card.addEventListener('mouseleave', () => {
+          card.style.transition = 'transform .6s var(--ease)';
+          card.style.transform  = REST;
+        });
+      });
+    })();
+
     /* ── HEADER SCROLL ── */
     (function () {
       const h = document.getElementById('hdr');
@@ -1983,6 +2012,36 @@
           }
 
           dots.forEach(dot => dot.addEventListener('click', () => goTo(+dot.dataset.idx)));
+
+          /* magnetic lift + 3D tilt on the progress-bar segments — same Koffie?-style
+             cursor-driven movement as the work cards, but adapted: a dot is a 2.5px-tall
+             bar, not a tile, so "drag toward cursor" on X is meaningless (it already
+             spans the full flex width). Instead it lifts + tilts toward the cursor based
+             on vertical proximity within its own hit area (matches the ::before -8px/+8px
+             invisible hit extension above, so the effect ramps up exactly across the
+             area the user can actually feel is "theirs"). */
+          if (window.matchMedia('(hover:hover)').matches) {
+            const HIT_PAD  = 8;   /* px — mirrors .wp-item__dot::before top/bottom */
+            const DOT_TILT = 16;  /* deg */
+            const DOT_LIFT = 5;   /* px */
+            const DOT_GROW = .9;  /* extra scaleY at full proximity */
+            dots.forEach(dot => {
+              dot.addEventListener('mousemove', e => {
+                const r      = dot.getBoundingClientRect();
+                const top    = r.top - HIT_PAD;
+                const height = r.height + HIT_PAD * 2;
+                const py     = (e.clientY - top) / height - .5;          /* -0.5 .. 0.5 */
+                const near   = 1 - Math.min(Math.abs(py) * 2, 1);        /* 1 = centered, 0 = edge */
+                dot.style.transition = 'transform 80ms linear';
+                dot.style.transform =
+                  `perspective(300px) rotateX(${-DOT_TILT * near}deg) translateY(${-DOT_LIFT * near}px) scaleY(${1 + DOT_GROW * near})`;
+              });
+              dot.addEventListener('mouseleave', () => {
+                dot.style.transition = 'transform .45s var(--ease)';
+                dot.style.transform  = 'perspective(300px) rotateX(0deg) translateY(0) scaleY(1)';
+              });
+            });
+          }
 
           /* invisible left/right tap zones — Instagram-style manual navigation.
              A quick tap navigates; a deliberate hold-then-release must NOT
