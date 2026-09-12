@@ -79,6 +79,14 @@
       --hdr-scrolled-bg: rgba(245,241,232,.88);
     }
 
+    /* cursor over a permanently-dark photo area (hero, wcard thumbnails,
+       about photo, CTA, work-page hero/slider) needs a fixed light color
+       regardless of site theme — same reasoning as --hdr-text etc. Same
+       specificity as the light-theme block above (:root + one selector each),
+       so source order decides: this comes after, so it wins in both themes
+       whenever .on-photo is toggled on <html> by the cursor-tracking script. */
+    :root.on-photo { --cursor-rgb: 255,255,255; }
+
     /* ══ BASE ══ */
     html { scroll-behavior: smooth; }
     body {
@@ -100,7 +108,7 @@
     #cur-dot {
       position: fixed; z-index: 9999; pointer-events: none;
       width: 5px; height: 5px; border-radius: 50%;
-      background: var(--text);
+      background: rgb(var(--cursor-rgb));
       top: 0; left: 0;
       transform: translate(-50%, -50%);
       transition: width .2s var(--ease), height .2s var(--ease), opacity .3s, background .3s;
@@ -161,6 +169,13 @@
       --hdr-dim:   rgba(255,255,255,.4);
       --hdr-track: rgba(255,255,255,.15);
       transition: padding .4s, background .5s, border-color .5s, color .4s;
+    }
+    /* momentarily added/removed by applyTheme() around a theme switch, so the
+       header's own slow scroll-fade transition doesn't also apply to the
+       theme change — every color-bearing child inside .hdr needs to snap
+       instantly here, not just .hdr itself */
+    .hdr.theme-switching, .hdr.theme-switching * {
+      transition: none !important;
     }
     .hdr.scrolled {
       padding-block: 17px;
@@ -359,11 +374,11 @@
     }
     .hero__scroll span {
       font-size: 9px; font-weight: 500; letter-spacing: .22em;
-      text-transform: uppercase; color: var(--dim);
+      text-transform: uppercase; color: rgba(255,255,255,.42);
     }
     .hero__scroll-line {
       width: 1px; height: 40px;
-      background: linear-gradient(to bottom, var(--dim), transparent);
+      background: linear-gradient(to bottom, rgba(255,255,255,.42), transparent);
       animation: lineDrop 2s ease-in-out infinite;
     }
 
@@ -1738,6 +1753,15 @@
       document.querySelectorAll('.theme-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.themeChoice === theme);
       });
+      /* .hdr has a slow background/color transition meant for the scroll-
+         triggered backdrop fade-in — without suppressing it here, a theme
+         switch would visibly lag behind the rest of the page (which has no
+         such transition and updates instantly, same as .wp-nav). */
+      const hdr = document.getElementById('hdr');
+      if (hdr) {
+        hdr.classList.add('theme-switching');
+        requestAnimationFrame(() => requestAnimationFrame(() => hdr.classList.remove('theme-switching')));
+      }
     }
     document.addEventListener('click', e => {
       const btn = e.target.closest('.theme-btn');
@@ -1835,8 +1859,12 @@
          at load) so it also covers buttons rendered later by renderWork(),
          like the work-page project tabs and theme toggle. */
       const hovSel = 'a, button, .wcard, .about__img, .cta, .step, .hdr__logo, .btn-border, .lang-btn, .mob-lang-btn, .theme-btn';
+      /* permanently-dark photo containers — the cursor needs a fixed light
+         color here regardless of site theme, same reasoning as --hdr-text */
+      const photoSel = '.hero, .wcard, .about__img, .cta, .wp-hero, .wp-item__img';
       document.addEventListener('mouseover', e => {
         if (e.target.closest(hovSel)) document.body.classList.add('is-hov');
+        document.documentElement.classList.toggle('on-photo', !!e.target.closest(photoSel));
       });
       document.addEventListener('mouseout', e => {
         if (e.target.closest(hovSel)) document.body.classList.remove('is-hov');
