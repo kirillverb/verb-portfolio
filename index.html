@@ -1010,9 +1010,13 @@
     /* phones in landscape: width alone (852px on iPhone 14 Pro, etc.) clears
        the 660px breakpoint below, so without this the header would switch to
        the full desktop nav — which doesn't actually fit comfortably at that
-       *height*, causing overlapping/misaligned items. Height is the more
-       reliable signal for "this is still a phone" than width once rotated. */
-    @media (max-height: 500px) and (orientation: landscape) {
+       *height*, causing overlapping/misaligned items. Height plus orientation
+       alone is NOT enough to identify "phone" — any desktop window that's
+       simply short and wider than tall would also match "landscape", which
+       is every normal monitor. (hover: none) and (pointer: coarse) is what
+       actually distinguishes a touch device with no mouse from a desktop
+       browser, regardless of how the desktop window happens to be sized. */
+    @media (max-height: 500px) and (orientation: landscape) and (hover: none) and (pointer: coarse) {
       .hdr__nav, .hdr__contact { display: none; }
       .hdr__right { display: none; }
       .burg { display: flex; }
