@@ -149,18 +149,36 @@
     }
     @media (hover: none) { #cur-dot, #cur-ring { display: none; } }
 
-    /* ══ THEME RIPPLE ══
-       The "stone dropped in water" reveal: an expanding circle from the
-       button that was clicked, painted in the target theme's background.
-       The real page underneath switches instantly (see applyTheme); this
-       overlay just paints over the seam while it sweeps outward, so by the
-       time it reaches the far corners the content beneath already matches
-       it exactly. clip-path radius/position are set inline per-click by JS. */
+    /* ══ THEME RIPPLE (fallback) ══
+       Only used on browsers without the View Transitions API (see below) —
+       a flat-color circle sweep instead of a real pixel reveal. Kept as a
+       graceful degrade rather than an abrupt instant switch. */
     #themeRipple {
       position: fixed; inset: 0; z-index: 9500;
       pointer-events: none;
       display: none;
       clip-path: circle(0px at 50% 0%);
+    }
+
+    /* ══ THEME RIPPLE (real) — View Transitions API ══
+       The browser itself snapshots the page before and after the theme
+       swap — actual pixels, every element, not a flat color — and we just
+       clip-path the "new" snapshot in an expanding circle over the "old"
+       one from the clicked button's position. --vt-x/--vt-y/--vt-r are set
+       by JS right before document.startViewTransition() runs. */
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation: none;
+      mix-blend-mode: normal;
+    }
+    ::view-transition-old(root) { z-index: 1; }
+    ::view-transition-new(root) {
+      z-index: 2;
+      clip-path: circle(0px at var(--vt-x, 50%) var(--vt-y, 50%));
+      animation: theme-reveal 1.05s cubic-bezier(.22,1,.36,1) forwards;
+    }
+    @keyframes theme-reveal {
+      to { clip-path: circle(var(--vt-r, 150%) at var(--vt-x, 50%) var(--vt-y, 50%)); }
     }
 
     /* ══ REVEAL ══ */
@@ -1799,8 +1817,21 @@
       const theme = btn.dataset.themeChoice;
       if (theme === document.documentElement.getAttribute('data-theme') || (theme === 'dark' && !document.documentElement.hasAttribute('data-theme'))) return;
       const r = btn.getBoundingClientRect();
-      themeRippleFrom(r.left + r.width / 2, r.top + r.height / 2, THEME_BG[theme]);
-      applyTheme(theme);
+      const x = r.left + r.width / 2, y = r.top + r.height / 2;
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (document.startViewTransition && !reduceMotion) {
+        const vw = window.innerWidth, vh = window.innerHeight;
+        const radius = Math.hypot(Math.max(x, vw - x), Math.max(y, vh - y));
+        const root = document.documentElement.style;
+        root.setProperty('--vt-x', x + 'px');
+        root.setProperty('--vt-y', y + 'px');
+        root.setProperty('--vt-r', radius + 'px');
+        document.startViewTransition(() => applyTheme(theme));
+      } else {
+        if (!reduceMotion) themeRippleFrom(x, y, THEME_BG[theme]);
+        applyTheme(theme);
+      }
     });
     applyTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark');
 
