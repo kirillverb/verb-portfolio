@@ -149,6 +149,20 @@
     }
     @media (hover: none) { #cur-dot, #cur-ring { display: none; } }
 
+    /* ══ THEME RIPPLE ══
+       The "stone dropped in water" reveal: an expanding circle from the
+       button that was clicked, painted in the target theme's background.
+       The real page underneath switches instantly (see applyTheme); this
+       overlay just paints over the seam while it sweeps outward, so by the
+       time it reaches the far corners the content beneath already matches
+       it exactly. clip-path radius/position are set inline per-click by JS. */
+    #themeRipple {
+      position: fixed; inset: 0; z-index: 9500;
+      pointer-events: none;
+      display: none;
+      clip-path: circle(0px at 50% 0%);
+    }
+
     /* ══ REVEAL ══ */
     [data-r] {
       opacity: 0; transform: translateY(30px);
@@ -1150,6 +1164,9 @@
 <body>
 
 
+  <!-- ─── THEME RIPPLE ─── -->
+  <div id="themeRipple" aria-hidden="true"></div>
+
   <!-- ─── CURSOR ─── -->
   <div id="cur-dot"></div>
   <div id="cur-ring"></div>
@@ -1750,6 +1767,24 @@
 
     /* ── THEME (dark/light) — default dark, matches the inline
        FOUC-prevention script in <head> which only ever sets "light". */
+    const THEME_BG = { dark: '#080808', light: '#F5F1E8' };
+
+    function themeRippleFrom(x, y, bgColor) {
+      const ripple = document.getElementById('themeRipple');
+      if (!ripple || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const vw = window.innerWidth, vh = window.innerHeight;
+      const radius = Math.hypot(Math.max(x, vw - x), Math.max(y, vh - y));
+      ripple.style.transition = 'none';
+      ripple.style.background = bgColor;
+      ripple.style.clipPath = `circle(0px at ${x}px ${y}px)`;
+      ripple.style.display = 'block';
+      void ripple.offsetHeight; /* force reflow so the next line actually animates */
+      ripple.style.transition = 'clip-path 1.05s cubic-bezier(.22,1,.36,1)';
+      ripple.style.clipPath = `circle(${radius}px at ${x}px ${y}px)`;
+      clearTimeout(ripple._hideTimer);
+      ripple._hideTimer = setTimeout(() => { ripple.style.display = 'none'; }, 1100);
+    }
+
     function applyTheme(theme) {
       if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
       else document.documentElement.removeAttribute('data-theme');
@@ -1760,7 +1795,12 @@
     }
     document.addEventListener('click', e => {
       const btn = e.target.closest('.theme-btn');
-      if (btn) applyTheme(btn.dataset.themeChoice);
+      if (!btn) return;
+      const theme = btn.dataset.themeChoice;
+      if (theme === document.documentElement.getAttribute('data-theme') || (theme === 'dark' && !document.documentElement.hasAttribute('data-theme'))) return;
+      const r = btn.getBoundingClientRect();
+      themeRippleFrom(r.left + r.width / 2, r.top + r.height / 2, THEME_BG[theme]);
+      applyTheme(theme);
     });
     applyTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark');
 
