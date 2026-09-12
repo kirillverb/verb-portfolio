@@ -212,7 +212,12 @@
       --hdr-track: rgba(255,255,255,.15);
       transition: padding .4s, background .6s var(--ease), border-color .6s var(--ease), color .6s var(--ease);
     }
-    .hdr.scrolled {
+    /* the work-page nav (.wp-nav) is a separate fixed/sticky bar — without
+       this, both it and the main .hdr render at once (previously masked only
+       by accident, since .wp-nav's z-index used to be higher; that stopped
+       being true once .hdr's z-index was raised for the iOS stacking fix) */
+    body.work-open .hdr { display: none; }
+    .hdr.scrolled, .hdr.menu-open {
       padding-block: 17px;
       background: var(--hdr-scrolled-bg);
       backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
@@ -2073,11 +2078,17 @@
     (function () {
       const burg = document.getElementById('burg');
       const mob  = document.getElementById('mob');
+      const hdr  = document.getElementById('hdr');
       let open = false;
       burg.addEventListener('click', () => {
         open = !open;
         burg.classList.toggle('open', open);
         mob.classList.toggle('open', open);
+        /* the header's logo/burger otherwise assume they're sitting over the
+           permanently-dark hero photo (fixed white) whenever unscrolled —
+           wrong once the mobile menu's own themed background is behind them
+           instead, so borrow the same theme-aware colors .scrolled uses */
+        hdr.classList.toggle('menu-open', open);
         burg.setAttribute('aria-expanded', open);
         document.body.style.overflow = open ? 'hidden' : '';
       });
@@ -2085,6 +2096,7 @@
         open = false;
         burg.classList.remove('open');
         mob.classList.remove('open');
+        hdr.classList.remove('menu-open');
         burg.setAttribute('aria-expanded', 'false');
         document.body.style.overflow = '';
       };
@@ -2368,6 +2380,7 @@
           renderWork(key);
           page.scrollTop = 0;
           document.body.style.overflow = 'hidden';
+          document.body.classList.add('work-open');
           if (!_fromPop) history.pushState(null, '', '#' + key);
           requestAnimationFrame(() => requestAnimationFrame(() => {
             page.classList.add('active');
@@ -2549,6 +2562,7 @@
 
       window.closeWork = function (_fromPop) {
         page.classList.remove('active');
+        document.body.classList.remove('work-open');
         if (!_fromPop) history.replaceState(null, '', window.location.pathname);
         setTimeout(() => {
           document.body.style.overflow = '';
