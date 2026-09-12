@@ -520,6 +520,10 @@
       font-size: 11px; font-weight: 500; letter-spacing: .12em;
     }
     .wp-nav__lang span { color: var(--dim); user-select: none; }
+    .wp-nav__theme {
+      display: flex; align-items: center; gap: 14px;
+      margin-left: 22px;
+    }
 
     /* ── HERO: full bleed ~42vh, title+desc overlaid bottom-left ── */
     .wp-hero {
@@ -603,6 +607,29 @@
         width: 100%; justify-content: space-between;
       }
       .wp-proj-btn { font-size: 10px; padding: 6px 10px; color: var(--muted); font-weight: 600; }
+      .wp-nav__theme { margin-left: 0; }
+    }
+    /* Mobile-only rotating hint, before the burger — cross-fades between two
+       short nudges toward the language and theme switchers (which move into
+       the fullscreen menu on mobile and could otherwise go unnoticed). Plain
+       inline text in the header's own flex row — no absolute positioning —
+       so it can never grow past the bar's own height. */
+    .hdr__hint {
+      display: none;
+    }
+    @media (max-width: 660px) {
+      .hdr__hint {
+        display: block;
+        font-size: 10px; font-weight: 500; letter-spacing: .06em;
+        color: var(--hdr-muted, var(--muted));
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        max-width: 42vw;
+        margin-right: 14px;
+        opacity: 0;
+        transition: opacity .5s var(--ease);
+        pointer-events: none;
+      }
+      .hdr__hint.show { opacity: 1; }
     }
 
     /* ── ITEM ROWS ── */
@@ -1163,6 +1190,7 @@
         <button class="lang-btn" data-lang="ru">RU</button>
       </div>
     </div>
+    <div class="hdr__hint" id="hdrHint" aria-hidden="true"></div>
     <button class="burg" id="burg" aria-label="Toggle menu" aria-expanded="false">
       <span></span><span></span><span></span>
     </button>
@@ -1681,10 +1709,55 @@
         btn.classList.toggle('active', btn.dataset.themeChoice === theme);
       });
     }
-    document.querySelectorAll('.theme-btn').forEach(btn => {
-      btn.addEventListener('click', () => applyTheme(btn.dataset.themeChoice));
+    document.addEventListener('click', e => {
+      const btn = e.target.closest('.theme-btn');
+      if (btn) applyTheme(btn.dataset.themeChoice);
     });
     applyTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark');
+
+    /* ── MOBILE HINT — nudges toward language/theme switches that moved
+       into the fullscreen menu on mobile. Cross-fades between two short
+       messages; dismissed for good on the user's first touch/scroll/click. */
+    (function () {
+      const hint = document.getElementById('hdrHint');
+      if (!hint || !window.matchMedia('(max-width: 660px)').matches) return;
+      const isRu = document.querySelector('.lang-btn.active')?.dataset.lang === 'ru';
+      const messages = isRu
+        ? ['Переключить язык →', 'Сменить тему →']
+        : ['Switch language →', 'Switch theme →'];
+      let i = 0, timer = null, dismissed = false;
+      hint.textContent = messages[0];
+      requestAnimationFrame(() => hint.classList.add('show'));
+
+      function cycle() {
+        timer = setTimeout(() => {
+          hint.classList.remove('show');
+          timer = setTimeout(() => {
+            if (dismissed) return;
+            i = (i + 1) % messages.length;
+            hint.textContent = messages[i];
+            hint.classList.add('show');
+            cycle();
+          }, 500); /* matches the .hdr__hint opacity transition duration */
+        }, 2400);
+      }
+      cycle();
+
+      function dismiss() {
+        if (dismissed) return;
+        dismissed = true;
+        clearTimeout(timer);
+        hint.classList.remove('show');
+        ['touchstart', 'click', 'mousedown'].forEach(ev =>
+          document.removeEventListener(ev, dismiss)
+        );
+        window.removeEventListener('scroll', dismiss);
+      }
+      ['touchstart', 'click', 'mousedown'].forEach(ev =>
+        document.addEventListener(ev, dismiss, { once: true, passive: true })
+      );
+      window.addEventListener('scroll', dismiss, { once: true, passive: true });
+    })();
 
     /* ── READY ── */
     window.addEventListener('load', () => document.body.classList.add('ready'));
@@ -1727,11 +1800,15 @@
         requestAnimationFrame(loop);
       })();
 
-      /* hover state for interactive elements */
+      /* hover state for interactive elements — delegated (not bound per-element
+         at load) so it also covers buttons rendered later by renderWork(),
+         like the work-page project tabs and theme toggle. */
       const hovSel = 'a, button, .wcard, .about__img, .cta, .step, .hdr__logo, .btn-border, .lang-btn, .mob-lang-btn, .theme-btn';
-      document.querySelectorAll(hovSel).forEach(el => {
-        el.addEventListener('mouseenter', () => document.body.classList.add('is-hov'));
-        el.addEventListener('mouseleave', () => document.body.classList.remove('is-hov'));
+      document.addEventListener('mouseover', e => {
+        if (e.target.closest(hovSel)) document.body.classList.add('is-hov');
+      });
+      document.addEventListener('mouseout', e => {
+        if (e.target.closest(hovSel)) document.body.classList.remove('is-hov');
       });
     })();
 
@@ -2075,6 +2152,19 @@
               <button class="lang-btn ${lng === 'en' ? 'active' : ''}" data-lang="en" onclick="applyLang('en')">EN</button>
               <span>/</span>
               <button class="lang-btn ${lng === 'ru' ? 'active' : ''}" data-lang="ru" onclick="applyLang('ru')">RU</button>
+            </div>
+            <div class="wp-nav__theme">
+              <button class="theme-btn ${document.documentElement.getAttribute('data-theme') === 'light' ? '' : 'active'}" data-theme-choice="dark" aria-label="Dark theme">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M20.9 14.6A9 9 0 1 1 9.4 3.1a7 7 0 0 0 11.5 11.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <button class="theme-btn ${document.documentElement.getAttribute('data-theme') === 'light' ? 'active' : ''}" data-theme-choice="light" aria-label="Light theme">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.6"/>
+                  <path d="M12 2.5v2.4M12 19.1v2.4M21.5 12h-2.4M4.9 12H2.5M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7M18.5 18.5l-1.7-1.7M7.2 7.2 5.5 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
+              </button>
             </div>
           </nav>
 
