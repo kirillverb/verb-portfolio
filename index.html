@@ -620,17 +620,21 @@
     }
     @media (max-width: 660px) {
       .hdr__hint {
-        display: block;
+        display: flex; align-items: center; gap: 6px;
         font-size: 13px; font-weight: 600; letter-spacing: .01em;
         color: var(--hdr-text, var(--text));
+        background: rgba(var(--cursor-rgb), .07);
+        border-radius: 6px;
+        padding: 5px 9px;
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         max-width: 55vw;
-        margin-right: 14px;
+        margin-right: 4px;
         opacity: 0;
         transition: opacity .5s var(--ease);
         pointer-events: none;
       }
       .hdr__hint.show { opacity: 1; }
+      .hdr__hint svg { width: 13px; height: 13px; flex-shrink: 0; }
     }
 
     /* ── ITEM ROWS ── */
@@ -1188,7 +1192,10 @@
         <button class="lang-btn" data-lang="ru">RU</button>
       </div>
     </div>
-    <div class="hdr__hint" id="hdrHint" aria-hidden="true"></div>
+    <div class="hdr__hint" id="hdrHint" aria-hidden="true">
+      <span class="hdr__hint-text"></span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </div>
     <button class="burg" id="burg" aria-label="Toggle menu" aria-expanded="false">
       <span></span><span></span><span></span>
     </button>
@@ -1718,13 +1725,14 @@
        messages; dismissed for good on the user's first touch/scroll/click. */
     (function () {
       const hint = document.getElementById('hdrHint');
-      if (!hint || !window.matchMedia('(max-width: 660px)').matches) return;
+      const text = hint?.querySelector('.hdr__hint-text');
+      if (!hint || !text || !window.matchMedia('(max-width: 660px)').matches) return;
       const isRu = document.querySelector('.lang-btn.active')?.dataset.lang === 'ru';
       const messages = isRu
-        ? ['Переключить язык →', 'Сменить тему →']
-        : ['Switch language →', 'Switch theme →'];
+        ? ['Переключить язык', 'Сменить тему']
+        : ['Switch language', 'Switch theme'];
       let i = 0, timer = null, dismissed = false;
-      hint.textContent = messages[0];
+      text.textContent = messages[0];
       requestAnimationFrame(() => hint.classList.add('show'));
 
       function cycle() {
@@ -1733,7 +1741,7 @@
           timer = setTimeout(() => {
             if (dismissed) return;
             i = (i + 1) % messages.length;
-            hint.textContent = messages[i];
+            text.textContent = messages[i];
             hint.classList.add('show');
             cycle();
           }, 500); /* matches the .hdr__hint opacity transition duration */
