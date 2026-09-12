@@ -1007,6 +1007,16 @@
       .process__grid { grid-template-columns: 1fr; gap: 56px; }
       .step { grid-template-columns: 24px 1fr 1fr; }
     }
+    /* phones in landscape: width alone (852px on iPhone 14 Pro, etc.) clears
+       the 660px breakpoint below, so without this the header would switch to
+       the full desktop nav — which doesn't actually fit comfortably at that
+       *height*, causing overlapping/misaligned items. Height is the more
+       reliable signal for "this is still a phone" than width once rotated. */
+    @media (max-height: 500px) and (orientation: landscape) {
+      .hdr__nav, .hdr__contact { display: none; }
+      .hdr__right { display: none; }
+      .burg { display: flex; }
+    }
     @media (max-width: 660px) {
       .hdr__nav, .hdr__contact { display: none; }
       .hdr__right { display: none; }
