@@ -97,7 +97,7 @@
        fills in the elements (body, section backgrounds, borders) that
        otherwise had no transition at all and used to just snap instantly. */
     * {
-      transition: background-color .4s var(--ease), color .4s var(--ease), border-color .4s var(--ease);
+      transition: background-color .6s var(--ease), color .6s var(--ease), border-color .6s var(--ease);
     }
     body {
       background: var(--bg);
@@ -178,7 +178,7 @@
       --hdr-muted: rgba(255,255,255,.68);
       --hdr-dim:   rgba(255,255,255,.4);
       --hdr-track: rgba(255,255,255,.15);
-      transition: padding .4s, background .5s, border-color .5s, color .4s;
+      transition: padding .4s, background .6s var(--ease), border-color .6s var(--ease), color .6s var(--ease);
     }
     .hdr.scrolled {
       padding-block: 17px;
@@ -529,7 +529,8 @@
       background: var(--hdr-scrolled-bg);
       backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
       border-bottom: 1px solid var(--bdr);
-      opacity: 0; transition: opacity .4s .18s;
+      opacity: 0;
+      transition: opacity .4s .18s, background-color .6s var(--ease), border-color .6s var(--ease);
       /* needed for absolute-positioned project tabs */
       isolation: isolate;
     }
