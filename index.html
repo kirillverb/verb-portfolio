@@ -620,12 +620,15 @@
     }
     @media (max-width: 660px) {
       .hdr__hint {
-        display: block;
-        font-size: 10px; font-weight: 500; letter-spacing: .06em;
-        color: var(--hdr-muted, var(--muted));
+        display: flex; align-items: center;
+        font-size: 15px; font-weight: 600; letter-spacing: .01em;
+        color: var(--hdr-text, var(--text));
+        background: rgba(var(--cursor-rgb), .1);
+        border-radius: 20px;
+        padding: 9px 16px;
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        max-width: 42vw;
-        margin-right: 14px;
+        max-width: 58vw;
+        margin-right: 10px;
         opacity: 0;
         transition: opacity .5s var(--ease);
         pointer-events: none;
@@ -1639,7 +1642,7 @@
         'step4.desc':   'Создание структуры, интерфейса и визуального языка, обеспечивающего ясный и последовательный пользовательский опыт.',
         'step5.ttl':    'Финал',
         'step5.desc':   'Подготовка дизайн-материалов для корректной реализации продукта и передача файлов заказчику.',
-        'cta.h':        'Расскажи, что тебе нужно.',
+        'cta.h':        'Чем помочь?',
       }
     };
 
