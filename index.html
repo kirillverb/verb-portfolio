@@ -1024,7 +1024,7 @@
       padding-bottom: clamp(52px, 7vw, 92px);
     }
     .cta {
-      position: relative; overflow: hidden;
+      position: relative; overflow: hidden; will-change: transform;
       min-height: 380px; display: flex; align-items: center;
       padding: clamp(52px, 7vw, 92px);
     }
@@ -1985,6 +1985,8 @@
       );
       const aboutImg = document.querySelector('.about__img');
       if (aboutImg) initMagnetic3D(aboutImg, { tilt: 11, move: 28, perspective: 1000, lerp: .1 });
+      const ctaEl = document.querySelector('.cta');
+      if (ctaEl) initMagnetic3D(ctaEl, { tilt: 9, move: 22, perspective: 1400, lerp: .1 });
     })();
 
     /* ── MAGNETIC 3D BLOCKS — MOBILE / GYROSCOPE ──
@@ -2045,6 +2047,8 @@
         document.querySelectorAll('.wcard').forEach(card => register(card, { tilt: 13, move: 30, perspective: 1400, lerp: .12 }));
         const aboutImg = document.querySelector('.about__img');
         if (aboutImg) register(aboutImg, { tilt: 11, move: 22, perspective: 1500, lerp: .12 });
+        const ctaEl = document.querySelector('.cta');
+        if (ctaEl) register(ctaEl, { tilt: 9, move: 18, perspective: 1900, lerp: .12 });
       }
 
       if (typeof DeviceOrientationEvent.requestPermission === 'function') {
