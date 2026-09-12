@@ -262,6 +262,10 @@
       display: none; position: relative;
       width: 28px; height: 20px;
     }
+    /* hidden by default like .burg itself — without this, the empty wrapper
+       div still counts as a third flex child in .hdr's space-between and
+       pushes .hdr__right toward the center instead of the right edge */
+    .hdr__burger-group { display: none; }
     .burg span {
       position: absolute; left: 0;
       width: 28px; height: 1px;
@@ -1019,6 +1023,7 @@
     @media (max-height: 500px) and (orientation: landscape) and (hover: none) and (pointer: coarse) {
       .hdr__nav, .hdr__contact { display: none; }
       .hdr__right { display: none; }
+      .hdr__burger-group { display: flex; align-items: center; gap: 6px; }
       .burg { display: flex; }
     }
     @media (max-width: 660px) {
