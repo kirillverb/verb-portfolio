@@ -624,7 +624,6 @@
         font-size: 13px; font-weight: 600; letter-spacing: .01em;
         color: var(--hdr-text, var(--text));
         background: rgba(var(--cursor-rgb), .07);
-        border-radius: 6px;
         padding: 5px 9px;
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         max-width: 55vw;
@@ -1010,7 +1009,7 @@
     }
     @media (max-width: 660px) {
       .hdr__nav, .hdr__contact { display: none; }
-      .lang-sw, .theme-sw { display: none; }
+      .hdr__right { display: none; }
       .burg { display: flex; }
       .works__grid { grid-template-columns: 1fr; gap: 20px; }
       /* on mobile: icon + title on row 1, desc spans full width on row 2 */
