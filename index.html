@@ -89,6 +89,16 @@
 
     /* ══ BASE ══ */
     html { scroll-behavior: smooth; }
+    /* smooth site-wide theme switch — narrow property list on purpose so it
+       never competes with the transform-based animations elsewhere (magnetic
+       cards, reveal-on-scroll, slider). Anything with its own more specific
+       transition (buttons, nav labels, etc.) keeps using that instead, since
+       a class selector always outranks this universal one — this rule only
+       fills in the elements (body, section backgrounds, borders) that
+       otherwise had no transition at all and used to just snap instantly. */
+    * {
+      transition: background-color .4s var(--ease), color .4s var(--ease), border-color .4s var(--ease);
+    }
     body {
       background: var(--bg);
       color: var(--text);
@@ -152,7 +162,7 @@
 
     /* ══ HEADER ══ */
     .hdr {
-      position: fixed; inset: 0 0 auto; z-index: 100;
+      position: fixed; inset: 0 0 auto; z-index: 1000; isolation: isolate;
       display: flex; align-items: center; justify-content: space-between;
       padding: 26px var(--px);
       border-bottom: 1px solid transparent;
@@ -169,13 +179,6 @@
       --hdr-dim:   rgba(255,255,255,.4);
       --hdr-track: rgba(255,255,255,.15);
       transition: padding .4s, background .5s, border-color .5s, color .4s;
-    }
-    /* momentarily added/removed by applyTheme() around a theme switch, so the
-       header's own slow scroll-fade transition doesn't also apply to the
-       theme change — every color-bearing child inside .hdr needs to snap
-       instantly here, not just .hdr itself */
-    .hdr.theme-switching, .hdr.theme-switching * {
-      transition: none !important;
     }
     .hdr.scrolled {
       padding-block: 17px;
@@ -284,8 +287,8 @@
     .burg span {
       position: absolute; left: 0;
       width: 28px; height: 1px;
-      background: var(--text);
-      transition: top .35s var(--ease), transform .35s var(--ease), opacity .3s var(--ease);
+      background: var(--hdr-text, var(--text));
+      transition: top .35s var(--ease), transform .35s var(--ease), opacity .3s var(--ease), background .3s;
     }
     .burg span:nth-child(1) { top: 0; }
     .burg span:nth-child(2) { top: 9px; }
@@ -1753,15 +1756,6 @@
       document.querySelectorAll('.theme-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.themeChoice === theme);
       });
-      /* .hdr has a slow background/color transition meant for the scroll-
-         triggered backdrop fade-in — without suppressing it here, a theme
-         switch would visibly lag behind the rest of the page (which has no
-         such transition and updates instantly, same as .wp-nav). */
-      const hdr = document.getElementById('hdr');
-      if (hdr) {
-        hdr.classList.add('theme-switching');
-        requestAnimationFrame(() => requestAnimationFrame(() => hdr.classList.remove('theme-switching')));
-      }
     }
     document.addEventListener('click', e => {
       const btn = e.target.closest('.theme-btn');
