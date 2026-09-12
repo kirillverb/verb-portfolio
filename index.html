@@ -627,13 +627,13 @@
         padding: 5px 9px;
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         max-width: 55vw;
-        margin-right: 0;
         opacity: 0;
         transition: opacity .5s var(--ease);
         pointer-events: none;
       }
       .hdr__hint.show { opacity: 1; }
       .hdr__hint svg { width: 13px; height: 13px; flex-shrink: 0; }
+      .hdr__burger-group { display: flex; align-items: center; gap: 6px; }
     }
 
     /* ── ITEM ROWS ── */
@@ -1191,13 +1191,15 @@
         <button class="lang-btn" data-lang="ru">RU</button>
       </div>
     </div>
-    <div class="hdr__hint" id="hdrHint" aria-hidden="true">
-      <span class="hdr__hint-text"></span>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    <div class="hdr__burger-group">
+      <div class="hdr__hint" id="hdrHint" aria-hidden="true">
+        <span class="hdr__hint-text"></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </div>
+      <button class="burg" id="burg" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
     </div>
-    <button class="burg" id="burg" aria-label="Toggle menu" aria-expanded="false">
-      <span></span><span></span><span></span>
-    </button>
   </header>
 
   <!-- ─── HERO ─── -->
