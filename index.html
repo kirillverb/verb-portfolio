@@ -520,9 +520,11 @@
       font-size: 11px; font-weight: 500; letter-spacing: .12em;
     }
     .wp-nav__lang span { color: var(--dim); user-select: none; }
+    .wp-nav__right {
+      display: flex; align-items: center; gap: 22px;
+    }
     .wp-nav__theme {
       display: flex; align-items: center; gap: 14px;
-      margin-left: 22px;
     }
 
     /* ── HERO: full bleed ~42vh, title+desc overlaid bottom-left ── */
@@ -607,7 +609,6 @@
         width: 100%; justify-content: space-between;
       }
       .wp-proj-btn { font-size: 10px; padding: 6px 10px; color: var(--muted); font-weight: 600; }
-      .wp-nav__theme { margin-left: 0; }
     }
     /* Mobile-only rotating hint, before the burger — cross-fades between two
        short nudges toward the language and theme switchers (which move into
@@ -2148,23 +2149,25 @@
                 </button>
               `).join('')}
             </div>
-            <div class="wp-nav__lang">
-              <button class="lang-btn ${lng === 'en' ? 'active' : ''}" data-lang="en" onclick="applyLang('en')">EN</button>
-              <span>/</span>
-              <button class="lang-btn ${lng === 'ru' ? 'active' : ''}" data-lang="ru" onclick="applyLang('ru')">RU</button>
-            </div>
-            <div class="wp-nav__theme">
-              <button class="theme-btn ${document.documentElement.getAttribute('data-theme') === 'light' ? '' : 'active'}" data-theme-choice="dark" aria-label="Dark theme">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M20.9 14.6A9 9 0 1 1 9.4 3.1a7 7 0 0 0 11.5 11.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </button>
-              <button class="theme-btn ${document.documentElement.getAttribute('data-theme') === 'light' ? 'active' : ''}" data-theme-choice="light" aria-label="Light theme">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.6"/>
-                  <path d="M12 2.5v2.4M12 19.1v2.4M21.5 12h-2.4M4.9 12H2.5M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7M18.5 18.5l-1.7-1.7M7.2 7.2 5.5 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-                </svg>
-              </button>
+            <div class="wp-nav__right">
+              <div class="wp-nav__theme">
+                <button class="theme-btn ${document.documentElement.getAttribute('data-theme') === 'light' ? '' : 'active'}" data-theme-choice="dark" aria-label="Dark theme">
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20.9 14.6A9 9 0 1 1 9.4 3.1a7 7 0 0 0 11.5 11.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+                <button class="theme-btn ${document.documentElement.getAttribute('data-theme') === 'light' ? 'active' : ''}" data-theme-choice="light" aria-label="Light theme">
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.6"/>
+                    <path d="M12 2.5v2.4M12 19.1v2.4M21.5 12h-2.4M4.9 12H2.5M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7M18.5 18.5l-1.7-1.7M7.2 7.2 5.5 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="wp-nav__lang">
+                <button class="lang-btn ${lng === 'en' ? 'active' : ''}" data-lang="en" onclick="applyLang('en')">EN</button>
+                <span>/</span>
+                <button class="lang-btn ${lng === 'ru' ? 'active' : ''}" data-lang="ru" onclick="applyLang('ru')">RU</button>
+              </div>
             </div>
           </nav>
 
