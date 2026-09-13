@@ -560,7 +560,10 @@
     }
     .teaser img {
       width: 100%; height: 100%; object-fit: cover; object-position: top;
+      filter: grayscale(1);
+      transition: filter .6s var(--ease);
     }
+    .works__teasers.is-revealed .teaser img { filter: grayscale(0); }
 
     .works__foot {
       margin-top: 6px;
@@ -2007,6 +2010,15 @@
       /* hard safety net: even if every listener above somehow fails to
          fire, never let the hint linger indefinitely */
       setTimeout(dismiss, 20000);
+    })();
+
+    /* ── WORKS TEASERS: color on "See more works" hover ── */
+    (function () {
+      const btn = document.querySelector('.works__foot .btn-border');
+      const teasers = document.querySelector('.works__teasers');
+      if (!btn || !teasers) return;
+      btn.addEventListener('mouseenter', () => teasers.classList.add('is-revealed'));
+      btn.addEventListener('mouseleave', () => teasers.classList.remove('is-revealed'));
     })();
 
     /* ── READY ── */
