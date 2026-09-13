@@ -560,12 +560,12 @@
     }
     .teaser img {
       width: 100%; height: 100%; object-fit: cover; object-position: top;
-      filter: grayscale(1) brightness(.5);
+      filter: grayscale(1) brightness(.55) contrast(.65);
       transition: filter .6s var(--ease);
     }
     /* toggled by JS while hovering "See more works" — drops just the
        black-and-white treatment, keeps the darkening/gradient as-is */
-    .works__teasers.is-revealed .teaser img { filter: grayscale(0) brightness(.5); }
+    .works__teasers.is-revealed .teaser img { filter: grayscale(0) brightness(.55); }
     .teaser::after {
       content: '';
       position: absolute; inset: 0;
