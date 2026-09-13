@@ -196,7 +196,7 @@
     ::view-transition-old(root) { z-index: 1; }
     ::view-transition-new(root) {
       z-index: 2;
-      clip-path: circle(0px at var(--vt-x, 50%) var(--vt-y, 50%));
+      clip-path: circle(6px at var(--vt-x, 50%) var(--vt-y, 50%));
       animation: theme-reveal 1.05s cubic-bezier(.22,1,.36,1) forwards;
     }
     @keyframes theme-reveal {
@@ -1896,7 +1896,7 @@
       const radius = Math.hypot(Math.max(x, vw - x), Math.max(y, vh - y));
       ripple.style.transition = 'none';
       ripple.style.background = bgColor;
-      ripple.style.clipPath = `circle(0px at ${x}px ${y}px)`;
+      ripple.style.clipPath = `circle(6px at ${x}px ${y}px)`;
       ripple.style.display = 'block';
       void ripple.offsetHeight; /* force reflow so the next line actually animates */
       ripple.style.transition = 'clip-path 1.05s cubic-bezier(.22,1,.36,1)';
