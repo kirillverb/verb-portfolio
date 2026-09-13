@@ -1152,6 +1152,8 @@
       .works__teasers-track {
         display: flex; gap: 10px;
         width: max-content;
+      }
+      .works__teasers-track.is-playing {
         animation: works-teasers-scroll 18s linear infinite;
       }
       @keyframes works-teasers-scroll {
@@ -2022,9 +2024,14 @@
        live (e.g. the Chrome DevTools device toolbar, without a reload)
        never re-fires 'load', so without the resize listener the loop would
        silently never get built even though the CSS around it still
-       switches to the mobile layout. */
-    function initWorksTeasersLoop() {
-      if (!window.matchMedia('(max-width: 660px)').matches) return;
+       switches to the mobile layout. The resize listener also handles the
+       REVERSE: dragging back up past 660px unwraps the track and restores
+       the plain 4-card markup, so desktop's own grid CSS (which only knows
+       how to lay out direct .teaser children of .works__teasers) has
+       something valid to work with again — without this, a mobile→desktop
+       resize left the mobile track sitting there with no matching styles,
+       collapsing into a stacked, unstyled list. */
+    function buildWorksTeasersLoop() {
       const teasers = document.getElementById('worksTeasers');
       if (!teasers || teasers.dataset.looped) return;
       const originals = Array.from(teasers.children);
@@ -2044,9 +2051,40 @@
       });
       teasers.appendChild(track);
       teasers.dataset.looped = 'true';
+      /* only start the animation once this row is actually visible — a page
+         load with this section below the fold would otherwise have the
+         loop already partway through its cycle by the time the person
+         scrolls to it, looking like it "doesn't start from the first card".
+         Observing `teasers` (the clipping wrapper, normal viewport-ish
+         width) rather than `track` itself — track is intentionally much
+         wider than the viewport for the marquee effect, so its visible
+         area can never reach a normal-looking threshold like 0.2 even when
+         it's fully scrolled into view vertically. */
+      const playObserver = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) track.classList.add('is-playing');
+        });
+      }, { threshold: 0.2 });
+      playObserver.observe(teasers);
     }
-    window.addEventListener('load', initWorksTeasersLoop);
-    window.addEventListener('resize', initWorksTeasersLoop);
+    function unwrapWorksTeasersLoop() {
+      const teasers = document.getElementById('worksTeasers');
+      const track = teasers && teasers.querySelector('.works__teasers-track');
+      if (!track) return;
+      /* drop the 4 clones, keep only the original 4 (the ones that still
+         carry data-r), put them straight back under .works__teasers */
+      Array.from(track.children).forEach(card => {
+        if (card.hasAttribute('data-r')) teasers.appendChild(card);
+      });
+      track.remove();
+      delete teasers.dataset.looped;
+    }
+    function syncWorksTeasersLoop() {
+      if (window.matchMedia('(max-width: 660px)').matches) buildWorksTeasersLoop();
+      else unwrapWorksTeasersLoop();
+    }
+    window.addEventListener('load', syncWorksTeasersLoop);
+    window.addEventListener('resize', syncWorksTeasersLoop);
 
     /* ── READY ── */
     window.addEventListener('load', () => document.body.classList.add('ready'));
