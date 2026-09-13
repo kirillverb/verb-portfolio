@@ -1154,7 +1154,7 @@
         width: max-content;
       }
       .works__teasers-track.is-playing {
-        animation: works-teasers-scroll 18s linear infinite;
+        animation: works-teasers-scroll 30s linear infinite;
       }
       @keyframes works-teasers-scroll {
         from { transform: translateX(0); }
@@ -1854,6 +1854,7 @@
           window.renderWork(currentHash);
           page.scrollTop = wpScroll;
           if (window.initSliders) window.initSliders();
+          if (window.initScrollReveal) window.initScrollReveal();
         }
       } else {
         /* main page — restore scroll after micro-task */
@@ -2372,7 +2373,11 @@
     })();
 
     /* ── SCROLL REVEAL ── */
-    (function () {
+    /* exposed on window so renderWork() can call it again after building
+       work-page content — that markup doesn't exist yet when this first
+       runs, so its [data-r] elements would otherwise never get observed
+       and just sit at opacity:0 forever instead of fading in on scroll. */
+    window.initScrollReveal = (function () {
       /* mobile gets a generous positive bottom margin so cards (like the
          work cards) reveal well before they'd naturally scroll into view —
          desktop keeps the original tight margin */
@@ -2385,7 +2390,11 @@
         threshold: 0.1,
         rootMargin: isMobile ? '0px 0px 20% 0px' : '0px 0px -44px 0px'
       });
-      document.querySelectorAll('[data-r]').forEach(el => io.observe(el));
+      function scan() {
+        document.querySelectorAll('[data-r]:not(.on)').forEach(el => io.observe(el));
+      }
+      scan();
+      return scan;
     })();
 
     /* ── HERO PARALLAX ── */
@@ -2451,7 +2460,7 @@
           `;
 
           return `
-            <div class="wp-item">
+            <div class="wp-item" data-r style="--d:${itemIdx}">
               <div class="wp-item__img">
                 ${imgHTML}
               </div>
@@ -2464,7 +2473,7 @@
         }).join('');
 
         const resultsHTML = w.results ? `
-          <div class="wp-results">
+          <div class="wp-results" data-r>
             <p class="wp-results__label">Results</p>
             <div class="wp-results__grid">
               ${w.results.map(r => `
@@ -2578,6 +2587,7 @@
               content.style.opacity    = '1';
               content.style.transform  = 'translateX(0)';
               initSliders();
+              if (window.initScrollReveal) window.initScrollReveal();
             }));
           }, 180);
         } else {
@@ -2591,6 +2601,7 @@
           requestAnimationFrame(() => requestAnimationFrame(() => {
             page.classList.add('active');
             initSliders();
+            if (window.initScrollReveal) window.initScrollReveal();
           }));
         }
       };
