@@ -307,7 +307,12 @@
        there --hdr-dim/--hdr-text are undefined, so the var() fallback
        correctly resolves to the plain theme tokens instead). */
     .theme-sw {
-      display: flex; align-items: center; gap: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .theme-sw span,
+    .theme-sw--mob span,
+    .wp-nav__theme span {
+      color: var(--hdr-dim, var(--dim)); user-select: none;
     }
     .theme-btn {
       display: flex; color: var(--hdr-dim, var(--dim));
@@ -372,8 +377,15 @@
     .mob.open a:nth-child(3) { opacity:1; transform:none; transition-delay:.20s; }
     .mob.open a:nth-child(4) { opacity:1; transform:none; transition-delay:.27s; }
     .mob a:hover { color: var(--gold); }
+    .theme-sw--mob {
+      display: flex; align-items: center; gap: 10px; margin-top: 26px;
+      opacity: 0; transition: opacity .45s var(--ease);
+    }
+    .theme-sw--mob .theme-btn svg { width: 20px; height: 20px; }
+    .mob.open .theme-sw--mob { opacity: 1; transition-delay: .32s; }
     .mob__lang {
-      display: flex; gap: 12px; margin-top: 20px;
+      display: flex; gap: 12px; margin-top: 34px;
+      opacity: 0; transition: opacity .45s var(--ease);
     }
     .mob__lang button {
       font-family: var(--sans); font-size: 14px; font-weight: 500;
@@ -383,14 +395,8 @@
     .mob__lang button.active { color: var(--text); }
     .mob__lang button:hover { color: var(--muted); }
     .mob.open .mob__lang {
-      opacity: 1; transition-delay: .32s;
+      opacity: 1; transition-delay: .38s;
     }
-    .theme-sw--mob {
-      display: flex; align-items: center; gap: 16px; margin-top: 22px;
-      opacity: 0; transition: opacity .45s var(--ease);
-    }
-    .theme-sw--mob .theme-btn svg { width: 20px; height: 20px; }
-    .mob.open .theme-sw--mob { opacity: 1; transition-delay: .38s; }
 
     /* ══ HERO ══ */
     .hero {
@@ -1232,22 +1238,23 @@
     <a href="#works"   onclick="closeMob()" data-i18n="nav.works">Works</a>
     <a href="#process" onclick="closeMob()" data-i18n="nav.process">Process</a>
     <a href="#contact" onclick="closeMob()" data-i18n="nav.contact">Contact</a>
-    <div class="mob__lang">
-      <button class="mob-lang-btn active" data-lang="en">EN</button>
-      <button class="mob-lang-btn" data-lang="ru">RU</button>
-    </div>
     <div class="theme-sw--mob" id="themeSwMob">
       <button class="theme-btn" data-theme-choice="dark" aria-label="Dark theme">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M20.9 14.6A9 9 0 1 1 9.4 3.1a7 7 0 0 0 11.5 11.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
+      <span>/</span>
       <button class="theme-btn" data-theme-choice="light" aria-label="Light theme">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.6"/>
           <path d="M12 2.5v2.4M12 19.1v2.4M21.5 12h-2.4M4.9 12H2.5M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7M18.5 18.5l-1.7-1.7M7.2 7.2 5.5 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
         </svg>
       </button>
+    </div>
+    <div class="mob__lang">
+      <button class="mob-lang-btn active" data-lang="en">EN</button>
+      <button class="mob-lang-btn" data-lang="ru">RU</button>
     </div>
   </nav>
 
@@ -1293,6 +1300,7 @@
             <path d="M20.9 14.6A9 9 0 1 1 9.4 3.1a7 7 0 0 0 11.5 11.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </button>
+        <span>/</span>
         <button class="theme-btn" data-theme-choice="light" aria-label="Light theme">
           <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.6"/>
@@ -1895,11 +1903,19 @@
 
     /* ── MOBILE HINT — nudges toward language/theme switches that moved
        into the fullscreen menu on mobile. Cross-fades between two short
-       messages; dismissed for good on the user's first touch/scroll/click. */
+       messages; dismissed for good on the user's first touch/scroll/click.
+       The dismissal is remembered in sessionStorage, not just in memory —
+       backgrounding Safari (e.g. to flip the OS theme in Settings) can make
+       iOS silently reload or restore the tab, which would otherwise re-run
+       this whole script and forget that the person already dismissed it. */
     (function () {
       const hint = document.getElementById('hdrHint');
       const text = hint?.querySelector('.hdr__hint-text');
       if (!hint || !text || !window.matchMedia('(max-width: 660px)').matches) return;
+      let alreadyDismissed = false;
+      try { alreadyDismissed = sessionStorage.getItem('hintDismissed') === '1'; } catch (e) {}
+      if (alreadyDismissed) return;
+
       const isRu = document.querySelector('.lang-btn.active')?.dataset.lang === 'ru';
       const messages = isRu
         ? ['Переключить язык', 'Сменить тему']
@@ -1910,6 +1926,7 @@
 
       function cycle() {
         timer = setTimeout(() => {
+          if (dismissed) return;
           hint.classList.remove('show');
           timer = setTimeout(() => {
             if (dismissed) return;
@@ -1925,17 +1942,21 @@
       function dismiss() {
         if (dismissed) return;
         dismissed = true;
+        try { sessionStorage.setItem('hintDismissed', '1'); } catch (e) {}
         clearTimeout(timer);
         hint.classList.remove('show');
-        ['touchstart', 'click', 'mousedown'].forEach(ev =>
+        ['touchstart', 'pointerdown', 'click', 'mousedown'].forEach(ev =>
           document.removeEventListener(ev, dismiss)
         );
         window.removeEventListener('scroll', dismiss);
       }
-      ['touchstart', 'click', 'mousedown'].forEach(ev =>
+      ['touchstart', 'pointerdown', 'click', 'mousedown'].forEach(ev =>
         document.addEventListener(ev, dismiss, { once: true, passive: true })
       );
       window.addEventListener('scroll', dismiss, { once: true, passive: true });
+      /* hard safety net: even if every listener above somehow fails to
+         fire, never let the hint linger indefinitely */
+      setTimeout(dismiss, 20000);
     })();
 
     /* ── READY ── */
@@ -2349,6 +2370,7 @@
                     <path d="M20.9 14.6A9 9 0 1 1 9.4 3.1a7 7 0 0 0 11.5 11.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </button>
+                <span>/</span>
                 <button class="theme-btn ${document.documentElement.getAttribute('data-theme') === 'light' ? 'active' : ''}" data-theme-choice="light" aria-label="Light theme">
                   <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.6"/>
