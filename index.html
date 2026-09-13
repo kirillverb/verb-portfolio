@@ -2016,10 +2016,14 @@
        never shows), so instead of leaning on it to make one shared wrapper
        behave differently per breakpoint, the wrapper is only ever created
        here, at runtime, and only for mobile — desktop's DOM never contains
-       it at all. Runs on window 'load' (not DOMContentLoaded) so the
-       img[data-img] loader above has already populated the src on the
-       originals before they're moved/cloned. */
-    window.addEventListener('load', () => {
+       it at all.
+       Checked on BOTH window 'load' (the normal case) AND 'resize' — a
+       page opened at desktop width and then dragged down to mobile width
+       live (e.g. the Chrome DevTools device toolbar, without a reload)
+       never re-fires 'load', so without the resize listener the loop would
+       silently never get built even though the CSS around it still
+       switches to the mobile layout. */
+    function initWorksTeasersLoop() {
       if (!window.matchMedia('(max-width: 660px)').matches) return;
       const teasers = document.getElementById('worksTeasers');
       if (!teasers || teasers.dataset.looped) return;
@@ -2040,7 +2044,9 @@
       });
       teasers.appendChild(track);
       teasers.dataset.looped = 'true';
-    });
+    }
+    window.addEventListener('load', initWorksTeasersLoop);
+    window.addEventListener('resize', initWorksTeasersLoop);
 
     /* ── READY ── */
     window.addEventListener('load', () => document.body.classList.add('ready'));
