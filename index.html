@@ -9,20 +9,16 @@
        "phone/tablet" vs "desktop"):
        - Desktop: a saved choice in localStorage always wins; otherwise dark,
          no matter what. No OS detection here at all, by design.
-       - Mobile: a saved choice in sessionStorage always wins; otherwise it
-         follows the OS's own light/dark setting. sessionStorage is cleared
-         by the browser when the tab closes, so a fresh tab always re-checks
-         the live OS setting again from scratch — an explicit tap on either
-         theme button only holds for that one tab's lifetime, same as the
-         chosen mechanism implies. */
+       - Mobile: the OS's own light/dark setting is authoritative, full stop —
+         no stored override is checked here. A tap on a theme button (see
+         applyTheme in the main script) changes the CURRENT view only; it is
+         never persisted, so the next OS-theme change or the next full page
+         load both go straight back to whatever the OS says. */
     (function () {
       try {
         const isMobile = !window.matchMedia('(hover: hover)').matches;
         if (isMobile) {
-          const saved = sessionStorage.getItem('theme');
-          if (saved === 'light') {
-            document.documentElement.setAttribute('data-theme', 'light');
-          } else if (!saved && window.matchMedia('(prefers-color-scheme: light)').matches) {
+          if (window.matchMedia('(prefers-color-scheme: light)').matches) {
             document.documentElement.setAttribute('data-theme', 'light');
           }
         } else if (localStorage.getItem('theme') === 'light') {
@@ -1839,12 +1835,14 @@
       ripple._hideTimer = setTimeout(() => { ripple.style.display = 'none'; }, 1100);
     }
 
-    const THEME_STORE = window.matchMedia('(hover: hover)').matches ? localStorage : sessionStorage;
+    /* mobile never persists a theme choice — the OS is authoritative there,
+       so a tap only affects what's on screen right now (see applyTheme) */
+    const THEME_STORE = window.matchMedia('(hover: hover)').matches ? localStorage : null;
     function applyTheme(theme, persist) {
       if (persist === undefined) persist = true;
       if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
       else document.documentElement.removeAttribute('data-theme');
-      if (persist) { try { THEME_STORE.setItem('theme', theme); } catch (e) {} }
+      if (persist && THEME_STORE) { try { THEME_STORE.setItem('theme', theme); } catch (e) {} }
       document.querySelectorAll('.theme-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.themeChoice === theme);
       });
@@ -1872,20 +1870,19 @@
       }
     });
     /* sync the button states to whatever the FOUC script in <head> already
-       decided (explicit saved choice, or an OS-followed guess on mobile) —
-       persist:false so an OS-followed guess never gets locked in as if the
-       person had clicked a button themselves. */
+       decided (explicit saved choice on desktop, or the live OS reading on
+       mobile) — persist:false so this sync itself never writes anything. */
     applyTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark', false);
 
-    /* mobile-only: keep following the OS live if the person flips their
-       phone's system theme while the tab stays open, but only for as long
-       as they haven't made an explicit choice here (sessionStorage, cleared
-       when the tab closes) — the moment they tap either button, the click
-       handler above takes over for the rest of this tab's lifetime. Desktop
-       never runs this at all, matching the FOUC script's own device split. */
-    if (!window.matchMedia('(hover: hover)').matches && !sessionStorage.getItem('theme')) {
+    /* mobile-only, and unconditional: the OS stays authoritative for the
+       whole life of the tab. A tap on a theme button changes the display
+       immediately, but the very next OS theme change (or the next full page
+       load, via the FOUC script) goes right back to whatever the OS says —
+       nothing here ever checks or sets a stored override. Desktop never
+       runs this branch at all, matching the FOUC script's own device split. */
+    if (!window.matchMedia('(hover: hover)').matches) {
       window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
-        if (!sessionStorage.getItem('theme')) applyTheme(e.matches ? 'light' : 'dark', false);
+        applyTheme(e.matches ? 'light' : 'dark', false);
       });
     }
 
