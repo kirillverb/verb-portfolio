@@ -553,6 +553,10 @@
       gap: clamp(10px, 1.4vw, 18px);
       margin-top: clamp(10px, 1.4vw, 18px);
     }
+    /* on desktop this wrapper is invisible to layout — its 4 .teaser
+       children become direct grid items of .works__teasers, same as before
+       the wrapper existed. On mobile it becomes the real animated strip. */
+    .works__teasers-track { display: contents; }
     .teaser {
       position: relative; overflow: hidden;
       aspect-ratio: 16/10;
@@ -1158,7 +1162,24 @@
       .hdr__right { display: none; }
       .burg { display: flex; }
       .works__grid { grid-template-columns: 1fr; gap: 20px; }
-      .works__teasers { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+      .works__teasers {
+        display: block; overflow: hidden;
+        margin-top: clamp(10px, 1.4vw, 18px);
+      }
+      .works__teasers-track {
+        display: flex; gap: 10px;
+        width: max-content;
+        animation: works-teasers-scroll 18s linear infinite;
+      }
+      @keyframes works-teasers-scroll {
+        from { transform: translateX(0); }
+        to   { transform: translateX(-50%); }
+      }
+      /* 2/3 the width of the full-bleed main work cards (.wcard, which run
+         the full content width on mobile: 100vw minus the side padding) */
+      .teaser {
+        flex: 0 0 calc((100vw - 2 * var(--px)) * 2 / 3);
+      }
       /* on mobile: icon + title on row 1, desc spans full width on row 2 */
       .step {
         grid-template-columns: 22px 1fr;
@@ -1458,17 +1479,19 @@
       </div>
       <div class="works__teasers-wrap">
         <div class="works__teasers">
-          <div class="teaser" data-r style="--d:4">
-            <img src="" data-img="teaser1" alt="" loading="lazy" aria-hidden="true">
-          </div>
-          <div class="teaser" data-r style="--d:5">
-            <img src="" data-img="teaser2" alt="" loading="lazy" aria-hidden="true">
-          </div>
-          <div class="teaser" data-r style="--d:6">
-            <img src="" data-img="teaser3" alt="" loading="lazy" aria-hidden="true">
-          </div>
-          <div class="teaser" data-r style="--d:7">
-            <img src="" data-img="teaser4" alt="" loading="lazy" aria-hidden="true">
+          <div class="works__teasers-track" id="worksTeasersTrack">
+            <div class="teaser" data-r style="--d:4">
+              <img src="" data-img="teaser1" alt="" loading="lazy" aria-hidden="true">
+            </div>
+            <div class="teaser" data-r style="--d:5">
+              <img src="" data-img="teaser2" alt="" loading="lazy" aria-hidden="true">
+            </div>
+            <div class="teaser" data-r style="--d:6">
+              <img src="" data-img="teaser3" alt="" loading="lazy" aria-hidden="true">
+            </div>
+            <div class="teaser" data-r style="--d:7">
+              <img src="" data-img="teaser4" alt="" loading="lazy" aria-hidden="true">
+            </div>
           </div>
         </div>
         <div class="works__foot" data-r>
@@ -2028,6 +2051,21 @@
       btn.addEventListener('mouseenter', () => teasers.classList.add('is-revealed'));
       btn.addEventListener('mouseleave', () => teasers.classList.remove('is-revealed'));
     })();
+
+    /* ── WORKS TEASERS: mobile infinite loop ──
+       doubles the 4 cards to 8 so translateX(-50%) in the CSS animation
+       lands exactly one full set later, making the loop seamless. Runs on
+       window 'load' (not DOMContentLoaded) so the img[data-img] loader
+       above has already populated the src on the originals before they're
+       cloned — desktop never runs this at all, .works__teasers-track stays
+       display:contents there and this would just bloat the grid. */
+    window.addEventListener('load', () => {
+      if (!window.matchMedia('(max-width: 660px)').matches) return;
+      const track = document.getElementById('worksTeasersTrack');
+      if (!track || track.dataset.cloned) return;
+      Array.from(track.children).forEach(card => track.appendChild(card.cloneNode(true)));
+      track.dataset.cloned = 'true';
+    });
 
     /* ── READY ── */
     window.addEventListener('load', () => document.body.classList.add('ready'));
