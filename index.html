@@ -564,6 +564,12 @@
       transition: filter .6s var(--ease);
     }
     .works__teasers.is-revealed .teaser img { filter: grayscale(0); }
+    .teaser::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(to top,
+        rgba(var(--bg-rgb),1) 0%, rgba(var(--bg-rgb),0) 100%);
+    }
 
     .works__foot {
       margin-top: 6px;
