@@ -540,6 +540,45 @@
     .wcard:hover img { transform: scale(1.065); }
     .wcard:hover .wcard__over { background: rgba(8,8,8,.4); }
     .wcard:hover .wcard__tag { color: rgba(255,255,255,.85); }
+    /* ══ WORKS TEASERS ══
+       4 additional horizontal "coming soon"-style cards — grayscale + a
+       heavy dark gradient so they read as sitting in shadow, deliberately
+       less finished-looking than the 3 real case studies above. No magnetic
+       tilt on these on purpose — they never get added to the .wcard/.about__img
+       selector lists the JS uses for that effect. */
+    .works__teasers {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: clamp(10px, 1.4vw, 18px);
+      margin-top: clamp(10px, 1.4vw, 18px);
+    }
+    .teaser {
+      position: relative; overflow: hidden;
+      aspect-ratio: 16/10;
+      background: var(--surface);
+    }
+    .teaser img {
+      width: 100%; height: 100%; object-fit: cover;
+      filter: grayscale(1) brightness(.5);
+    }
+    .teaser::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(to top,
+        rgba(0,0,0,.8) 0%, rgba(0,0,0,.45) 55%, rgba(0,0,0,.2) 100%);
+    }
+    .teaser__scroll {
+      position: absolute; right: -14px; bottom: -14px; z-index: 2;
+      width: 30%; height: auto; max-width: 84px;
+      opacity: .3;
+      transform: rotate(-18deg);
+      pointer-events: none;
+    }
+    .teaser__mark {
+      position: absolute; top: 14px; left: 14px; z-index: 2;
+      font-size: 11px; font-weight: 600; letter-spacing: .06em;
+      color: rgba(255,255,255,.65);
+    }
+
     .works__foot { margin-top: clamp(32px, 4.5vw, 60px); text-align: center; }
     .btn-border {
       display: inline-block; font-size: 11px; font-weight: 500;
@@ -1122,6 +1161,7 @@
       .hdr__right { display: none; }
       .burg { display: flex; }
       .works__grid { grid-template-columns: 1fr; gap: 20px; }
+      .works__teasers { grid-template-columns: 1fr; gap: 14px; }
       /* on mobile: icon + title on row 1, desc spans full width on row 2 */
       .step {
         grid-template-columns: 22px 1fr;
@@ -1189,6 +1229,10 @@
       jemcards1b: 'images/jemcards1b.jpg',
       jemCover: 'images/jemCover.jpg',
       hubCover: 'images/hubCover.jpg',
+      teaser1: 'images/teaser1.jpg',
+      teaser2: 'images/teaser2.jpg',
+      teaser3: 'images/teaser3.jpg',
+      teaser4: 'images/teaser4.jpg',
       collagenCover: 'images/collagenCover.jpg',
       jemHero: 'images/jemHero.jpg',
       hubHero: 'images/hubHero.jpg',
@@ -1413,6 +1457,28 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </div>
           </div>
+        </div>
+      </div>
+      <div class="works__teasers">
+        <div class="teaser" data-r style="--d:4">
+          <img src="" data-img="teaser1" alt="" loading="lazy" aria-hidden="true">
+          <svg class="teaser__scroll" viewBox="0 0 80 80" fill="none" aria-hidden="true"><path d="M12 58c0-14 10-24 24-24h20a10 10 0 0 1 0 20H36" stroke="#fff" stroke-width="2" stroke-linecap="round"/><circle cx="56" cy="54" r="10" stroke="#fff" stroke-width="2"/></svg>
+          <div class="teaser__mark">🔥</div>
+        </div>
+        <div class="teaser" data-r style="--d:5">
+          <img src="" data-img="teaser2" alt="" loading="lazy" aria-hidden="true">
+          <svg class="teaser__scroll" viewBox="0 0 80 80" fill="none" aria-hidden="true"><path d="M12 58c0-14 10-24 24-24h20a10 10 0 0 1 0 20H36" stroke="#fff" stroke-width="2" stroke-linecap="round"/><circle cx="56" cy="54" r="10" stroke="#fff" stroke-width="2"/></svg>
+          <div class="teaser__mark">FONT</div>
+        </div>
+        <div class="teaser" data-r style="--d:6">
+          <img src="" data-img="teaser3" alt="" loading="lazy" aria-hidden="true">
+          <svg class="teaser__scroll" viewBox="0 0 80 80" fill="none" aria-hidden="true"><path d="M12 58c0-14 10-24 24-24h20a10 10 0 0 1 0 20H36" stroke="#fff" stroke-width="2" stroke-linecap="round"/><circle cx="56" cy="54" r="10" stroke="#fff" stroke-width="2"/></svg>
+          <div class="teaser__mark">Mardari.co</div>
+        </div>
+        <div class="teaser" data-r style="--d:7">
+          <img src="" data-img="teaser4" alt="" loading="lazy" aria-hidden="true">
+          <svg class="teaser__scroll" viewBox="0 0 80 80" fill="none" aria-hidden="true"><path d="M12 58c0-14 10-24 24-24h20a10 10 0 0 1 0 20H36" stroke="#fff" stroke-width="2" stroke-linecap="round"/><circle cx="56" cy="54" r="10" stroke="#fff" stroke-width="2"/></svg>
+          <div class="teaser__mark">M</div>
         </div>
       </div>
       <div class="works__foot" data-r>
