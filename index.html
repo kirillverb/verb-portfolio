@@ -553,10 +553,6 @@
       gap: clamp(10px, 1.4vw, 18px);
       margin-top: clamp(10px, 1.4vw, 18px);
     }
-    /* on desktop this wrapper is invisible to layout — its 4 .teaser
-       children become direct grid items of .works__teasers, same as before
-       the wrapper existed. On mobile it becomes the real animated strip. */
-    .works__teasers-track { display: contents; }
     .teaser {
       position: relative; overflow: hidden;
       aspect-ratio: 16/10;
@@ -1478,20 +1474,18 @@
         </div>
       </div>
       <div class="works__teasers-wrap">
-        <div class="works__teasers">
-          <div class="works__teasers-track" id="worksTeasersTrack">
-            <div class="teaser" data-r style="--d:4">
-              <img src="" data-img="teaser1" alt="" loading="lazy" aria-hidden="true">
-            </div>
-            <div class="teaser" data-r style="--d:5">
-              <img src="" data-img="teaser2" alt="" loading="lazy" aria-hidden="true">
-            </div>
-            <div class="teaser" data-r style="--d:6">
-              <img src="" data-img="teaser3" alt="" loading="lazy" aria-hidden="true">
-            </div>
-            <div class="teaser" data-r style="--d:7">
-              <img src="" data-img="teaser4" alt="" loading="lazy" aria-hidden="true">
-            </div>
+        <div class="works__teasers" id="worksTeasers">
+          <div class="teaser" data-r style="--d:4">
+            <img src="" data-img="teaser1" alt="" loading="lazy" aria-hidden="true">
+          </div>
+          <div class="teaser" data-r style="--d:5">
+            <img src="" data-img="teaser2" alt="" loading="lazy" aria-hidden="true">
+          </div>
+          <div class="teaser" data-r style="--d:6">
+            <img src="" data-img="teaser3" alt="" loading="lazy" aria-hidden="true">
+          </div>
+          <div class="teaser" data-r style="--d:7">
+            <img src="" data-img="teaser4" alt="" loading="lazy" aria-hidden="true">
           </div>
         </div>
         <div class="works__foot" data-r>
@@ -2053,17 +2047,25 @@
     })();
 
     /* ── WORKS TEASERS: mobile infinite loop ──
-       doubles the 4 cards to 8 so translateX(-50%) in the CSS animation
-       lands exactly one full set later, making the loop seamless. Runs on
-       window 'load' (not DOMContentLoaded) so the img[data-img] loader
-       above has already populated the src on the originals before they're
-       cloned — desktop never runs this at all, .works__teasers-track stays
-       display:contents there and this would just bloat the grid. */
+       Desktop keeps the plain original markup (4 .teaser as direct children
+       of .works__teasers) untouched — no wrapper div, no display:contents,
+       on purpose. display:contents has a real history of Safari-specific
+       bugs (animations/layout on its children misbehaving in ways Chrome
+       never shows), so instead of leaning on it to make one shared wrapper
+       behave differently per breakpoint, the wrapper is only ever created
+       here, at runtime, and only for mobile — desktop's DOM never contains
+       it at all. Runs on window 'load' (not DOMContentLoaded) so the
+       img[data-img] loader above has already populated the src on the
+       originals before they're moved/cloned. */
     window.addEventListener('load', () => {
       if (!window.matchMedia('(max-width: 660px)').matches) return;
-      const track = document.getElementById('worksTeasersTrack');
-      if (!track || track.dataset.cloned) return;
-      Array.from(track.children).forEach(card => {
+      const teasers = document.getElementById('worksTeasers');
+      if (!teasers || teasers.dataset.looped) return;
+      const originals = Array.from(teasers.children);
+      const track = document.createElement('div');
+      track.className = 'works__teasers-track';
+      originals.forEach(card => track.appendChild(card)); /* moves, not clones */
+      originals.forEach(card => {
         const clone = card.cloneNode(true);
         /* the scroll-reveal IntersectionObserver already ran over the page
            before these clones existed, so it will never see them and add
@@ -2074,7 +2076,8 @@
         clone.removeAttribute('style');
         track.appendChild(clone);
       });
-      track.dataset.cloned = 'true';
+      teasers.appendChild(track);
+      teasers.dataset.looped = 'true';
     });
 
     /* ── READY ── */
