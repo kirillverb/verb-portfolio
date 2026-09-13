@@ -1833,10 +1833,11 @@
       ripple._hideTimer = setTimeout(() => { ripple.style.display = 'none'; }, 1100);
     }
 
-    function applyTheme(theme) {
+    function applyTheme(theme, persist) {
+      if (persist === undefined) persist = true;
       if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
       else document.documentElement.removeAttribute('data-theme');
-      try { localStorage.setItem('theme', theme); } catch (e) {}
+      if (persist) { try { localStorage.setItem('theme', theme); } catch (e) {} }
       document.querySelectorAll('.theme-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.themeChoice === theme);
       });
@@ -1863,7 +1864,21 @@
         applyTheme(theme);
       }
     });
-    applyTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark');
+    /* sync the button states to whatever the FOUC script in <head> already
+       decided (explicit saved choice, or an OS-followed guess on mobile) —
+       persist:false so an OS-followed guess never gets locked in as if the
+       person had clicked a button themselves. */
+    applyTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark', false);
+
+    /* mobile-only: keep following the OS live if the person flips their
+       phone's system theme while the tab stays open, but only for as long
+       as they haven't made an explicit choice here — the moment they tap
+       either button, the click handler above takes over for good. */
+    if (!localStorage.getItem('theme') && !window.matchMedia('(hover: hover)').matches) {
+      window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
+        if (!localStorage.getItem('theme')) applyTheme(e.matches ? 'light' : 'dark', false);
+      });
+    }
 
     /* ── MOBILE HINT — nudges toward language/theme switches that moved
        into the fullscreen menu on mobile. Cross-fades between two short
