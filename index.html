@@ -487,29 +487,6 @@
     }
     .wcard { position: relative; overflow: hidden; aspect-ratio: 3/4; background: var(--surface); will-change: transform; transition: opacity .8s var(--ease); transition-delay: calc(var(--d,0) * 140ms); }
 
-    /* ══ GLASS SHEEN ══
-       A soft radial highlight across the whole surface of every magnetically-
-       tilted media block, positioned by --sheen-x/--sheen-y (updated every
-       frame by initMagnetic3D/initGyroMagnetic3D from the current tilt) — as
-       the card tilts, the hotspot slides across the photo like light
-       glancing off glass. mix-blend-mode: overlay so it reads as a reflection
-       riding on top of the actual photo rather than a flat white patch. */
-    .wcard::after,
-    .about__img::after,
-    .cta::after,
-    .wp-item__img::after {
-      content: '';
-      position: absolute; inset: 0;
-      z-index: 3;
-      pointer-events: none;
-      mix-blend-mode: overlay;
-      background: radial-gradient(
-        circle at var(--sheen-x, 50%) var(--sheen-y, 50%),
-        rgba(255,255,255,.55) 0%,
-        rgba(255,255,255,.16) 28%,
-        rgba(255,255,255,0) 60%
-      );
-    }
     /* .wcard/.about__img now own their transition (see above) instead of inheriting
        it from [data-r], so the reduced-motion kill-switch needs restating here too —
        otherwise it'd lose the cascade to these later, equal-specificity rules. */
@@ -1982,11 +1959,6 @@
         cy += (ty - cy) * LERP;
         el.style.transform =
           `perspective(${PERSPECTIVE}px) rotateX(${-cy * TILT}deg) rotateY(${cx * TILT}deg) translate3d(${cx * MOVE}px, ${cy * MOVE}px, 0)`;
-        /* surface sheen (see .wcard::after etc.) reads its hotspot position
-           off these — slides across the whole photo with the tilt, like
-           light glancing off glass rather than a fixed reflection */
-        el.style.setProperty('--sheen-x', ((cx + .5) * 100).toFixed(1) + '%');
-        el.style.setProperty('--sheen-y', ((cy + .5) * 100).toFixed(1) + '%');
         if (active || Math.abs(tx - cx) > .0008 || Math.abs(ty - cy) > .0008) {
           raf = requestAnimationFrame(frame);
         } else { raf = null; }
@@ -2010,12 +1982,12 @@
       if (!window.matchMedia('(hover:hover)').matches) return;
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       document.querySelectorAll('.wcard').forEach(card =>
-        initMagnetic3D(card, { tilt: 14, move: 34, perspective: 900, lerp: .1 })
+        initMagnetic3D(card, { tilt: 16, move: 34, perspective: 900, lerp: .1 })
       );
       const aboutImg = document.querySelector('.about__img');
-      if (aboutImg) initMagnetic3D(aboutImg, { tilt: 11, move: 28, perspective: 1000, lerp: .1 });
+      if (aboutImg) initMagnetic3D(aboutImg, { tilt: 13, move: 28, perspective: 1000, lerp: .1 });
       const ctaEl = document.querySelector('.cta');
-      if (ctaEl) initMagnetic3D(ctaEl, { tilt: 9, move: 22, perspective: 1400, lerp: .1 });
+      if (ctaEl) initMagnetic3D(ctaEl, { tilt: 11, move: 22, perspective: 1400, lerp: .1 });
     })();
 
     /* ── MAGNETIC 3D BLOCKS — MOBILE / GYROSCOPE ──
@@ -2036,8 +2008,6 @@
         cy += (ty - cy) * LERP;
         el.style.transform =
           `perspective(${PERSPECTIVE}px) rotateX(${-cy * TILT}deg) rotateY(${cx * TILT}deg) translate3d(${cx * MOVE}px, ${cy * MOVE}px, 0)`;
-        el.style.setProperty('--sheen-x', ((cx + .5) * 100).toFixed(1) + '%');
-        el.style.setProperty('--sheen-y', ((cy + .5) * 100).toFixed(1) + '%');
         requestAnimationFrame(frame);
       })();
       return { setTarget(nx, ny) { tx = nx; ty = ny; } };
@@ -2075,11 +2045,11 @@
         if (started) return;
         started = true;
         window.addEventListener('deviceorientation', handleOrientation);
-        document.querySelectorAll('.wcard').forEach(card => register(card, { tilt: 13, move: 30, perspective: 1400, lerp: .12 }));
+        document.querySelectorAll('.wcard').forEach(card => register(card, { tilt: 15, move: 30, perspective: 1400, lerp: .12 }));
         const aboutImg = document.querySelector('.about__img');
-        if (aboutImg) register(aboutImg, { tilt: 11, move: 22, perspective: 1500, lerp: .12 });
+        if (aboutImg) register(aboutImg, { tilt: 13, move: 22, perspective: 1500, lerp: .12 });
         const ctaEl = document.querySelector('.cta');
-        if (ctaEl) register(ctaEl, { tilt: 9, move: 18, perspective: 1900, lerp: .12 });
+        if (ctaEl) register(ctaEl, { tilt: 11, move: 18, perspective: 1900, lerp: .12 });
       }
 
       if (typeof DeviceOrientationEvent.requestPermission === 'function') {
@@ -2438,14 +2408,14 @@
           document.querySelectorAll('.wp-item__img').forEach(img => {
             if (img._magnetInit) return;
             img._magnetInit = true;
-            initMagnetic3D(img, { tilt: 10, move: 24, perspective: 900, lerp: .11 });
+            initMagnetic3D(img, { tilt: 12, move: 24, perspective: 900, lerp: .11 });
           });
         }
         if (window._registerGyroMagnetic) {
           document.querySelectorAll('.wp-item__img').forEach(img => {
             if (img._gyroInit) return;
             img._gyroInit = true;
-            window._registerGyroMagnetic(img, { tilt: 9, move: 18, perspective: 1400, lerp: .12 });
+            window._registerGyroMagnetic(img, { tilt: 11, move: 18, perspective: 1400, lerp: .12 });
           });
         }
 
