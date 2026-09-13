@@ -1024,7 +1024,7 @@
     .steps {}
     .step {
       display: grid;
-      grid-template-columns: 24px 1fr 1fr;
+      grid-template-columns: 1fr 1fr;
       gap: 20px 22px;
       padding: 26px 0;
       border-top: 1px solid var(--bdr);
@@ -1039,18 +1039,6 @@
     /* hovering one step dims all the others for visual contrast —
        untouched (no hover anywhere) leaves everything at full brightness */
     .steps:hover .step:not(:hover) { opacity: .4; }
-
-    /* col 1: icon */
-    .step__icon {
-      width: 22px; height: 22px;
-      margin-top: 4px; /* optical align with cap-height of title */
-      margin-right: -22px; /* tightened to the physical limit — any further and the icon would overlap the title text */
-      color: var(--dim);
-      flex-shrink: 0;
-      transition: color .4s var(--ease);
-    }
-    .step__icon svg { width: 100%; height: 100%; display: block; stroke-width: 1.4; }
-    .step:hover .step__icon { color: var(--gold); }
 
     /* col 2: number + title stacked */
     .step__head {
@@ -1136,7 +1124,6 @@
       .about__img { max-width: 420px; }
       .about__sig { font-size: 22px; }
       .process__grid { grid-template-columns: 1fr; gap: 56px; }
-      .step { grid-template-columns: 24px 1fr 1fr; }
     }
     /* phones in landscape: width alone (852px on iPhone 14 Pro, etc.) clears
        the 660px breakpoint below, so without this the header would switch to
@@ -1176,22 +1163,12 @@
       .teaser {
         flex: 0 0 calc((100vw - 2 * var(--px)) * 2 / 3);
       }
-      /* on mobile: icon + title on row 1, desc spans full width on row 2 */
+      /* on mobile: title then description stacked, full width */
       .step {
-        grid-template-columns: 22px 1fr;
+        grid-template-columns: 1fr;
         grid-template-rows: auto auto;
-        gap: 8px 14px;
+        gap: 8px;
       }
-      /* icon's negative margin was calibrated for desktop's 22px column-gap —
-         mobile's gap is only 14px, so reset it to avoid overlapping the title */
-      /* mobile: no hover state exists on touch devices, so icons must show
-         their "active" gold color by default instead of staying dim forever */
-      .step__icon {
-        margin-right: 0;
-        margin-top: -3px; /* correct the downward offset vs title's cap-height on mobile */
-        color: var(--gold);
-      }
-      .step__desc { grid-column: 1 / -1; padding-top: 4px; }
       .foot { flex-direction: column; align-items: flex-start; }
       .foot a { font-size: 22px; }
 
@@ -1431,7 +1408,7 @@
   <!-- ─── WORKS ─── -->
   <section class="works" id="works">
     <div class="wrap">
-      <h2 class="works__h" data-r data-i18n="works.h">My Latest Works</h2>
+      <h2 class="works__h" data-r data-i18n="works.h">Featured Works</h2>
       <div class="works__grid">
         <div class="wcard" data-r style="--d:1" data-work="jem" role="button" tabindex="0" aria-label="Open JEM Camp project">
           <img src="" data-img="jemCover" alt="JEM Camp — Apparel Branding" loading="lazy"
@@ -1507,9 +1484,6 @@
         </div>
         <div class="steps">
           <div class="step" data-r style="--d:1">
-            <div class="step__icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
-            </div>
             <div class="step__head">
               <div class="step__title-row">
                 <span class="step__n">01.</span>
@@ -1519,9 +1493,6 @@
             <p class="step__desc" data-i18n="step1.desc">Defining the project goals, business objectives and expectations that the design should address.</p>
           </div>
           <div class="step" data-r style="--d:2">
-            <div class="step__icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="20" y1="20" x2="15.8" y2="15.8"/></svg>
-            </div>
             <div class="step__head">
               <div class="step__title-row">
                 <span class="step__n">02.</span>
@@ -1531,9 +1502,6 @@
             <p class="step__desc" data-i18n="step2.desc">Study the product, audience, and context of use to identify problems and opportunities.</p>
           </div>
           <div class="step" data-r style="--d:3">
-            <div class="step__icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0018 8 6 6 0 006 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 018.91 14"/></svg>
-            </div>
             <div class="step__head">
               <div class="step__title-row">
                 <span class="step__n">03.</span>
@@ -1543,9 +1511,6 @@
             <p class="step__desc" data-i18n="step3.desc">Formation of an idea and a general direction that determines the logic and nature of the future solution.</p>
           </div>
           <div class="step" data-r style="--d:4">
-            <div class="step__icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-            </div>
             <div class="step__head">
               <div class="step__title-row">
                 <span class="step__n">04.</span>
@@ -1555,9 +1520,6 @@
             <p class="step__desc" data-i18n="step4.desc">Creating a structure, interface, and visual language that provides a clear and consistent user experience.</p>
           </div>
           <div class="step" data-r style="--d:5">
-            <div class="step__icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-            </div>
             <div class="step__head">
               <div class="step__title-row">
                 <span class="step__n">05.</span>
@@ -1804,7 +1766,7 @@
         'hero.scroll':  'Scroll',
         'about.h':      'About me',
         'about.text':   'I\'m a digital designer who creates clear and expressive visual solutions through simple forms. Drawing on research and user insight, I help make digital products clearer, more user-friendly, and visually cohesive.',
-        'works.h':      'My Latest Works',
+        'works.h':      'Featured Works',
         'wcard1.tag':   'Identity & Merch',
         'wcard2.tag':   'Digital Product',
         'wcard3.tag':   'Marketing & Ads',
@@ -1831,7 +1793,7 @@
         'hero.scroll':  'Скролл',
         'about.h':      'О себе',
         'about.text':   'Я цифровой дизайнер, создающий чёткие и выразительные визуальные решения через простые формы. Опираясь на исследования и понимание пользователей, я помогаю делать цифровые продукты яснее, удобнее и визуально целостнее.',
-        'works.h':      'Последние работы',
+        'works.h':      'Избранные кейсы',
         'wcard1.tag':   'Айдентика и мерч',
         'wcard2.tag':   'Цифровой продукт',
         'wcard3.tag':   'Маркетинг и реклама',
