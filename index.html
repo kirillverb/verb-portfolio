@@ -50,6 +50,7 @@
     /* ══ TOKENS ══ */
     :root {
       --bg:      #080808;
+      --bg-rgb:  8,8,8;
       --surface: #111111;
       --text:    #F4F3F0;
       --text-serif: #F7F5E0;
@@ -85,6 +86,7 @@
        surrounding page did. */
     :root[data-theme="light"] {
       --bg:      #F5F1E8;
+      --bg-rgb:  245,241,232;
       --surface: #EAE4D6;
       --text:    #17140F;
       --text-serif: #1B1710;
@@ -564,13 +566,11 @@
       content: '';
       position: absolute; inset: 0;
       background: linear-gradient(to top,
-        rgba(0,0,0,1) 0%, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%);
+        rgba(var(--bg-rgb),1) 0%, rgba(var(--bg-rgb),1) 50%, rgba(var(--bg-rgb),0) 100%);
     }
 
-    .works__teasers-wrap { position: relative; }
     .works__foot {
-      position: absolute; left: 50%; top: 75%;
-      transform: translate(-50%, -50%);
+      margin-top: clamp(32px, 4.5vw, 60px);
       text-align: center;
     }
     .btn-border {
@@ -1155,10 +1155,6 @@
       .burg { display: flex; }
       .works__grid { grid-template-columns: 1fr; gap: 20px; }
       .works__teasers { grid-template-columns: 1fr; gap: 14px; }
-      .works__foot {
-        position: static; transform: none;
-        margin-top: clamp(24px, 4vw, 40px);
-      }
       /* on mobile: icon + title on row 1, desc spans full width on row 2 */
       .step {
         grid-template-columns: 22px 1fr;
