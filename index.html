@@ -560,27 +560,6 @@
     }
     .teaser img {
       width: 100%; height: 100%; object-fit: cover; object-position: top;
-      filter: grayscale(1) contrast(.35);
-      transition: filter .6s var(--ease);
-    }
-    /* toggled by JS while hovering "See more works" — drops just the
-       black-and-white treatment; the darkening layers below are untouched */
-    .works__teasers.is-revealed .teaser img { filter: grayscale(0) contrast(.35); }
-    /* flat, uniform darkening — a solid layer at fixed opacity behaves the
-       same on every pixel regardless of how bright that pixel originally
-       was, unlike filter: brightness() which just scales the existing value
-       (so a genuine highlight in the source photo stays relatively bright
-       no matter how far brightness() is pushed down). */
-    .teaser::before {
-      content: '';
-      position: absolute; inset: 0; z-index: 1;
-      background: rgba(var(--bg-rgb), .45);
-    }
-    .teaser::after {
-      content: '';
-      position: absolute; inset: 0; z-index: 2;
-      background: linear-gradient(to top,
-        rgba(var(--bg-rgb),1) 0%, rgba(var(--bg-rgb),1) 38%, rgba(var(--bg-rgb),0) 100%);
     }
 
     .works__foot {
@@ -2028,15 +2007,6 @@
       /* hard safety net: even if every listener above somehow fails to
          fire, never let the hint linger indefinitely */
       setTimeout(dismiss, 20000);
-    })();
-
-    /* ── WORKS TEASERS: color reveal on "See more works" hover ── */
-    (function () {
-      const btn = document.querySelector('.works__foot .btn-border');
-      const teasers = document.querySelector('.works__teasers');
-      if (!btn || !teasers) return;
-      btn.addEventListener('mouseenter', () => teasers.classList.add('is-revealed'));
-      btn.addEventListener('mouseleave', () => teasers.classList.remove('is-revealed'));
     })();
 
     /* ── READY ── */
