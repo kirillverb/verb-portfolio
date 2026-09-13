@@ -557,29 +557,22 @@
       background: var(--surface);
     }
     .teaser img {
-      width: 100%; height: 100%; object-fit: cover;
+      width: 100%; height: 100%; object-fit: cover; object-position: top;
       filter: grayscale(1) brightness(.5);
     }
     .teaser::after {
       content: '';
       position: absolute; inset: 0;
       background: linear-gradient(to top,
-        rgba(0,0,0,.8) 0%, rgba(0,0,0,.45) 55%, rgba(0,0,0,.2) 100%);
-    }
-    .teaser__scroll {
-      position: absolute; right: -14px; bottom: -14px; z-index: 2;
-      width: 30%; height: auto; max-width: 84px;
-      opacity: .3;
-      transform: rotate(-18deg);
-      pointer-events: none;
-    }
-    .teaser__mark {
-      position: absolute; top: 14px; left: 14px; z-index: 2;
-      font-size: 11px; font-weight: 600; letter-spacing: .06em;
-      color: rgba(255,255,255,.65);
+        rgba(0,0,0,1) 0%, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%);
     }
 
-    .works__foot { margin-top: clamp(32px, 4.5vw, 60px); text-align: center; }
+    .works__teasers-wrap { position: relative; }
+    .works__foot {
+      position: absolute; left: 50%; top: 75%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
     .btn-border {
       display: inline-block; font-size: 11px; font-weight: 500;
       letter-spacing: .14em; text-transform: uppercase;
@@ -1162,6 +1155,10 @@
       .burg { display: flex; }
       .works__grid { grid-template-columns: 1fr; gap: 20px; }
       .works__teasers { grid-template-columns: 1fr; gap: 14px; }
+      .works__foot {
+        position: static; transform: none;
+        margin-top: clamp(24px, 4vw, 40px);
+      }
       /* on mobile: icon + title on row 1, desc spans full width on row 2 */
       .step {
         grid-template-columns: 22px 1fr;
@@ -1459,30 +1456,24 @@
           </div>
         </div>
       </div>
-      <div class="works__teasers">
-        <div class="teaser" data-r style="--d:4">
-          <img src="" data-img="teaser1" alt="" loading="lazy" aria-hidden="true">
-          <svg class="teaser__scroll" viewBox="0 0 80 80" fill="none" aria-hidden="true"><path d="M12 58c0-14 10-24 24-24h20a10 10 0 0 1 0 20H36" stroke="#fff" stroke-width="2" stroke-linecap="round"/><circle cx="56" cy="54" r="10" stroke="#fff" stroke-width="2"/></svg>
-          <div class="teaser__mark">🔥</div>
+      <div class="works__teasers-wrap">
+        <div class="works__teasers">
+          <div class="teaser" data-r style="--d:4">
+            <img src="" data-img="teaser1" alt="" loading="lazy" aria-hidden="true">
+          </div>
+          <div class="teaser" data-r style="--d:5">
+            <img src="" data-img="teaser2" alt="" loading="lazy" aria-hidden="true">
+          </div>
+          <div class="teaser" data-r style="--d:6">
+            <img src="" data-img="teaser3" alt="" loading="lazy" aria-hidden="true">
+          </div>
+          <div class="teaser" data-r style="--d:7">
+            <img src="" data-img="teaser4" alt="" loading="lazy" aria-hidden="true">
+          </div>
         </div>
-        <div class="teaser" data-r style="--d:5">
-          <img src="" data-img="teaser2" alt="" loading="lazy" aria-hidden="true">
-          <svg class="teaser__scroll" viewBox="0 0 80 80" fill="none" aria-hidden="true"><path d="M12 58c0-14 10-24 24-24h20a10 10 0 0 1 0 20H36" stroke="#fff" stroke-width="2" stroke-linecap="round"/><circle cx="56" cy="54" r="10" stroke="#fff" stroke-width="2"/></svg>
-          <div class="teaser__mark">FONT</div>
+        <div class="works__foot" data-r>
+          <a href="https://dribbble.com/KiryaVerb?work_availability_modal=true" target="_blank" rel="noopener" class="btn-border" data-i18n="works.more">See more works</a>
         </div>
-        <div class="teaser" data-r style="--d:6">
-          <img src="" data-img="teaser3" alt="" loading="lazy" aria-hidden="true">
-          <svg class="teaser__scroll" viewBox="0 0 80 80" fill="none" aria-hidden="true"><path d="M12 58c0-14 10-24 24-24h20a10 10 0 0 1 0 20H36" stroke="#fff" stroke-width="2" stroke-linecap="round"/><circle cx="56" cy="54" r="10" stroke="#fff" stroke-width="2"/></svg>
-          <div class="teaser__mark">Mardari.co</div>
-        </div>
-        <div class="teaser" data-r style="--d:7">
-          <img src="" data-img="teaser4" alt="" loading="lazy" aria-hidden="true">
-          <svg class="teaser__scroll" viewBox="0 0 80 80" fill="none" aria-hidden="true"><path d="M12 58c0-14 10-24 24-24h20a10 10 0 0 1 0 20H36" stroke="#fff" stroke-width="2" stroke-linecap="round"/><circle cx="56" cy="54" r="10" stroke="#fff" stroke-width="2"/></svg>
-          <div class="teaser__mark">M</div>
-        </div>
-      </div>
-      <div class="works__foot" data-r>
-        <a href="https://dribbble.com/KiryaVerb?work_availability_modal=true" target="_blank" rel="noopener" class="btn-border" data-i18n="works.more">See more works</a>
       </div>
     </div>
   </section>
