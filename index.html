@@ -3,10 +3,23 @@
 <head>
   <script>
     /* must run before CSS is applied, or a light-theme visitor briefly sees
-       dark on load. Default is dark — data-theme is only ever set to "light". */
+       dark on load. Default is dark — data-theme is only ever set to "light".
+       Mobile-only exception: with no saved choice yet, a touch device (no
+       hover — the same signal used everywhere else in this file to mean
+       "phone/tablet") follows the OS's own light/dark setting instead of
+       defaulting to dark. Desktop never does this — it always starts dark
+       regardless of the OS preference, by design. This only runs once, at
+       first paint; it doesn't persist to localStorage, so it re-checks the
+       live OS setting every visit until the person picks a theme themselves,
+       at which point that explicit choice always wins here. */
     (function () {
       try {
-        if (localStorage.getItem('theme') === 'light') {
+        const saved = localStorage.getItem('theme');
+        if (saved === 'light') {
+          document.documentElement.setAttribute('data-theme', 'light');
+        } else if (!saved &&
+                   !window.matchMedia('(hover: hover)').matches &&
+                   window.matchMedia('(prefers-color-scheme: light)').matches) {
           document.documentElement.setAttribute('data-theme', 'light');
         }
       } catch (e) {}
