@@ -2063,7 +2063,17 @@
       if (!window.matchMedia('(max-width: 660px)').matches) return;
       const track = document.getElementById('worksTeasersTrack');
       if (!track || track.dataset.cloned) return;
-      Array.from(track.children).forEach(card => track.appendChild(card.cloneNode(true)));
+      Array.from(track.children).forEach(card => {
+        const clone = card.cloneNode(true);
+        /* the scroll-reveal IntersectionObserver already ran over the page
+           before these clones existed, so it will never see them and add
+           the .on class they need — without this they'd stay permanently
+           at [data-r]'s default opacity:0, and once the marquee scrolled
+           them into view it would look like the cards were vanishing. */
+        clone.removeAttribute('data-r');
+        clone.removeAttribute('style');
+        track.appendChild(clone);
+      });
       track.dataset.cloned = 'true';
     });
 
