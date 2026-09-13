@@ -1117,7 +1117,11 @@
       /* verified via actual headless-browser rendering at real mobile viewport —
          75% is the empirically confirmed sweet spot, not a calculation */
       .cta__bg img { object-position: 75% center; }
-      .cta { justify-content: center; text-align: center; align-items: flex-end; }
+      .cta {
+        justify-content: center; text-align: center; align-items: flex-end;
+        min-height: 0; aspect-ratio: 16/10;
+        padding: 28px 24px;
+      }
     }
   </style>
   <script id="img-data">
