@@ -4,22 +4,28 @@
   <script>
     /* must run before CSS is applied, or a light-theme visitor briefly sees
        dark on load. Default is dark — data-theme is only ever set to "light".
-       Mobile-only exception: with no saved choice yet, a touch device (no
-       hover — the same signal used everywhere else in this file to mean
-       "phone/tablet") follows the OS's own light/dark setting instead of
-       defaulting to dark. Desktop never does this — it always starts dark
-       regardless of the OS preference, by design. This only runs once, at
-       first paint; it doesn't persist to localStorage, so it re-checks the
-       live OS setting every visit until the person picks a theme themselves,
-       at which point that explicit choice always wins here. */
+       Two entirely different rules depending on device (checked once, via
+       the same hover:hover signal used everywhere else in this file to mean
+       "phone/tablet" vs "desktop"):
+       - Desktop: a saved choice in localStorage always wins; otherwise dark,
+         no matter what. No OS detection here at all, by design.
+       - Mobile: a saved choice in sessionStorage always wins; otherwise it
+         follows the OS's own light/dark setting. sessionStorage is cleared
+         by the browser when the tab closes, so a fresh tab always re-checks
+         the live OS setting again from scratch — an explicit tap on either
+         theme button only holds for that one tab's lifetime, same as the
+         chosen mechanism implies. */
     (function () {
       try {
-        const saved = localStorage.getItem('theme');
-        if (saved === 'light') {
-          document.documentElement.setAttribute('data-theme', 'light');
-        } else if (!saved &&
-                   !window.matchMedia('(hover: hover)').matches &&
-                   window.matchMedia('(prefers-color-scheme: light)').matches) {
+        const isMobile = !window.matchMedia('(hover: hover)').matches;
+        if (isMobile) {
+          const saved = sessionStorage.getItem('theme');
+          if (saved === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+          } else if (!saved && window.matchMedia('(prefers-color-scheme: light)').matches) {
+            document.documentElement.setAttribute('data-theme', 'light');
+          }
+        } else if (localStorage.getItem('theme') === 'light') {
           document.documentElement.setAttribute('data-theme', 'light');
         }
       } catch (e) {}
@@ -1833,11 +1839,12 @@
       ripple._hideTimer = setTimeout(() => { ripple.style.display = 'none'; }, 1100);
     }
 
+    const THEME_STORE = window.matchMedia('(hover: hover)').matches ? localStorage : sessionStorage;
     function applyTheme(theme, persist) {
       if (persist === undefined) persist = true;
       if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light');
       else document.documentElement.removeAttribute('data-theme');
-      if (persist) { try { localStorage.setItem('theme', theme); } catch (e) {} }
+      if (persist) { try { THEME_STORE.setItem('theme', theme); } catch (e) {} }
       document.querySelectorAll('.theme-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.themeChoice === theme);
       });
@@ -1872,11 +1879,13 @@
 
     /* mobile-only: keep following the OS live if the person flips their
        phone's system theme while the tab stays open, but only for as long
-       as they haven't made an explicit choice here — the moment they tap
-       either button, the click handler above takes over for good. */
-    if (!localStorage.getItem('theme') && !window.matchMedia('(hover: hover)').matches) {
+       as they haven't made an explicit choice here (sessionStorage, cleared
+       when the tab closes) — the moment they tap either button, the click
+       handler above takes over for the rest of this tab's lifetime. Desktop
+       never runs this at all, matching the FOUC script's own device split. */
+    if (!window.matchMedia('(hover: hover)').matches && !sessionStorage.getItem('theme')) {
       window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', e => {
-        if (!localStorage.getItem('theme')) applyTheme(e.matches ? 'light' : 'dark', false);
+        if (!sessionStorage.getItem('theme')) applyTheme(e.matches ? 'light' : 'dark', false);
       });
     }
 
