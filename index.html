@@ -203,15 +203,29 @@
       to { clip-path: circle(var(--vt-r, 150%) at var(--vt-x, 50%) var(--vt-y, 50%)); }
     }
 
-    /* ══ REVEAL ══ */
-    [data-r] {
-      opacity: 0; transform: translateY(30px);
-      transition: opacity .8s var(--ease), transform .8s var(--ease);
-      transition-delay: calc(var(--d,0) * 140ms);
+    /* ══ REVEAL — pure CSS scroll-driven animation ══ */
+    @keyframes reveal-in {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: none; }
     }
-    [data-r].on { opacity: 1; transform: none; }
+    /* safety default: fully visible unless the animation below overrides it —
+       so ANY browser without support just shows content normally, never stuck invisible */
+    [data-r] { opacity: 1; }
+    @supports (animation-timeline: view()) {
+      [data-r] {
+        /* longhand properties, not the "animation" shorthand — the shorthand
+           silently resets animation-timeline back to "auto" in some engines,
+           a known gotcha with this specification */
+        animation-name: reveal-in;
+        animation-duration: 1ms; /* irrelevant once driven by a scroll timeline, but required */
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 40%;
+      }
+    }
     @media (prefers-reduced-motion: reduce) {
-      [data-r] { opacity: 1; transform: none; transition: none; }
+      [data-r] { opacity: 1 !important; animation: none !important; transform: none !important; }
     }
 
     /* ══ HEADER ══ */
@@ -1877,7 +1891,7 @@
           window.renderWork(currentHash);
           page.scrollTop = wpScroll;
           if (window.initSliders) window.initSliders();
-          if (window.initScrollReveal) window.initScrollReveal();
+          if (window.revealVisible) window.revealVisible();
         }
       } else {
         /* main page — restore scroll after micro-task */
@@ -2319,34 +2333,37 @@
       update(); /* set correct initial state on load */
     })();
 
-    /* ── SCROLL REVEAL ── */
-    /* exposed on window so renderWork() can call it again after building
-       work-page content — that markup doesn't exist yet when this first
-       runs, so its [data-r] elements would otherwise never get observed
-       and just sit at opacity:0 forever instead of fading in on scroll. */
-    window.initScrollReveal = (function () {
-      /* generous positive bottom margin on both breakpoints so elements
-         start revealing while still comfortably below the fold, not only
-         once they're basically already on screen — the desktop value used
-         to be a NEGATIVE margin (-44px), which shrinks the trigger zone and
-         made things appear later than a normal scroll would suggest. */
-      /* generous positive bottom margin — pushed from 30% to 50% of viewport
-         height so elements clearly start revealing well before the fold,
-         addressing feedback that reveal felt late on both the main page
-         (Process section) and inside work-page item blocks (same system) */
-      const io = new IntersectionObserver(entries => {
-        entries.forEach(e => {
-          if (e.isIntersecting) { e.target.classList.add('on'); io.unobserve(e.target); }
+    /* ── SCROLL REVEAL ──
+       Two independent systems, deliberately redundant:
+       1) Pure CSS (animation-timeline: view()) — see the REVEAL block near
+          the top of <style>. No JS involved for this one at all.
+       2) This plain scroll-listener backup below. No IntersectionObserver,
+          no fancy API — just the oldest, most basic technique possible:
+          check each element's position on every scroll tick, and if it's
+          within the viewport, force it visible via an inline style (which
+          wins over any CSS by specificity, regardless of what system 1 is
+          doing). If either system works, the content reveals correctly. */
+    (function () {
+      function revealVisible() {
+        document.querySelectorAll('[data-r]').forEach(el => {
+          const rect = el.getBoundingClientRect();
+          if (rect.top < window.innerHeight * 0.92 && rect.bottom > 0) {
+            el.style.opacity = '1';
+            el.style.transform = 'none';
+          }
         });
-      }, {
-        threshold: 0.01,
-        rootMargin: '0px 0px 50% 0px'
-      });
-      function scan() {
-        document.querySelectorAll('[data-r]:not(.on)').forEach(el => io.observe(el));
       }
-      scan();
-      return scan;
+      let ticking = false;
+      function onScroll() {
+        if (!ticking) {
+          requestAnimationFrame(() => { revealVisible(); ticking = false; });
+          ticking = true;
+        }
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll);
+      revealVisible(); /* run once immediately for whatever's already on screen */
+      window.revealVisible = revealVisible; /* exposed so renderWork() can call it for work-page content */
     })();
 
     /* ── HERO PARALLAX ── */
@@ -2539,7 +2556,7 @@
               content.style.opacity    = '1';
               content.style.transform  = 'translateX(0)';
               initSliders();
-              if (window.initScrollReveal) window.initScrollReveal();
+              if (window.revealVisible) window.revealVisible();
             }));
           }, 180);
         } else {
@@ -2553,7 +2570,7 @@
           requestAnimationFrame(() => requestAnimationFrame(() => {
             page.classList.add('active');
             initSliders();
-            if (window.initScrollReveal) window.initScrollReveal();
+            if (window.revealVisible) window.revealVisible();
           }));
         }
       };
