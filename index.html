@@ -1386,13 +1386,13 @@
       >
     </div>
     <div class="hero__fade"></div>
-    <div class="hero__body">
+    <div class="hero__body" data-r>
       <button class="hero__play" aria-label="Play video">
         <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
       </button>
       <p class="hero__label">Тут будет видео 16:9</p>
     </div>
-    <div class="hero__scroll" aria-hidden="true">
+    <div class="hero__scroll" data-r style="--d:1" aria-hidden="true">
       <span data-i18n="hero.scroll">Scroll</span>
       <div class="hero__scroll-line"></div>
     </div>
@@ -1572,7 +1572,7 @@
   </div>
 
   <!-- ─── FOOTER ─── -->
-  <footer class="foot">
+  <footer class="foot" data-r>
     <a href="https://dribbble.com/KiryaVerb" target="_blank" rel="noopener">Dribbble</a>
     <a href="mailto:kiryaverb@icloud.com">kiryaverb@icloud.com</a>
     <a href="tel:+37379969974">+373 79 969 974</a>
@@ -2474,7 +2474,7 @@
             </div>
           </nav>
 
-          <div class="wp-hero">
+          <div class="wp-hero" data-r>
             <img src="${w.hero}" alt="${w.title}">
             <div class="wp-hero__bar">
               <div class="wp-hero__logo ${key === 'hub' ? 'wp-hero__logo--hub' : ''}">${LOGOS[key + 'Svg'] || LOGOS[key === 'collagen' ? 'collagenSvg' : key + 'Svg'] || ''}</div>
@@ -2483,12 +2483,12 @@
           </div>
           <p class="wp-hero-desc-mob">${w.desc[lng]}</p>
 
-          <div class="wp-dribbble-btn">
+          <div class="wp-dribbble-btn" data-r style="--d:1">
             <a href="${w.dribbble}" target="_blank" rel="noopener" class="btn-border">
               ${lng === 'ru' ? 'Полный кейс на Dribbble' : 'See the FULL case on Dribbble'}
             </a>
           </div>
-          <div class="wp-scroll" aria-hidden="true">
+          <div class="wp-scroll" data-r style="--d:2" aria-hidden="true">
             <span>Scroll</span>
             <div class="wp-scroll-line"></div>
           </div>
@@ -2499,7 +2499,7 @@
 
           ${resultsHTML}
 
-          <footer class="wp-foot">
+          <footer class="wp-foot" data-r>
             <a href="https://dribbble.com/KiryaVerb" target="_blank" rel="noopener">Dribbble</a>
             <a href="mailto:kiryaverb@icloud.com">kiryaverb@icloud.com</a>
             <a href="tel:+37379969974">+373 79 969 974</a>
