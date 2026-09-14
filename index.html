@@ -553,6 +553,7 @@
       gap: clamp(10px, 1.4vw, 18px);
       margin-top: clamp(10px, 1.4vw, 18px);
     }
+    .teaser--dup { display: none; }
     .teaser {
       position: relative; overflow: hidden;
       aspect-ratio: 16/10;
@@ -1146,24 +1147,27 @@
       .burg { display: flex; }
       .works__grid { grid-template-columns: 1fr; gap: 20px; }
       .works__teasers {
-        display: block; overflow: hidden;
+        display: flex; gap: 10px; overflow: hidden;
         margin-top: clamp(10px, 1.4vw, 18px);
-      }
-      .works__teasers-track {
-        display: flex; gap: 10px;
-        width: max-content;
-      }
-      .works__teasers-track.is-playing {
         animation: works-teasers-scroll 30s linear infinite;
       }
-      @keyframes works-teasers-scroll {
-        from { transform: translateX(0); }
-        to   { transform: translateX(-50%); }
-      }
+      .teaser--dup { display: block; }
       /* 2/3 the width of the full-bleed main work cards (.wcard, which run
          the full content width on mobile: 100vw minus the side padding) */
       .teaser {
         flex: 0 0 calc((100vw - 2 * var(--px)) * 2 / 3);
+      }
+      /* distance = exactly 4 cards + 4 gaps, so the animation travels one
+         full set width — the 5th card (first duplicate) lands exactly where
+         the 1st card started, and the loop repeats with no visible seam.
+         A fixed calc() distance (not a %) is what makes this work without
+         any extra wrapper element: percentages in a transform resolve
+         against the animated element's OWN box, which here is clipped by
+         overflow:hidden to the viewport width, not the full 8-card width —
+         calc() sidesteps that entirely. */
+      @keyframes works-teasers-scroll {
+        from { transform: translateX(0); }
+        to   { transform: translateX(calc(-4 * ((100vw - 2 * var(--px)) * 2 / 3) - 40px)); }
       }
       /* on mobile: title then description stacked, full width */
       .step {
@@ -1465,6 +1469,18 @@
           </div>
           <div class="teaser" data-r style="--d:7">
             <img src="" data-img="teaser4" alt="" loading="lazy" aria-hidden="true">
+          </div>
+          <div class="teaser teaser--dup" aria-hidden="true">
+            <img src="" data-img="teaser1" alt="" loading="lazy">
+          </div>
+          <div class="teaser teaser--dup" aria-hidden="true">
+            <img src="" data-img="teaser2" alt="" loading="lazy">
+          </div>
+          <div class="teaser teaser--dup" aria-hidden="true">
+            <img src="" data-img="teaser3" alt="" loading="lazy">
+          </div>
+          <div class="teaser teaser--dup" aria-hidden="true">
+            <img src="" data-img="teaser4" alt="" loading="lazy">
           </div>
         </div>
         <div class="works__foot" data-r>
@@ -2011,82 +2027,6 @@
       btn.addEventListener('mouseleave', () => teasers.classList.remove('is-revealed'));
     })();
 
-    /* ── WORKS TEASERS: mobile infinite loop ──
-       Desktop keeps the plain original markup (4 .teaser as direct children
-       of .works__teasers) untouched — no wrapper div, no display:contents,
-       on purpose. display:contents has a real history of Safari-specific
-       bugs (animations/layout on its children misbehaving in ways Chrome
-       never shows), so instead of leaning on it to make one shared wrapper
-       behave differently per breakpoint, the wrapper is only ever created
-       here, at runtime, and only for mobile — desktop's DOM never contains
-       it at all.
-       Checked on BOTH window 'load' (the normal case) AND 'resize' — a
-       page opened at desktop width and then dragged down to mobile width
-       live (e.g. the Chrome DevTools device toolbar, without a reload)
-       never re-fires 'load', so without the resize listener the loop would
-       silently never get built even though the CSS around it still
-       switches to the mobile layout. The resize listener also handles the
-       REVERSE: dragging back up past 660px unwraps the track and restores
-       the plain 4-card markup, so desktop's own grid CSS (which only knows
-       how to lay out direct .teaser children of .works__teasers) has
-       something valid to work with again — without this, a mobile→desktop
-       resize left the mobile track sitting there with no matching styles,
-       collapsing into a stacked, unstyled list. */
-    function buildWorksTeasersLoop() {
-      const teasers = document.getElementById('worksTeasers');
-      if (!teasers || teasers.dataset.looped) return;
-      const originals = Array.from(teasers.children);
-      const track = document.createElement('div');
-      track.className = 'works__teasers-track';
-      originals.forEach(card => track.appendChild(card)); /* moves, not clones */
-      originals.forEach(card => {
-        const clone = card.cloneNode(true);
-        /* the scroll-reveal IntersectionObserver already ran over the page
-           before these clones existed, so it will never see them and add
-           the .on class they need — without this they'd stay permanently
-           at [data-r]'s default opacity:0, and once the marquee scrolled
-           them into view it would look like the cards were vanishing. */
-        clone.removeAttribute('data-r');
-        clone.removeAttribute('style');
-        track.appendChild(clone);
-      });
-      teasers.appendChild(track);
-      teasers.dataset.looped = 'true';
-      /* only start the animation once this row is actually visible — a page
-         load with this section below the fold would otherwise have the
-         loop already partway through its cycle by the time the person
-         scrolls to it, looking like it "doesn't start from the first card".
-         Observing `teasers` (the clipping wrapper, normal viewport-ish
-         width) rather than `track` itself — track is intentionally much
-         wider than the viewport for the marquee effect, so its visible
-         area can never reach a normal-looking threshold like 0.2 even when
-         it's fully scrolled into view vertically. */
-      const playObserver = new IntersectionObserver(entries => {
-        entries.forEach(e => {
-          if (e.isIntersecting) track.classList.add('is-playing');
-        });
-      }, { threshold: 0.2 });
-      playObserver.observe(teasers);
-    }
-    function unwrapWorksTeasersLoop() {
-      const teasers = document.getElementById('worksTeasers');
-      const track = teasers && teasers.querySelector('.works__teasers-track');
-      if (!track) return;
-      /* drop the 4 clones, keep only the original 4 (the ones that still
-         carry data-r), put them straight back under .works__teasers */
-      Array.from(track.children).forEach(card => {
-        if (card.hasAttribute('data-r')) teasers.appendChild(card);
-      });
-      track.remove();
-      delete teasers.dataset.looped;
-    }
-    function syncWorksTeasersLoop() {
-      if (window.matchMedia('(max-width: 660px)').matches) buildWorksTeasersLoop();
-      else unwrapWorksTeasersLoop();
-    }
-    window.addEventListener('load', syncWorksTeasersLoop);
-    window.addEventListener('resize', syncWorksTeasersLoop);
-
     /* ── READY ── */
     window.addEventListener('load', () => document.body.classList.add('ready'));
 
@@ -2378,17 +2318,18 @@
        runs, so its [data-r] elements would otherwise never get observed
        and just sit at opacity:0 forever instead of fading in on scroll. */
     window.initScrollReveal = (function () {
-      /* mobile gets a generous positive bottom margin so cards (like the
-         work cards) reveal well before they'd naturally scroll into view —
-         desktop keeps the original tight margin */
-      const isMobile = window.matchMedia('(max-width: 660px)').matches;
+      /* generous positive bottom margin on both breakpoints so elements
+         start revealing while still comfortably below the fold, not only
+         once they're basically already on screen — the desktop value used
+         to be a NEGATIVE margin (-44px), which shrinks the trigger zone and
+         made things appear later than a normal scroll would suggest. */
       const io = new IntersectionObserver(entries => {
         entries.forEach(e => {
           if (e.isIntersecting) { e.target.classList.add('on'); io.unobserve(e.target); }
         });
       }, {
-        threshold: 0.1,
-        rootMargin: isMobile ? '0px 0px 20% 0px' : '0px 0px -44px 0px'
+        threshold: 0.01,
+        rootMargin: '0px 0px 30% 0px'
       });
       function scan() {
         document.querySelectorAll('[data-r]:not(.on)').forEach(el => io.observe(el));
