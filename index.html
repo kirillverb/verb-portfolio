@@ -1151,6 +1151,13 @@
         margin-top: clamp(10px, 1.4vw, 18px);
         animation: works-teasers-scroll 30s linear infinite;
       }
+      /* the marquee runs independently of page scroll — a card can be
+         transformed off past the visible edge at the exact moment its own
+         [data-r] scroll-reveal check fires, so it may never receive .on and
+         stay invisible forever. A continuously-moving strip should just
+         always be visible; this overrides the reveal-on-scroll opacity for
+         mobile specifically, keeping the desktop static grid's fade-in intact. */
+      .teaser[data-r] { opacity: 1; transform: none; transition: none; }
       .teaser--dup { display: block; }
       /* 2/3 the width of the full-bleed main work cards (.wcard, which run
          the full content width on mobile: 100vw minus the side padding) */
@@ -2323,13 +2330,17 @@
          once they're basically already on screen — the desktop value used
          to be a NEGATIVE margin (-44px), which shrinks the trigger zone and
          made things appear later than a normal scroll would suggest. */
+      /* generous positive bottom margin — pushed from 30% to 50% of viewport
+         height so elements clearly start revealing well before the fold,
+         addressing feedback that reveal felt late on both the main page
+         (Process section) and inside work-page item blocks (same system) */
       const io = new IntersectionObserver(entries => {
         entries.forEach(e => {
           if (e.isIntersecting) { e.target.classList.add('on'); io.unobserve(e.target); }
         });
       }, {
         threshold: 0.01,
-        rootMargin: '0px 0px 30% 0px'
+        rootMargin: '0px 0px 50% 0px'
       });
       function scan() {
         document.querySelectorAll('[data-r]:not(.on)').forEach(el => io.observe(el));
