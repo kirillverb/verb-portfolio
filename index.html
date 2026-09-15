@@ -2146,7 +2146,6 @@
 
     (function () {
       if (!window.matchMedia('(hover:hover)').matches) return;
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       document.querySelectorAll('.wcard').forEach(card =>
         initMagnetic3D(card, { tilt: 16, move: 34, perspective: 900, lerp: .1 })
       );
@@ -2181,7 +2180,6 @@
 
     (function () {
       if (window.matchMedia('(hover:hover)').matches) return;               /* desktop already covered above */
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       if (typeof DeviceOrientationEvent === 'undefined') return;             /* no sensor support at all */
 
       const MAX_DEG = 9;   /* real-world degrees of tilt that map to the full -0.5..0.5 target range */
@@ -2588,8 +2586,7 @@
            cards since this block also carries the invisible prev/next tap
            zones as children; they move with it (still hit-tested correctly
            at click time) but a huge drift would make deliberate taps feel floaty. */
-        if (window.matchMedia('(hover:hover)').matches &&
-            !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        if (window.matchMedia('(hover:hover)').matches) {
           document.querySelectorAll('.wp-item__img').forEach(img => {
             if (img._magnetInit) return;
             img._magnetInit = true;
@@ -2674,8 +2671,7 @@
              invisible hit extension above, so the effect ramps up exactly across the
              area the user can actually feel is "theirs"). Same target/current lerp loop
              as initMagnetic3D, so it gets the same "small resistance" release. */
-          if (window.matchMedia('(hover:hover)').matches &&
-              !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          if (window.matchMedia('(hover:hover)').matches) {
             const HIT_PAD  = 8;    /* px — mirrors .wp-item__dot::before top/bottom */
             const DOT_TILT = 24;   /* deg */
             const DOT_LIFT = 9;    /* px */
