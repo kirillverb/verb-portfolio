@@ -598,9 +598,11 @@
        tilt on these on purpose — they never get added to the .wcard/.about__img
        selector lists the JS uses for that effect. */
     .works__teasers {
+      margin-top: clamp(10px, 1.4vw, 18px);
+    }
+    .works__teasers-track {
       display: grid; grid-template-columns: repeat(4, 1fr);
       gap: clamp(10px, 1.4vw, 18px);
-      margin-top: clamp(10px, 1.4vw, 18px);
     }
     .teaser--dup { display: none; }
     .teaser {
@@ -1208,16 +1210,26 @@
          same aspect ratio (About uses padding-top:118%, i.e. width/height
          = 100/118) and the same max-width, centered the same way. */
       .wcard { aspect-ratio: 100 / 118; width: 100%; max-width: 420px; margin-inline: auto; }
+      /* the FIXED viewport — clips content, never itself moves or animates.
+         Previously the SAME element both clipped AND carried the slide
+         animation, which meant translating it also dragged its own clip
+         window off to the side — the whole strip would eventually scroll
+         itself completely off-screen instead of looping in place. Splitting
+         "the window you look through" from "the thing that moves behind it"
+         is the actual fix. */
       .works__teasers {
-        display: flex; gap: 10px; overflow: hidden;
+        overflow: hidden;
         margin-top: 20px;
+      }
+      .works__teasers-track {
+        display: flex; gap: 10px;
         /* animation only starts once .started is added by JS, when the
            strip actually scrolls into view — see the dedicated observer
            for #worksTeasers. Not running by default avoids wasting cycles
            animating something off-screen, and matches "starts only once
            you've scrolled to it" exactly. */
       }
-      .works__teasers.started {
+      .works__teasers-track.started {
         animation: works-teasers-scroll 30s linear infinite;
       }
       /* a continuously-moving strip should just always be visible — no
@@ -1537,29 +1549,31 @@
       </div>
       <div class="works__teasers-wrap" data-r>
         <div class="works__teasers" id="worksTeasers">
-          <div class="teaser" data-r style="--d:4">
-            <img src="" data-img="teaser1" alt="" loading="lazy" aria-hidden="true">
-          </div>
-          <div class="teaser" data-r style="--d:5">
-            <img src="" data-img="teaser2" alt="" loading="lazy" aria-hidden="true">
-          </div>
-          <div class="teaser" data-r style="--d:6">
-            <img src="" data-img="teaser3" alt="" loading="lazy" aria-hidden="true">
-          </div>
-          <div class="teaser" data-r style="--d:7">
-            <img src="" data-img="teaser4" alt="" loading="lazy" aria-hidden="true">
-          </div>
-          <div class="teaser teaser--dup" aria-hidden="true">
-            <img src="" data-img="teaser1" alt="" loading="lazy">
-          </div>
-          <div class="teaser teaser--dup" aria-hidden="true">
-            <img src="" data-img="teaser2" alt="" loading="lazy">
-          </div>
-          <div class="teaser teaser--dup" aria-hidden="true">
-            <img src="" data-img="teaser3" alt="" loading="lazy">
-          </div>
-          <div class="teaser teaser--dup" aria-hidden="true">
-            <img src="" data-img="teaser4" alt="" loading="lazy">
+          <div class="works__teasers-track" id="worksTeasersTrack">
+            <div class="teaser" data-r style="--d:4">
+              <img src="" data-img="teaser1" alt="" loading="lazy" aria-hidden="true">
+            </div>
+            <div class="teaser" data-r style="--d:5">
+              <img src="" data-img="teaser2" alt="" loading="lazy" aria-hidden="true">
+            </div>
+            <div class="teaser" data-r style="--d:6">
+              <img src="" data-img="teaser3" alt="" loading="lazy" aria-hidden="true">
+            </div>
+            <div class="teaser" data-r style="--d:7">
+              <img src="" data-img="teaser4" alt="" loading="lazy" aria-hidden="true">
+            </div>
+            <div class="teaser teaser--dup" aria-hidden="true">
+              <img src="" data-img="teaser1" alt="" loading="lazy">
+            </div>
+            <div class="teaser teaser--dup" aria-hidden="true">
+              <img src="" data-img="teaser2" alt="" loading="lazy">
+            </div>
+            <div class="teaser teaser--dup" aria-hidden="true">
+              <img src="" data-img="teaser3" alt="" loading="lazy">
+            </div>
+            <div class="teaser teaser--dup" aria-hidden="true">
+              <img src="" data-img="teaser4" alt="" loading="lazy">
+            </div>
           </div>
         </div>
         <div class="works__foot" data-r>
@@ -2121,17 +2135,17 @@
        earlier. This just adds one class, once, the first time the strip is
        actually on screen. */
     (function () {
-      const strip = document.getElementById('worksTeasers');
+      const strip = document.getElementById('worksTeasersTrack');
       if (!strip) return;
       const io = new IntersectionObserver(entries => {
         entries.forEach(e => {
           if (e.isIntersecting) {
             strip.classList.add('started');
-            io.unobserve(strip);
+            io.unobserve(e.target);
           }
         });
       }, { threshold: 0.15 });
-      io.observe(strip);
+      io.observe(document.getElementById('worksTeasers') || strip);
     })();
 
     /* ── READY ── */
