@@ -1204,6 +1204,10 @@
       .hdr__right { display: none; }
       .burg { display: flex; }
       .works__grid { grid-template-columns: 1fr; gap: 20px; }
+      /* work cards match the About Me photo's size/proportions on mobile —
+         same aspect ratio (About uses padding-top:118%, i.e. width/height
+         = 100/118) and the same max-width, centered the same way. */
+      .wcard { aspect-ratio: 100 / 118; width: 100%; max-width: 420px; margin-inline: auto; }
       .works__teasers {
         display: flex; gap: 10px; overflow: hidden;
         margin-top: clamp(10px, 1.4vw, 18px);
