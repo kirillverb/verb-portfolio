@@ -781,6 +781,10 @@
          pattern as the main page — it was cramping the top bar here before */
       .wp-nav__right { display: none; }
       .wp-nav .burg { display: flex; }
+      /* only the back arrow and the X remain visible while the burger
+         menu is open — the project tabs would otherwise sit awkwardly
+         behind/above the fullscreen overlay */
+      .wp-nav.menu-open .wp-nav__projects { display: none; }
     }
     /* Mobile-only rotating hint, before the burger — cross-fades between two
        short nudges toward the language and theme switchers (which move into
@@ -1625,6 +1629,13 @@
   ════════════════════════════════════════ -->
   <div id="work-page" role="dialog" aria-modal="true" aria-label="Project page">
     <div id="work-content"></div>
+    <!-- kept OUTSIDE #work-content deliberately: that element gets a
+         slide transform during project-switch animations, and ANY element
+         freshly laid out while an ancestor has an active transform can end
+         up with a corrupted position:fixed containing-block association
+         that persists even after the transform is cleared. Living as a
+         plain sibling means this is never at risk of that. -->
+    <div id="wp-mob-container"></div>
   </div>
 
   <script>
@@ -2551,34 +2562,6 @@
             </button>
           </nav>
 
-          <!-- mobile fullscreen menu — same look as the main page's, but
-               with project links instead of section anchors, since that's
-               what's actually useful while browsing a work page on mobile -->
-          <nav class="mob" id="wpMob">
-            ${Object.keys(WORKS).map(k => `
-              <a href="#" onclick="closeWpMob(); openWork('${k}'); return false;">${WORKS[k].title}</a>
-            `).join('')}
-            <div class="theme-sw--mob">
-              <button class="theme-btn ${document.documentElement.getAttribute('data-theme') === 'light' ? '' : 'active'}" data-theme-choice="dark" aria-label="Dark theme">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M20.9 14.6A9 9 0 1 1 9.4 3.1a7 7 0 0 0 11.5 11.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </button>
-              <span>/</span>
-              <button class="theme-btn ${document.documentElement.getAttribute('data-theme') === 'light' ? 'active' : ''}" data-theme-choice="light" aria-label="Light theme">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.6"/>
-                  <path d="M12 2.5v2.4M12 19.1v2.4M21.5 12h-2.4M4.9 12H2.5M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7M18.5 18.5l-1.7-1.7M7.2 7.2 5.5 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-                </svg>
-              </button>
-            </div>
-            <div class="mob__lang">
-              <button class="mob-lang-btn ${lng === 'en' ? 'active' : ''}" data-lang="en" onclick="applyLang('en')">EN</button>
-              <span>/</span>
-              <button class="mob-lang-btn ${lng === 'ru' ? 'active' : ''}" data-lang="ru" onclick="applyLang('ru')">RU</button>
-            </div>
-          </nav>
-
           <div class="wp-hero" data-r>
             <img src="${w.hero}" alt="${w.title}">
             <div class="wp-hero__bar">
@@ -2609,6 +2592,39 @@
             <a href="mailto:kiryaverb@icloud.com">kiryaverb@icloud.com</a>
             <a href="tel:+37379969974">+373 79 969 974</a>
           </footer>
+        `;
+
+        /* rendered into its own sibling container, deliberately OUTSIDE
+           #work-content — see the comment on #wp-mob-container in the HTML
+           for why (content gets a slide transform during project switches,
+           which can permanently corrupt position:fixed layout for anything
+           freshly created inside it while that transform is active). */
+        document.getElementById('wp-mob-container').innerHTML = `
+          <nav class="mob" id="wpMob">
+            ${Object.keys(WORKS).map(k => `
+              <a href="#" onclick="closeWpMob(); openWork('${k}'); return false;">${WORKS[k].title}</a>
+            `).join('')}
+            <a href="#" onclick="closeWpMob(); closeWork(); return false;">${lng === 'ru' ? 'Смотреть все работы' : 'See more works'}</a>
+            <div class="theme-sw--mob">
+              <button class="theme-btn ${document.documentElement.getAttribute('data-theme') === 'light' ? '' : 'active'}" data-theme-choice="dark" aria-label="Dark theme">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M20.9 14.6A9 9 0 1 1 9.4 3.1a7 7 0 0 0 11.5 11.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <span>/</span>
+              <button class="theme-btn ${document.documentElement.getAttribute('data-theme') === 'light' ? 'active' : ''}" data-theme-choice="light" aria-label="Light theme">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.6"/>
+                  <path d="M12 2.5v2.4M12 19.1v2.4M21.5 12h-2.4M4.9 12H2.5M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7M18.5 18.5l-1.7-1.7M7.2 7.2 5.5 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
+              </button>
+            </div>
+            <div class="mob__lang">
+              <button class="mob-lang-btn ${lng === 'en' ? 'active' : ''}" data-lang="en" onclick="applyLang('en')">EN</button>
+              <span>/</span>
+              <button class="mob-lang-btn ${lng === 'ru' ? 'active' : ''}" data-lang="ru" onclick="applyLang('ru')">RU</button>
+            </div>
+          </nav>
         `;
       }
 
@@ -2645,6 +2661,29 @@
               content.style.transform  = 'translateX(0)';
               initSliders();
               if (window.revealVisible) window.revealVisible();
+              /* once the slide-in finishes, clear the transform entirely
+                 rather than leaving it at translateX(0) — ANY transform
+                 value, even a zero one, turns this element into the
+                 containing block for position:fixed descendants (like the
+                 mobile burger menu), silently breaking their positioning
+                 relative to the real viewport from this point onward.
+                 Both transitionend AND a matching setTimeout are used —
+                 transitionend can occasionally fail to fire (interrupted
+                 transitions, browser quirks), so the timeout guarantees
+                 this always happens regardless. */
+              let transformCleared = false;
+              function clearTransform() {
+                if (transformCleared) return;
+                transformCleared = true;
+                content.style.transform = '';
+              }
+              content.addEventListener('transitionend', function clearT(e) {
+                if (e.propertyName === 'transform') {
+                  clearTransform();
+                  content.removeEventListener('transitionend', clearT);
+                }
+              });
+              setTimeout(clearTransform, 550);
             }));
           }, 180);
         } else {
@@ -2672,6 +2711,7 @@
            needs rebinding on every call rather than once. */
         const wpBurg = document.getElementById('wpBurg');
         const wpMob  = document.getElementById('wpMob');
+        const wpNav  = document.querySelector('.wp-nav');
         if (wpBurg && wpMob && !wpBurg._wpBurgInit) {
           wpBurg._wpBurgInit = true;
           let wpMobOpen = false;
@@ -2679,6 +2719,9 @@
             wpMobOpen = !wpMobOpen;
             wpBurg.classList.toggle('open', wpMobOpen);
             wpMob.classList.toggle('open', wpMobOpen);
+            /* hide the project-switcher tabs while the burger is open —
+               only the back arrow and the X should remain in the bar */
+            if (wpNav) wpNav.classList.toggle('menu-open', wpMobOpen);
             wpBurg.setAttribute('aria-expanded', wpMobOpen);
             document.body.style.overflow = wpMobOpen ? 'hidden' : '';
           });
@@ -2686,6 +2729,7 @@
             wpMobOpen = false;
             wpBurg.classList.remove('open');
             wpMob.classList.remove('open');
+            if (wpNav) wpNav.classList.remove('menu-open');
             wpBurg.setAttribute('aria-expanded', 'false');
             document.body.style.overflow = '';
           };
