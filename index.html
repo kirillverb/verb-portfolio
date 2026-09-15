@@ -208,11 +208,26 @@
       from { opacity: 0; transform: translateY(46px); }
       to   { opacity: 1; transform: none; }
     }
+    /* opacity-only variant — for elements that ALSO get the JS magnetic-tilt
+       effect (.wcard, .about__img, .cta, .wp-item__img). A CSS animation
+       keeps "holding" any property it animates even once finished (with
+       fill-mode: both), which silently overrides an inline style set by JS
+       afterwards — so these specific elements must never have their
+       transform claimed by the reveal animation at all, or the tilt effect
+       becomes invisible no matter how correctly the JS computes it. */
+    @keyframes reveal-in-fade-only {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
     /* safety default: fully visible unless the animation below overrides it —
        so ANY browser without support just shows content normally, never stuck invisible */
     [data-r] {
       opacity: 0; transform: translateY(46px);
       transition: opacity 1.1s var(--ease), transform 1.1s var(--ease);
+    }
+    .wcard[data-r], .about__img[data-r], .cta[data-r], .wp-item__img[data-r] {
+      transform: none; /* these tilt via JS — never give the reveal system transform */
+      transition: opacity 1.1s var(--ease);
     }
     @supports (animation-timeline: view()) {
       [data-r] {
@@ -225,6 +240,9 @@
         animation-fill-mode: both;
         animation-timeline: view();
         animation-range: entry 0% entry 65%;
+      }
+      .wcard[data-r], .about__img[data-r], .cta[data-r], .wp-item__img[data-r] {
+        animation-name: reveal-in-fade-only;
       }
     }
     /* NOTE: intentionally NOT disabling this for prefers-reduced-motion —
@@ -497,7 +515,8 @@
     }
     .about__img {
       position: relative; overflow: hidden; will-change: transform;
-      transition: opacity .8s var(--ease); transition-delay: calc(var(--d,0) * 140ms);
+      transition: opacity .8s var(--ease);
+      transition-delay: calc(var(--d,0) * 140ms);
     }
     .about__img::before { content: ''; display: block; padding-top: 118%; }
     .about__img img {
@@ -2109,16 +2128,15 @@
       });
     })();
 
-    /* ── MAGNETIC 3D BLOCKS ──
-       cursor-follow drag (Koffie?-style) + perspective tilt so the movement
-       reads as depth, not a flat slide. Desktop/mouse only — pointless on touch.
-       Uses the same target/current-lerp-loop pattern as the custom cursor ring
-       above (LERP toward a target each frame) instead of a CSS transition —
-       this is what gives the "small resistance, doesn't let go instantly" feel:
-       on mouseleave the target snaps to 0 but the current value keeps easing
-       toward it over several frames rather than jumping. */
-    function initMagnetic3D(el, opts) {
-      const TILT = opts.tilt, MOVE = opts.move, PERSPECTIVE = opts.perspective || 900, LERP = opts.lerp || .14;
+    /* ── MAGNETIC 3D TILT ──
+       A continuously-updating target (cursor position, phone tilt) needs a
+       proper requestAnimationFrame + lerp loop for smooth motion — a CSS
+       transition fights itself when retriggered on every mousemove event,
+       since it never finishes easing before being redirected to a new
+       target, which reads as jerky rather than smooth. This loop eases the
+       CURRENT value toward the TARGET a little every frame instead. */
+    function createTilt(el, opts) {
+      const TILT = opts.tilt, MOVE = opts.move, PERSPECTIVE = opts.perspective || 900, LERP = opts.lerp || .12;
       let tx = 0, ty = 0, cx = 0, cy = 0, raf = null, active = false;
       function frame() {
         cx += (tx - cx) * LERP;
@@ -2130,76 +2148,68 @@
         } else { raf = null; }
       }
       function kick() { if (!raf) raf = requestAnimationFrame(frame); }
+      return {
+        setTarget(nx, ny) { tx = nx; ty = ny; active = true; kick(); },
+        release() { tx = 0; ty = 0; active = false; kick(); }
+      };
+    }
+
+    function bindDesktopTilt(el, opts) {
+      const t = createTilt(el, opts);
       el.addEventListener('mousemove', e => {
         const r = el.getBoundingClientRect();
-        tx = (e.clientX - r.left) / r.width  - .5; /* -0.5 .. 0.5 */
-        ty = (e.clientY - r.top)  / r.height - .5;
-        active = true;
-        kick();
+        const nx = (e.clientX - r.left) / r.width  - .5;
+        const ny = (e.clientY - r.top)  / r.height - .5;
+        t.setTarget(nx, ny);
       });
-      el.addEventListener('mouseleave', () => {
-        tx = 0; ty = 0;
-        active = false;
-        kick();
-      });
+      el.addEventListener('mouseleave', () => t.release());
     }
 
     (function () {
-      if (!window.matchMedia('(hover:hover)').matches) return;
-      document.querySelectorAll('.wcard').forEach(card =>
-        initMagnetic3D(card, { tilt: 16, move: 34, perspective: 900, lerp: .1 })
-      );
-      const aboutImg = document.querySelector('.about__img');
-      if (aboutImg) initMagnetic3D(aboutImg, { tilt: 13, move: 28, perspective: 1000, lerp: .1 });
-      const ctaEl = document.querySelector('.cta');
-      if (ctaEl) initMagnetic3D(ctaEl, { tilt: 11, move: 22, perspective: 1400, lerp: .1 });
+      /* wait for a REAL first mousemove rather than trusting a one-time
+         hover:hover snapshot at load — on some hybrid touch+mouse laptops
+         that media query can read false at the very first paint and never
+         gets re-checked, permanently skipping this effect even though a
+         mouse is actually being used. */
+      let bound = false;
+      function bindAll() {
+        if (bound) return;
+        bound = true;
+        document.querySelectorAll('.wcard').forEach(card =>
+          bindDesktopTilt(card, { tilt: 16, move: 34, perspective: 900, lerp: .12 })
+        );
+        const aboutImg = document.querySelector('.about__img');
+        if (aboutImg) bindDesktopTilt(aboutImg, { tilt: 13, move: 28, perspective: 1000, lerp: .12 });
+        const ctaEl = document.querySelector('.cta');
+        if (ctaEl) bindDesktopTilt(ctaEl, { tilt: 11, move: 22, perspective: 1400, lerp: .12 });
+        window.removeEventListener('mousemove', bindAll);
+      }
+      if (window.matchMedia('(hover:hover)').matches) bindAll();
+      else window.addEventListener('mousemove', bindAll, { once: true });
     })();
 
-    /* ── MAGNETIC 3D BLOCKS — MOBILE / GYROSCOPE ──
-       Same visual family as initMagnetic3D above, but there's no cursor on
-       touch, so the "target" comes from the phone's real-world tilt instead
-       of a pointer position. Runs only when (hover:hover) does NOT match —
-       mutually exclusive with the desktop version, never bound to the same
-       element twice. iOS 13+ requires DeviceOrientationEvent.requestPermission()
-       to be called synchronously from within a user-gesture handler — it
-       cannot be requested silently on load — so instead of a visible "enable
-       motion" button, the request rides the user's first tap anywhere on the
-       page. Android generally needs no such prompt and starts immediately. */
-    function initGyroMagnetic3D(el, opts) {
-      const TILT = opts.tilt, MOVE = opts.move, PERSPECTIVE = opts.perspective || 900, LERP = opts.lerp || .12;
-      let tx = 0, ty = 0, cx = 0, cy = 0;
-      (function frame() {
-        cx += (tx - cx) * LERP;
-        cy += (ty - cy) * LERP;
-        el.style.transform =
-          `perspective(${PERSPECTIVE}px) rotateX(${-cy * TILT}deg) rotateY(${cx * TILT}deg) translate3d(${cx * MOVE}px, ${cy * MOVE}px, 0)`;
-        requestAnimationFrame(frame);
-      })();
-      return { setTarget(nx, ny) { tx = nx; ty = ny; } };
-    }
-
+    /* ── MAGNETIC 3D TILT — MOBILE / GYROSCOPE ──
+       Same lerp-loop smoothing as desktop. iOS 13+ requires
+       DeviceOrientationEvent.requestPermission() from within a direct user
+       gesture — rides the user's tap anywhere on the page, retried on every
+       tap until it actually succeeds rather than giving up after one try. */
     (function () {
-      if (window.matchMedia('(hover:hover)').matches) return;               /* desktop already covered above */
-      if (typeof DeviceOrientationEvent === 'undefined') return;             /* no sensor support at all */
+      if (window.matchMedia('(hover:hover)').matches) return;   /* desktop already covered above */
+      if (typeof DeviceOrientationEvent === 'undefined') return; /* no sensor support at all */
 
-      const MAX_DEG = 9;   /* real-world degrees of tilt that map to the full -0.5..0.5 target range */
+      const MAX_DEG = 9;
       let baseBeta = null, baseGamma = null;
-      const targets = [];
+      const targets = []; /* tilt controller instances */
 
-      function register(el, elOpts) { targets.push(initGyroMagnetic3D(el, elOpts)); }
-      /* exposed so initSliders() can also register the work-page photo
-         blocks once they exist — those are rendered on demand, long after
-         this IIFE runs. */
+      function register(el, opts) { targets.push(createTilt(el, opts)); }
       window._registerGyroMagnetic = register;
 
       function handleOrientation(e) {
         if (e.beta === null || e.gamma === null) return;
-        /* calibrate against however the phone happens to be held on the
-           first reading, rather than demanding it lie perfectly flat */
         if (baseBeta === null) { baseBeta = e.beta; baseGamma = e.gamma; return; }
         const dBeta  = Math.max(-MAX_DEG, Math.min(MAX_DEG, e.beta  - baseBeta));
         const dGamma = Math.max(-MAX_DEG, Math.min(MAX_DEG, e.gamma - baseGamma));
-        const ny = dBeta  / MAX_DEG / 2;  /* -0.5 .. 0.5 */
+        const ny = dBeta  / MAX_DEG / 2;
         const nx = dGamma / MAX_DEG / 2;
         targets.forEach(t => t.setTarget(nx, ny));
       }
@@ -2209,27 +2219,26 @@
         if (started) return;
         started = true;
         window.addEventListener('deviceorientation', handleOrientation);
-        document.querySelectorAll('.wcard').forEach(card => register(card, { tilt: 15, move: 30, perspective: 1400, lerp: .12 }));
+        document.querySelectorAll('.wcard').forEach(card => register(card, { tilt: 15, move: 30, perspective: 1400 }));
         const aboutImg = document.querySelector('.about__img');
-        if (aboutImg) register(aboutImg, { tilt: 13, move: 22, perspective: 1500, lerp: .12 });
+        if (aboutImg) register(aboutImg, { tilt: 13, move: 22, perspective: 1500 });
         const ctaEl = document.querySelector('.cta');
-        if (ctaEl) register(ctaEl, { tilt: 11, move: 18, perspective: 1900, lerp: .12 });
+        if (ctaEl) register(ctaEl, { tilt: 11, move: 18, perspective: 1900 });
       }
 
       if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-        /* iOS — wait for the user's first tap anywhere, then ask once.
-           Both touchend and click are wired since the permission grant must
-           be a direct, synchronous result of a user gesture — covering both
-           keeps this robust across WebKit versions that handle touch vs.
-           synthesized click slightly differently. Whichever fires first wins;
-           {once:true} on both means the loser is a harmless no-op. */
         const grant = () => {
+          if (started) { cleanup(); return; }
           DeviceOrientationEvent.requestPermission()
-            .then(state => { if (state === 'granted') start(); })
+            .then(state => { if (state === 'granted') { start(); cleanup(); } })
             .catch(() => {});
         };
-        document.addEventListener('touchend', grant, { once: true });
-        document.addEventListener('click', grant, { once: true });
+        function cleanup() {
+          document.removeEventListener('touchend', grant);
+          document.removeEventListener('click', grant);
+        }
+        document.addEventListener('touchend', grant);
+        document.addEventListener('click', grant);
       } else {
         start(); /* Android / other — no permission gate */
       }
@@ -2351,7 +2360,13 @@
           const rect = el.getBoundingClientRect();
           if (rect.top < window.innerHeight * 0.92 && rect.bottom > 0) {
             el.style.opacity = '1';
-            el.style.transform = 'none';
+            /* tilt-enabled elements manage their own transform via the
+               magnetic-tilt effect — never touch it here, or this backup
+               would silently override the tilt the same way the CSS
+               animation used to. */
+            if (!el.matches('.wcard, .about__img, .cta, .wp-item__img')) {
+              el.style.transform = 'none';
+            }
           }
         });
       }
@@ -2590,14 +2605,14 @@
           document.querySelectorAll('.wp-item__img').forEach(img => {
             if (img._magnetInit) return;
             img._magnetInit = true;
-            initMagnetic3D(img, { tilt: 12, move: 24, perspective: 900, lerp: .11 });
+            bindDesktopTilt(img, { tilt: 12, move: 24, perspective: 900 });
           });
         }
         if (window._registerGyroMagnetic) {
           document.querySelectorAll('.wp-item__img').forEach(img => {
             if (img._gyroInit) return;
             img._gyroInit = true;
-            window._registerGyroMagnetic(img, { tilt: 11, move: 18, perspective: 1400, lerp: .12 });
+            window._registerGyroMagnetic(img, { tilt: 11, move: 18, perspective: 1400 });
           });
         }
 
