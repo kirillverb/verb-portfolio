@@ -974,11 +974,11 @@
       border-top: 1px solid var(--bdr);
       padding: 32px var(--px);
       display: flex; justify-content: space-between; align-items: center;
-      flex-wrap: wrap; gap: 12px 32px;
+      flex-wrap: nowrap; gap: 12px 32px;
     }
     .wp-foot a {
       font-family: var(--serif);
-      font-size: clamp(18px, 2.2vw, 22px);
+      font-size: 20px;
       color: var(--muted); transition: color .3s;
     }
     .wp-foot a[href*="dribbble"]:hover { color: #EA4C89; }
@@ -1076,6 +1076,7 @@
     .step:hover { border-top-color: var(--bdr2); border-bottom-color: var(--bdr2); }
     /* hovering one step dims all the others for visual contrast —
        untouched (no hover anywhere) leaves everything at full brightness */
+    .step.is-settled { opacity: 1; transform: none; }
     .steps:hover .step:not(:hover) { opacity: .4; }
 
     /* col 2: number + title stacked */
@@ -1142,11 +1143,11 @@
       border-top: 1px solid var(--bdr);
       padding: 32px var(--px);
       display: flex; justify-content: space-between; align-items: center;
-      flex-wrap: wrap; gap: 12px 32px;
+      flex-wrap: nowrap; gap: 12px 32px;
     }
     .foot a {
       font-family: var(--serif);
-      font-size: clamp(18px, 2.2vw, 22px);
+      font-size: 20px;
       font-weight: 400;
       letter-spacing: .01em;
       color: var(--muted);
@@ -1609,7 +1610,7 @@
   </div>
 
   <!-- ─── FOOTER ─── -->
-  <footer class="foot" data-r>
+  <footer class="foot">
     <a href="https://dribbble.com/KiryaVerb" target="_blank" rel="noopener">Dribbble</a>
     <a href="mailto:kiryaverb@icloud.com">kiryaverb@icloud.com</a>
     <a href="tel:+37379969974">+373 79 969 974</a>
@@ -2354,12 +2355,47 @@
           within the viewport, force it visible via an inline style (which
           wins over any CSS by specificity, regardless of what system 1 is
           doing). If either system works, the content reveals correctly. */
+
+    /* .step's reveal animation finishes by permanently HOLDING opacity:1
+       via fill-mode:both, which silently blocks the hover-dim CSS rule
+       (.steps:hover .step:not(:hover) { opacity: .4 }) forever afterward —
+       same class of bug as the tilt/transform conflict, but happening at
+       the CSS animation level itself, not just the JS backup. Once the
+       reveal animation naturally finishes, drop it entirely so opacity is
+       freely available to normal stylesheet rules again. */
+    document.querySelectorAll('.step').forEach(step => {
+      step.addEventListener('animationend', () => {
+        /* toggle a plain CSS class (not an inline style) so the hover-dim
+           rule — which has higher specificity — can still correctly
+           override it. An inline style would have won regardless of hover
+           state and permanently blocked the dim effect, same bug as before
+           just one layer deeper. */
+        step.classList.add('is-settled');
+        step.style.animation = 'none';
+      });
+    });
+
     (function () {
       function revealVisible() {
         document.querySelectorAll('[data-r]').forEach(el => {
           const rect = el.getBoundingClientRect();
           if (rect.top < window.innerHeight * 0.92 && rect.bottom > 0) {
-            el.style.opacity = '1';
+            /* .step manages its own opacity via the hover-dim CSS rule
+               (.steps:hover .step:not(:hover) { opacity: .4 }) — an inline
+               style here would permanently pin it to 1 and silently block
+               that rule forever, the same class of bug as the tilt/transform
+               conflict below. */
+            /* .step manages its own opacity via the hover-dim CSS rule
+               (.steps:hover .step:not(:hover) { opacity: .4 }) — an inline
+               style here would permanently pin it to 1 and silently block
+               that rule forever, the same class of bug as the tilt/transform
+               conflict below. Use the same low-specificity class the CSS
+               animationend handler uses instead, so hover-dim can still win. */
+            if (el.matches('.step')) {
+              el.classList.add('is-settled');
+            } else {
+              el.style.opacity = '1';
+            }
             /* tilt-enabled elements manage their own transform via the
                magnetic-tilt effect — never touch it here, or this backup
                would silently override the tilt the same way the CSS
@@ -2533,7 +2569,7 @@
 
           ${resultsHTML}
 
-          <footer class="wp-foot" data-r>
+          <footer class="wp-foot">
             <a href="https://dribbble.com/KiryaVerb" target="_blank" rel="noopener">Dribbble</a>
             <a href="mailto:kiryaverb@icloud.com">kiryaverb@icloud.com</a>
             <a href="tel:+37379969974">+373 79 969 974</a>
