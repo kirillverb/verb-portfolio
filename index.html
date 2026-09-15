@@ -410,6 +410,15 @@
       color: var(--text); opacity: 0; transform: translateY(16px);
       transition: color .3s, opacity .45s var(--ease), transform .45s var(--ease);
     }
+    /* the "See more works" link inside .mob reuses the same bordered
+       button style as the main page's own "See more works" — needs to win
+       over the plain giant-text menu-link styling above */
+    .mob a.btn-border {
+      font-family: var(--sans); font-size: 11px; font-weight: 500;
+      letter-spacing: .14em; text-transform: uppercase;
+      padding: 15px 52px; border: 1px solid var(--bdr2);
+      margin-top: 14px;
+    }
     .mob.open a:nth-child(1) { opacity:1; transform:none; transition-delay:.06s; }
     .mob.open a:nth-child(2) { opacity:1; transform:none; transition-delay:.13s; }
     .mob.open a:nth-child(3) { opacity:1; transform:none; transition-delay:.20s; }
@@ -2604,7 +2613,7 @@
             ${Object.keys(WORKS).map(k => `
               <a href="#" onclick="closeWpMob(); openWork('${k}'); return false;">${WORKS[k].title}</a>
             `).join('')}
-            <a href="#" onclick="closeWpMob(); closeWork(); return false;">${lng === 'ru' ? 'Смотреть все работы' : 'See more works'}</a>
+            <a href="#" class="btn-border" onclick="closeWpMob(); closeWork(); return false;">${lng === 'ru' ? 'Смотреть все работы' : 'See more works'}</a>
             <div class="theme-sw--mob">
               <button class="theme-btn ${document.documentElement.getAttribute('data-theme') === 'light' ? '' : 'active'}" data-theme-choice="dark" aria-label="Dark theme">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -2708,31 +2717,40 @@
 
         /* work-page mobile burger menu — re-render (project switch, language
            change) replaces this markup each time, so the click listener
-           needs rebinding on every call rather than once. */
+           needs rebinding on every call rather than once. The open/closed
+           STATE itself is tracked on window (not a local variable), since a
+           local variable would reset to false on every fresh render —
+           exactly the bug that closed the menu on language switch even
+           though the user never asked it to close. */
         const wpBurg = document.getElementById('wpBurg');
         const wpMob  = document.getElementById('wpMob');
         const wpNav  = document.querySelector('.wp-nav');
-        if (wpBurg && wpMob && !wpBurg._wpBurgInit) {
-          wpBurg._wpBurgInit = true;
-          let wpMobOpen = false;
-          wpBurg.addEventListener('click', () => {
-            wpMobOpen = !wpMobOpen;
-            wpBurg.classList.toggle('open', wpMobOpen);
-            wpMob.classList.toggle('open', wpMobOpen);
-            /* hide the project-switcher tabs while the burger is open —
-               only the back arrow and the X should remain in the bar */
-            if (wpNav) wpNav.classList.toggle('menu-open', wpMobOpen);
-            wpBurg.setAttribute('aria-expanded', wpMobOpen);
-            document.body.style.overflow = wpMobOpen ? 'hidden' : '';
-          });
-          window.closeWpMob = function () {
-            wpMobOpen = false;
-            wpBurg.classList.remove('open');
-            wpMob.classList.remove('open');
-            if (wpNav) wpNav.classList.remove('menu-open');
-            wpBurg.setAttribute('aria-expanded', 'false');
-            document.body.style.overflow = '';
-          };
+        const wpPage = document.getElementById('work-page');
+        if (wpBurg && wpMob) {
+          function applyWpMobState(open) {
+            window._wpMobOpen = open;
+            wpBurg.classList.toggle('open', open);
+            wpMob.classList.toggle('open', open);
+            if (wpNav) wpNav.classList.toggle('menu-open', open);
+            wpBurg.setAttribute('aria-expanded', open);
+            /* body alone isn't enough — #work-page has its own independent
+               scroll (overflow-y: auto), so it keeps scrolling underneath
+               the open menu unless frozen too, and closing later "teleports"
+               the user to wherever that hidden scroll ended up. */
+            document.body.style.overflow = open ? 'hidden' : '';
+            if (wpPage) wpPage.style.overflow = open ? 'hidden' : '';
+          }
+          /* re-apply instantly (no re-triggering the open transition) if the
+             menu was open before this fresh render replaced the markup —
+             this is what keeps the user "inside" the burger across a
+             language switch instead of it silently closing on them. */
+          if (window._wpMobOpen) applyWpMobState(true);
+
+          if (!wpBurg._wpBurgInit) {
+            wpBurg._wpBurgInit = true;
+            wpBurg.addEventListener('click', () => applyWpMobState(!window._wpMobOpen));
+          }
+          window.closeWpMob = function () { applyWpMobState(false); };
         }
 
         /* magnetic tilt on the photo block itself — covers both slider and
