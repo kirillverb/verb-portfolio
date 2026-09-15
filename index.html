@@ -1210,16 +1210,26 @@
       .wcard { aspect-ratio: 100 / 118; width: 100%; max-width: 420px; margin-inline: auto; }
       .works__teasers {
         display: flex; gap: 10px; overflow: hidden;
-        margin-top: clamp(10px, 1.4vw, 18px);
+        margin-top: 20px;
+        /* animation only starts once .started is added by JS, when the
+           strip actually scrolls into view — see the dedicated observer
+           for #worksTeasers. Not running by default avoids wasting cycles
+           animating something off-screen, and matches "starts only once
+           you've scrolled to it" exactly. */
+      }
+      .works__teasers.started {
         animation: works-teasers-scroll 30s linear infinite;
       }
-      /* the marquee runs independently of page scroll — a card can be
-         transformed off past the visible edge at the exact moment its own
-         [data-r] scroll-reveal check fires, so it may never receive .on and
-         stay invisible forever. A continuously-moving strip should just
-         always be visible; this overrides the reveal-on-scroll opacity for
-         mobile specifically, keeping the desktop static grid's fade-in intact. */
-      .teaser[data-r] { opacity: 1; transform: none; transition: none; }
+      /* a continuously-moving strip should just always be visible — no
+         per-card fade-in via [data-r]/animation-timeline here at all,
+         which is what caused cards to occasionally get stuck invisible
+         forever in earlier attempts (caught mid-transform-cycle by that
+         system's own visibility check). Desktop keeps its own staggered
+         per-card reveal (different layout, no movement, no conflict) —
+         this override is mobile-scoped only. animation:none is required
+         here too, not just opacity — an active reveal-in animation would
+         otherwise keep holding opacity regardless of this plain rule. */
+      .teaser[data-r] { opacity: 1; animation: none; }
       .teaser--dup { display: block; }
       /* 2/3 the width of the full-bleed main work cards (.wcard, which run
          the full content width on mobile: 100vw minus the side padding) */
@@ -1525,7 +1535,7 @@
           </div>
         </div>
       </div>
-      <div class="works__teasers-wrap">
+      <div class="works__teasers-wrap" data-r>
         <div class="works__teasers" id="worksTeasers">
           <div class="teaser" data-r style="--d:4">
             <img src="" data-img="teaser1" alt="" loading="lazy" aria-hidden="true">
@@ -2101,6 +2111,27 @@
       if (!btn || !teasers) return;
       btn.addEventListener('mouseenter', () => teasers.classList.add('is-revealed'));
       btn.addEventListener('mouseleave', () => teasers.classList.remove('is-revealed'));
+    })();
+
+    /* ── WORKS TEASERS: marquee starts moving only once scrolled into view ──
+       Simple, one-time, dedicated to this single element — deliberately NOT
+       reusing the shared [data-r] reveal system for the actual movement
+       trigger, since that system is about per-card opacity, not "start an
+       ongoing animation," and mixing the two concerns caused real bugs
+       earlier. This just adds one class, once, the first time the strip is
+       actually on screen. */
+    (function () {
+      const strip = document.getElementById('worksTeasers');
+      if (!strip) return;
+      const io = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            strip.classList.add('started');
+            io.unobserve(strip);
+          }
+        });
+      }, { threshold: 0.15 });
+      io.observe(strip);
     })();
 
     /* ── READY ── */
