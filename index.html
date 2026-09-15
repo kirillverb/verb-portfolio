@@ -423,6 +423,9 @@
     .mob.open a:nth-child(2) { opacity:1; transform:none; transition-delay:.13s; }
     .mob.open a:nth-child(3) { opacity:1; transform:none; transition-delay:.20s; }
     .mob.open a:nth-child(4) { opacity:1; transform:none; transition-delay:.27s; }
+    /* used to re-apply the open state instantly after a language-switch
+       re-render, without replaying the whole opening animation */
+    .mob.no-anim, .mob.no-anim * { transition: none !important; }
     .mob a:hover { color: var(--gold); }
     .theme-sw--mob {
       display: flex; align-items: center; gap: 10px; margin-top: 40px;
@@ -430,7 +433,7 @@
       opacity: 0; transition: opacity .45s var(--ease);
     }
     .theme-sw--mob .theme-btn svg { width: 20px; height: 20px; }
-    .mob.open .theme-sw--mob { opacity: 1; transition-delay: .32s; }
+    .mob.open .theme-sw--mob { opacity: 1; transition-delay: .38s; }
     .mob__lang {
       display: flex; align-items: center; gap: 12px; margin-top: 56px;
       font-size: 14px; font-weight: 500;
@@ -445,7 +448,7 @@
     .mob__lang button.active { color: var(--text); }
     .mob__lang button:hover { color: var(--muted); }
     .mob.open .mob__lang {
-      opacity: 1; transition-delay: .38s;
+      opacity: 1; transition-delay: .32s;
     }
 
     /* ══ HERO ══ */
@@ -1344,6 +1347,11 @@
     <a href="#works"   onclick="closeMob()" data-i18n="nav.works">Works</a>
     <a href="#process" onclick="closeMob()" data-i18n="nav.process">Process</a>
     <a href="#contact" onclick="closeMob()" data-i18n="nav.contact">Contact</a>
+    <div class="mob__lang">
+      <button class="mob-lang-btn active" data-lang="en">EN</button>
+      <span>/</span>
+      <button class="mob-lang-btn" data-lang="ru">RU</button>
+    </div>
     <div class="theme-sw--mob" id="themeSwMob">
       <button class="theme-btn" data-theme-choice="dark" aria-label="Dark theme">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1357,11 +1365,6 @@
           <path d="M12 2.5v2.4M12 19.1v2.4M21.5 12h-2.4M4.9 12H2.5M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7M18.5 18.5l-1.7-1.7M7.2 7.2 5.5 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
         </svg>
       </button>
-    </div>
-    <div class="mob__lang">
-      <button class="mob-lang-btn active" data-lang="en">EN</button>
-      <span>/</span>
-      <button class="mob-lang-btn" data-lang="ru">RU</button>
     </div>
   </nav>
 
@@ -2613,7 +2616,12 @@
             ${Object.keys(WORKS).map(k => `
               <a href="#" onclick="closeWpMob(); openWork('${k}'); return false;">${WORKS[k].title}</a>
             `).join('')}
-            <a href="#" class="btn-border" onclick="closeWpMob(); closeWork(); return false;">${lng === 'ru' ? 'Смотреть все работы' : 'See more works'}</a>
+            <a href="https://dribbble.com/KiryaVerb" target="_blank" rel="noopener" class="btn-border">${lng === 'ru' ? 'Смотреть все работы' : 'See more works'}</a>
+            <div class="mob__lang">
+              <button class="mob-lang-btn ${lng === 'en' ? 'active' : ''}" data-lang="en" onclick="applyLang('en')">EN</button>
+              <span>/</span>
+              <button class="mob-lang-btn ${lng === 'ru' ? 'active' : ''}" data-lang="ru" onclick="applyLang('ru')">RU</button>
+            </div>
             <div class="theme-sw--mob">
               <button class="theme-btn ${document.documentElement.getAttribute('data-theme') === 'light' ? '' : 'active'}" data-theme-choice="dark" aria-label="Dark theme">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -2628,11 +2636,6 @@
                 </svg>
               </button>
             </div>
-            <div class="mob__lang">
-              <button class="mob-lang-btn ${lng === 'en' ? 'active' : ''}" data-lang="en" onclick="applyLang('en')">EN</button>
-              <span>/</span>
-              <button class="mob-lang-btn ${lng === 'ru' ? 'active' : ''}" data-lang="ru" onclick="applyLang('ru')">RU</button>
-            </div>
           </nav>
         `;
       }
@@ -2643,6 +2646,8 @@
         const isSwitch = page.classList.contains('active');
 
         if (isSwitch) {
+          const curKeyNow = window.location.hash.replace('#', '');
+          if (curKeyNow === key) return; /* already viewing this project — no-op */
           /* determine direction: right if new project index > current */
           const keys = Object.keys(WORKS);
           const curKey = window.location.hash.replace('#', '') || keys[0];
@@ -2727,8 +2732,9 @@
         const wpNav  = document.querySelector('.wp-nav');
         const wpPage = document.getElementById('work-page');
         if (wpBurg && wpMob) {
-          function applyWpMobState(open) {
+          function applyWpMobState(open, instant) {
             window._wpMobOpen = open;
+            if (instant) wpMob.classList.add('no-anim');
             wpBurg.classList.toggle('open', open);
             wpMob.classList.toggle('open', open);
             if (wpNav) wpNav.classList.toggle('menu-open', open);
@@ -2739,12 +2745,17 @@
                the user to wherever that hidden scroll ended up. */
             document.body.style.overflow = open ? 'hidden' : '';
             if (wpPage) wpPage.style.overflow = open ? 'hidden' : '';
+            if (instant) {
+              wpMob.offsetHeight; /* force layout with transitions off */
+              wpMob.classList.remove('no-anim');
+            }
           }
-          /* re-apply instantly (no re-triggering the open transition) if the
+          /* re-apply INSTANTLY (no re-triggering the open animation) if the
              menu was open before this fresh render replaced the markup —
              this is what keeps the user "inside" the burger across a
-             language switch instead of it silently closing on them. */
-          if (window._wpMobOpen) applyWpMobState(true);
+             language switch instead of it silently closing on them, without
+             the whole thing visibly re-playing its opening flourish. */
+          if (window._wpMobOpen) applyWpMobState(true, true);
 
           if (!wpBurg._wpBurgInit) {
             wpBurg._wpBurgInit = true;
