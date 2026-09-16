@@ -1166,25 +1166,31 @@
       position: absolute; inset: 0; z-index: 1;
       pointer-events: none; mix-blend-mode: overlay; opacity: .85;
     }
-    .cta.weather-clear.is-daytime .cta__weather-tint {
-      background: linear-gradient(165deg, rgba(90,170,255,.32), rgba(255,196,110,.22) 55%, transparent 85%);
+    /* daytime — screen blend mode actively ADDS light and warmth, which is
+       what actually shows up on a dark photo; overlay barely affects
+       already-dark pixels, which is why day and night looked nearly
+       identical before. */
+    .cta.weather-clear.is-daytime .cta__weather-tint,
+    .cta.weather-cloudy.is-daytime .cta__weather-tint,
+    .cta.weather-clear:not(.is-daytime):not(.is-nighttime) .cta__weather-tint,
+    .cta.weather-cloudy:not(.is-daytime):not(.is-nighttime) .cta__weather-tint {
+      mix-blend-mode: screen; opacity: 1;
     }
+    .cta.weather-clear.is-daytime .cta__weather-tint,
+    .cta.weather-clear:not(.is-daytime):not(.is-nighttime) .cta__weather-tint {
+      background: linear-gradient(165deg, rgba(120,190,255,.4), rgba(255,205,120,.38) 55%, transparent 85%);
+    }
+    .cta.weather-cloudy.is-daytime .cta__weather-tint,
+    .cta.weather-cloudy:not(.is-daytime):not(.is-nighttime) .cta__weather-tint {
+      background: linear-gradient(165deg, rgba(190,205,220,.32), rgba(210,218,225,.2) 60%, transparent 85%);
+    }
+    /* nighttime — deep, saturated indigo/purple, deliberately darker and
+       moodier than day rather than trying to compete on brightness */
     .cta.weather-clear.is-nighttime .cta__weather-tint {
-      background: linear-gradient(165deg, rgba(40,30,90,.4), rgba(20,20,55,.28) 55%, transparent 85%);
-    }
-    .cta.weather-cloudy.is-daytime .cta__weather-tint {
-      background: linear-gradient(165deg, rgba(150,165,185,.3), rgba(180,190,200,.16) 60%, transparent 85%);
+      background: linear-gradient(165deg, rgba(50,35,120,.55), rgba(15,15,45,.4) 55%, transparent 85%);
     }
     .cta.weather-cloudy.is-nighttime .cta__weather-tint {
-      background: linear-gradient(165deg, rgba(55,65,85,.36), rgba(40,45,60,.2) 60%, transparent 85%);
-    }
-    /* fallback if day/night info wasn't available — defaults to the
-       daytime look rather than showing no tint at all */
-    .cta.weather-clear:not(.is-daytime):not(.is-nighttime) .cta__weather-tint {
-      background: linear-gradient(165deg, rgba(90,170,255,.32), rgba(255,196,110,.22) 55%, transparent 85%);
-    }
-    .cta.weather-cloudy:not(.is-daytime):not(.is-nighttime) .cta__weather-tint {
-      background: linear-gradient(165deg, rgba(150,165,185,.3), rgba(180,190,200,.16) 60%, transparent 85%);
+      background: linear-gradient(165deg, rgba(40,50,80,.5), rgba(20,25,40,.35) 60%, transparent 85%);
     }
     .cta.weather-rain .cta__weather-tint {
       background: linear-gradient(165deg, rgba(60,90,140,.42), rgba(35,55,90,.26) 60%, transparent 85%);
@@ -1352,8 +1358,8 @@
          75% is the empirically confirmed sweet spot, not a calculation */
       .cta__bg img { object-position: 75% center; }
       .cta {
-        justify-content: center; text-align: center; align-items: flex-end;
-        min-height: 0; aspect-ratio: 16/10;
+        justify-content: flex-start; text-align: left; align-items: flex-end;
+        min-height: 0; aspect-ratio: 100 / 118;
         padding: 28px 24px;
       }
       /* mobile only: the shorter 16/10 banner has less room for the photo's
