@@ -1205,19 +1205,15 @@
       letter-spacing: .12em; text-transform: uppercase;
       color: var(--gold);
     }
-    /* each word starts dim/low, brightens as scroll progress through this
-       block reaches it — reveal pace naturally matches however fast or
-       slow the visitor scrolls this specific section */
+    /* up through the first em-dash — shown immediately in gold, no reveal
+       animation of any kind. Plain inline (not inline-block, a leftover
+       from the old per-word system) — text needs to wrap normally right
+       through the dash, not treat the whole gold phrase as one rigid unit
+       that jumps to its own line. */
     .cta__word {
-      display: inline-block;
       color: var(--gold);
-      opacity: .18;
-      transition: opacity .25s linear;
     }
-    .cta__word.on { opacity: 1; }
-    /* everything after the first em-dash — plain, static, dim from the
-       very first paint. No transition, no scroll dependency, no per-word
-       spans: it simply never changes. */
+    /* everything after the first em-dash — plain white, shown immediately */
     .cta__rest { color: #FFFFFF; }
 
     /* weather particles — simple CSS-only rain/snow, count and exact
@@ -2698,7 +2694,7 @@
       };
     })();
 
-    /* ── CTA: personalized message + scroll-paced word reveal ── */
+    /* ── CTA: personalized message ── */
     (function () {
       function ruMinutes(n) {
         const mod10 = n % 10, mod100 = n % 100;
@@ -2747,57 +2743,18 @@
           : `You scrolled straight here without opening a single project — either you've already decided from the previews, or you're just curious. Either way, hi.`;
       }
 
-      let wordEls = [];
       function renderMessage() {
         const el = document.getElementById('ctaMessage');
         if (!el) return;
         const raw = buildMessage();
-        /* animated (gray→white on scroll) only up through the FIRST em-dash;
-           everything after it is static, plain dim text from the start —
-           not part of the reveal system at all, no transition, no per-word
-           spans needed since nothing about it changes over time. */
+        /* gold up through the first em-dash, plain white after it — both
+           shown immediately at full color, no reveal animation of any kind */
         const dashIdx = raw.indexOf('—');
         const brightPart = dashIdx === -1 ? raw : raw.slice(0, dashIdx + 1);
         const dimPart = dashIdx === -1 ? '' : raw.slice(dashIdx + 1);
-        const brightHTML = brightPart.trim().split(' ')
-          .map(w => `<span class="cta__word">${w}</span>`).join(' ');
-        el.innerHTML = brightHTML +
+        el.innerHTML = `<span class="cta__word">${brightPart.trim()}</span>` +
           (dimPart.trim() ? ` <span class="cta__rest">${dimPart.trim()}</span>` : '');
-        wordEls = Array.from(el.querySelectorAll('.cta__word'));
-        updateReveal();
       }
-
-      function updateReveal() {
-        const el = document.getElementById('ctaMessage');
-        if (!el || !wordEls.length) return;
-        const rect = el.getBoundingClientRect();
-        const vh = window.innerHeight;
-        /* 0 when the block's top is at the bottom edge of the viewport
-           (just entering), 1 once it has been scrolled all the way up to
-           the top edge — a clean one-viewport-height reveal window. Fast
-           scroll covers that distance in a couple of frames (words snap in
-           together), slow scroll spreads it out (words land one by one). */
-        let progress = (vh - rect.top) / vh;
-        progress = Math.max(0, Math.min(1, progress));
-
-        /* CTA sits right above the footer, near the very bottom of the
-           page — there often isn't enough page left below it for rect.top
-           to ever actually reach 0 through normal scrolling, so progress
-           can get stuck short of 1 no matter how far the visitor scrolls.
-           Same fix as the earlier top-bar progress bars: once scrolled to
-           the true bottom of the page, force full reveal regardless of
-           the geometric calculation above. */
-        const atPageBottom = window.scrollY + vh >= document.documentElement.scrollHeight - 2;
-        if (atPageBottom) progress = 1;
-
-        const revealCount = Math.round(progress * wordEls.length);
-        wordEls.forEach((w, i) => w.classList.toggle('on', i < revealCount));
-      }
-
-      let ticking = false;
-      window.addEventListener('scroll', () => {
-        if (!ticking) { requestAnimationFrame(() => { updateReveal(); ticking = false; }); ticking = true; }
-      }, { passive: true });
 
       /* the message is only computed the FIRST time the visitor actually
          scrolls the CTA block into view — not at page load. Rendering it
