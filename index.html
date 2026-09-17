@@ -1209,15 +1209,18 @@
       margin-top: 18px;
       font-family: var(--sans); font-size: 11px; font-weight: 500;
       letter-spacing: .12em; text-transform: uppercase;
-      color: var(--gold);
+      color: #C9A96E;
     }
     /* up through the first em-dash — shown immediately in gold, no reveal
        animation of any kind. Plain inline (not inline-block, a leftover
        from the old per-word system) — text needs to wrap normally right
        through the dash, not treat the whole gold phrase as one rigid unit
-       that jumps to its own line. */
+       that jumps to its own line. Fixed hex, not var(--gold) — that
+       variable shifts between the light/dark theme's own accent colors,
+       but the CTA sits on the same dark photo either way, so its gold
+       shouldn't move when the visitor toggles theme. */
     .cta__word {
-      color: var(--gold);
+      color: #C9A96E;
     }
     /* everything after the first em-dash — plain white, shown immediately */
     .cta__rest { color: #FFFFFF; }
@@ -2702,15 +2705,6 @@
 
     /* ── CTA: personalized message ── */
     (function () {
-      function ruMinutes(n) {
-        const mod10 = n % 10, mod100 = n % 100;
-        if (mod100 >= 11 && mod100 <= 14) return n + ' минут';
-        if (mod10 === 1) return n + ' минута';
-        if (mod10 >= 2 && mod10 <= 4) return n + ' минуты';
-        return n + ' минут';
-      }
-      function enMinutes(n) { return n === 1 ? '1 minute' : n + ' minutes'; }
-
       function buildMessage() {
         const read = (window._getReadWorks && window._getReadWorks()) || {};
         const readCount = Object.keys(read).length;
@@ -2720,44 +2714,42 @@
         const isRu = currentLang === 'ru';
 
         if (readCount >= totalWorks) {
-          /* claiming "not skimmed, actually read" only makes sense if the
-             elapsed time is plausible for reading three full case studies —
-             under 2 minutes contradicts that claim, so we simply drop the
-             time detail there instead of stating something implausible.
-             RU uses the plural past tense with the subject omitted
-             (неопределённо-личное предложение) — "прошли/прочитали" rather
-             than "ты прошёл/прошла" — Russian plural past tense never marks
-             gender, unlike singular, and reads far more natural and active
-             than a fully impersonal/passive rebuild. English needs no such
-             rework — its past tense doesn't inflect for gender at all. */
           const believable = mins >= 2;
           return isRu
             ? (believable
-                ? `Чекнули все избранные кейсы — от начала до конца. Такое здесь ценится. На это ушло ${ruMinutes(mins)} — не пролистали мельком, а реально прочитали. Есть о чём поговорить.`
-                : `Чекнули все избранные кейсы — от начала до конца. Такое здесь ценится. Есть о чём поговорить.`)
+                ? `Все три кейса просмотрены от начала до конца. Похоже, вы настроены серьёзно. Давайте обсудим проект.`
+                : `Все три кейса за пару минут. Надеюсь, главное не осталось за кадром.`)
             : (believable
-                ? `You made it through all three projects — that's rare. And it took ${enMinutes(mins)} — not skimmed, actually read. We clearly have something to talk about.`
-                : `You made it through all three projects — that's rare. We clearly have something to talk about.`);
+                ? `All three projects, from start to finish. Looks like you mean business. Let’s discuss your project.`
+                : `All three projects in a couple of minutes. Hope nothing important was missed.`);
         }
         if (readCount > 0) {
           return isRu
-            ? `Заглянули в пару работ, но не дочитали до конца — понимаю, времени всегда не хватает. Если зацепило хоть что-то — пишите, разберёмся в переписке.`
-            : `You peeked into a couple of the projects but didn't finish — I get it, time's always short. If something caught your eye, just write, we'll figure it out.`;
+            ? `В несколько кейсов заглянули, но не во все. Уже достаточно, чтобы продолжить разговор.`
+            : `You explored a few projects, but not all. Enough to keep the conversation going.`;
         }
         return isRu
-          ? `Проскроллили сразу досюда, ни разу не заглянув в сами работы — либо уже всё понятно по превью, либо просто любопытно. В любом случае, привет.`
-          : `You scrolled straight here without opening a single project — either you've already decided from the previews, or you're just curious. Either way, hi.`;
+          ? `Сразу к финалу, минуя кейсы? Эффективно. Тогда обсудим ваш проект?`
+          : `Straight to the end, skipping the projects? Efficient. Then let’s discuss your project?`;
       }
 
       function renderMessage() {
         const el = document.getElementById('ctaMessage');
         if (!el) return;
         const raw = buildMessage();
-        /* gold up through the first em-dash, plain white after it — both
-           shown immediately at full color, no reveal animation of any kind */
-        const dashIdx = raw.indexOf('—');
-        const brightPart = dashIdx === -1 ? raw : raw.slice(0, dashIdx + 1);
-        const dimPart = dashIdx === -1 ? '' : raw.slice(dashIdx + 1);
+        /* gold for the first sentence, plain white for the rest — the new
+           copy doesn't contain an em-dash the way the old copy did, so the
+           split point moves to the first sentence boundary instead, same
+           idea (lead statement emphasized, reaction/CTA stays quieter).
+           Some variants end that first clause with "?" rather than "." —
+           whichever punctuation mark actually ends it, take the EARLIER of
+           the two rather than assuming it's always a period. */
+        const dotIdx = raw.indexOf('. ');
+        const qIdx = raw.indexOf('? ');
+        const candidates = [dotIdx, qIdx].filter(i => i !== -1);
+        const splitAt = candidates.length ? Math.min(...candidates) + 1 : raw.length;
+        const brightPart = raw.slice(0, splitAt);
+        const dimPart = raw.slice(splitAt);
         el.innerHTML = `<span class="cta__word">${brightPart.trim()}</span>` +
           (dimPart.trim() ? ` <span class="cta__rest">${dimPart.trim()}</span>` : '');
       }
@@ -2901,7 +2893,7 @@
                magnetic-tilt effect — never touch it here, or this backup
                would silently override the tilt the same way the CSS
                animation used to. */
-            if (!el.matches('.wcard, .about__img, .cta, .wp-item__img')) {
+            if (!el.matches('.wcard, .about__img, .cta, .wp-item__img, .hero__scroll')) {
               el.style.transform = 'none';
             }
           }
