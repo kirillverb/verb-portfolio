@@ -1209,7 +1209,7 @@
       margin-top: 18px;
       font-family: var(--sans); font-size: 11px; font-weight: 500;
       letter-spacing: .12em; text-transform: uppercase;
-      color: #C9A96E;
+      color: rgba(255,255,255,.4);
     }
     /* up through the first em-dash — shown immediately in gold, no reveal
        animation of any kind. Plain inline (not inline-block, a leftover
@@ -1220,7 +1220,7 @@
        but the CTA sits on the same dark photo either way, so its gold
        shouldn't move when the visitor toggles theme. */
     .cta__word {
-      color: #C9A96E;
+      color: #FFFFFF;
     }
     /* everything after the first em-dash — plain white, shown immediately */
     .cta__rest { color: #FFFFFF; }
@@ -2465,6 +2465,11 @@
            e.target isn't guaranteed to be an Element (edge cases exist),
            so guard before calling .closest() on it. */
         if (e.target && e.target.closest && e.target.closest('#work-page, .mob, .wp-item__img')) return;
+        /* macOS trackpad pinch-to-zoom is delivered as a wheel event with
+           ctrlKey set (that's how Safari/Chrome represent it internally,
+           not an actual Ctrl key press) — preventDefault() on it blocks
+           native zoom entirely. Let this one pass through untouched. */
+        if (e.ctrlKey) return;
         e.preventDefault();
         targetY = Math.max(0, Math.min(maxScroll(), targetY + e.deltaY));
         if (!raf) raf = requestAnimationFrame(tick);
