@@ -203,31 +203,37 @@
       to { clip-path: circle(var(--vt-r, 150%) at var(--vt-x, 50%) var(--vt-y, 50%)); }
     }
 
-    /* ══ REVEAL — pure CSS scroll-driven animation ══ */
-    @keyframes reveal-in {
-      from { opacity: 0; transform: translateY(46px); }
-      to   { opacity: 1; transform: none; }
+    /* ══ REVEAL — pure CSS scroll-driven animation ══
+       ARCHITECTURE NOTE: every property here is a CSS custom property that
+       each animation system owns exclusively — reveal owns --reveal-o and
+       --reveal-y, the magnetic-tilt system owns --tilt-*, hover-dim owns
+       --hover-o. The final `opacity`/`transform` each element actually
+       paints is a COMPOSED formula built from whichever of these are
+       relevant to it. No system ever writes the final property directly,
+       so no system can silently overwrite another's contribution — this
+       was the root cause behind several earlier bugs (tilt vanishing,
+       hover-dim breaking, the scroll indicator losing its centering) that
+       kept recurring in different specific spots because the underlying
+       conflict was structural, not a one-off mistake. Registering these
+       via @property is what lets a CSS animation interpolate them
+       smoothly frame-by-frame instead of jumping in one step. */
+    @property --reveal-o {
+      syntax: '<number>'; inherits: true; initial-value: 0;
     }
-    /* opacity-only variant — for elements that ALSO get the JS magnetic-tilt
-       effect (.wcard, .about__img, .cta, .wp-item__img). A CSS animation
-       keeps "holding" any property it animates even once finished (with
-       fill-mode: both), which silently overrides an inline style set by JS
-       afterwards — so these specific elements must never have their
-       transform claimed by the reveal animation at all, or the tilt effect
-       becomes invisible no matter how correctly the JS computes it. */
-    @keyframes reveal-in-fade-only {
-      from { opacity: 0; }
-      to   { opacity: 1; }
+    @property --reveal-y {
+      syntax: '<length>'; inherits: true; initial-value: 46px;
+    }
+    @keyframes reveal-in {
+      from { --reveal-o: 0; --reveal-y: 46px; }
+      to   { --reveal-o: 1; --reveal-y: 0px; }
     }
     /* safety default: fully visible unless the animation below overrides it —
        so ANY browser without support just shows content normally, never stuck invisible */
     [data-r] {
-      opacity: 0; transform: translateY(46px);
+      --reveal-o: 0; --reveal-y: 46px;
+      opacity: var(--reveal-o);
+      transform: translateY(var(--reveal-y));
       transition: opacity 1.1s var(--ease), transform 1.1s var(--ease);
-    }
-    .wcard[data-r], .about__img[data-r], .cta[data-r], .wp-item__img[data-r] {
-      transform: none; /* these tilt via JS — never give the reveal system transform */
-      transition: opacity 1.1s var(--ease);
     }
     @supports (animation-timeline: view()) {
       [data-r] {
@@ -241,9 +247,33 @@
         animation-timeline: view();
         animation-range: entry 0% entry 65%;
       }
-      .wcard[data-r], .about__img[data-r], .cta[data-r], .wp-item__img[data-r] {
-        animation-name: reveal-in-fade-only;
-      }
+    }
+    /* elements that ALSO get the JS magnetic-tilt effect — the tilt system
+       (see createTilt()) writes only to --tilt-*, never to transform
+       directly, so this composed formula always reflects both this
+       reveal's current --reveal-y AND whatever the tilt system last set,
+       with neither able to clobber the other. */
+    .wcard[data-r], .about__img[data-r], .cta[data-r] {
+      transform:
+        translateY(var(--reveal-y))
+        perspective(var(--tilt-p, 900px))
+        rotateX(var(--tilt-rx, 0deg))
+        rotateY(var(--tilt-ry, 0deg))
+        translate3d(var(--tilt-tx, 0px), var(--tilt-ty, 0px), 0);
+    }
+    /* .wp-item__img never carries data-r (work-page photos don't use the
+       scroll-reveal system at all) — it needs the tilt-composition formula
+       unconditionally, not gated behind [data-r] like the other three.
+       Missing this was an actual regression: the JS tilt system was
+       correctly setting --tilt-* on it, but no rule existed that actually
+       read those variables into a real transform, so the values it set
+       had nowhere to go. */
+    .wp-item__img {
+      transform:
+        perspective(var(--tilt-p, 900px))
+        rotateX(var(--tilt-rx, 0deg))
+        rotateY(var(--tilt-ry, 0deg))
+        translate3d(var(--tilt-tx, 0px), var(--tilt-ty, 0px), 0);
     }
     /* NOTE: intentionally NOT disabling this for prefers-reduced-motion —
        this specific animation is a very gentle opacity+30px fade, and the
@@ -527,6 +557,7 @@
     }
     .about__img {
       position: relative; overflow: hidden; will-change: transform;
+      --tilt-p: 900px; --tilt-rx: 0deg; --tilt-ry: 0deg; --tilt-tx: 0px; --tilt-ty: 0px;
       transition: opacity .8s var(--ease);
       transition-delay: calc(var(--d,0) * 140ms);
     }
@@ -565,7 +596,7 @@
       display: grid; grid-template-columns: repeat(3, 1fr);
       gap: clamp(10px, 1.4vw, 18px);
     }
-    .wcard { position: relative; overflow: hidden; aspect-ratio: 3/4; background: var(--surface); will-change: transform; transition: opacity .8s var(--ease); transition-delay: calc(var(--d,0) * 140ms); }
+    .wcard { position: relative; overflow: hidden; aspect-ratio: 3/4; background: var(--surface); will-change: transform; --tilt-p: 900px; --tilt-rx: 0deg; --tilt-ry: 0deg; --tilt-tx: 0px; --tilt-ty: 0px; transition: opacity .8s var(--ease); transition-delay: calc(var(--d,0) * 140ms); }
 
     /* .wcard/.about__img now own their transition (see above) instead of inheriting
        it from [data-r], so the reduced-motion kill-switch needs restating here too —
@@ -846,6 +877,7 @@
       top: 80px;
       overflow: hidden;
       will-change: transform;
+      --tilt-p: 900px; --tilt-rx: 0deg; --tilt-ry: 0deg; --tilt-tx: 0px; --tilt-ty: 0px;
     }
     .wp-item__img::before {
       content: ''; display: block; padding-top: 118%;
@@ -1090,16 +1122,20 @@
       border-top: 1px solid var(--bdr);
       border-bottom: 1px solid var(--bdr);
       align-items: start;
+      --hover-o: 1;
       transition: border-color .3s, opacity .35s var(--ease);
     }
     /* overlap each item's top border with the previous item's bottom border
        so they collapse into a single shared line instead of stacking 2px thick */
     .step + .step { margin-top: -1px; }
     .step:hover { border-top-color: var(--bdr2); border-bottom-color: var(--bdr2); }
-    /* hovering one step dims all the others for visual contrast —
-       untouched (no hover anywhere) leaves everything at full brightness */
-    .step.is-settled { opacity: 1; transform: none; }
-    .steps:hover .step:not(:hover) { opacity: .4; }
+    /* opacity is reveal-o × hover-o composed — the reveal animation "holding"
+       --reveal-o at 1 once finished no longer matters, because hover-dim
+       writes to the SEPARATE --hover-o property; multiplying them together
+       means either one can move the final opacity without needing to touch
+       (or wait on) the other at all. */
+    .step[data-r] { opacity: calc(var(--reveal-o) * var(--hover-o)); }
+    .steps:hover .step:not(:hover) { --hover-o: .4; }
 
     /* col 2: number + title stacked */
     .step__head {
@@ -1140,6 +1176,7 @@
     }
     .cta {
       position: relative; overflow: hidden; will-change: transform;
+      --tilt-p: 900px; --tilt-rx: 0deg; --tilt-ry: 0deg; --tilt-tx: 0px; --tilt-ty: 0px;
       min-height: 380px; display: flex; align-items: center;
       padding: clamp(52px, 7vw, 92px);
     }
@@ -2303,15 +2340,22 @@
        transition fights itself when retriggered on every mousemove event,
        since it never finishes easing before being redirected to a new
        target, which reads as jerky rather than smooth. This loop eases the
-       CURRENT value toward the TARGET a little every frame instead. */
+       CURRENT value toward the TARGET a little every frame instead.
+       Writes ONLY to --tilt-* custom properties, never to `transform`
+       directly — the element's own CSS rule composes those together with
+       whatever the reveal system is contributing via --reveal-y, so this
+       system and the reveal system can never overwrite each other. */
     function createTilt(el, opts) {
       const TILT = opts.tilt, MOVE = opts.move, PERSPECTIVE = opts.perspective || 900, LERP = opts.lerp || .12;
       let tx = 0, ty = 0, cx = 0, cy = 0, raf = null, active = false;
       function frame() {
         cx += (tx - cx) * LERP;
         cy += (ty - cy) * LERP;
-        el.style.transform =
-          `perspective(${PERSPECTIVE}px) rotateX(${-cy * TILT}deg) rotateY(${cx * TILT}deg) translate3d(${cx * MOVE}px, ${cy * MOVE}px, 0)`;
+        el.style.setProperty('--tilt-p', PERSPECTIVE + 'px');
+        el.style.setProperty('--tilt-rx', (-cy * TILT) + 'deg');
+        el.style.setProperty('--tilt-ry', (cx * TILT) + 'deg');
+        el.style.setProperty('--tilt-tx', (cx * MOVE) + 'px');
+        el.style.setProperty('--tilt-ty', (cy * MOVE) + 'px');
         if (active || Math.abs(tx - cx) > .0008 || Math.abs(ty - cy) > .0008) {
           raf = requestAnimationFrame(frame);
         } else { raf = null; }
@@ -2366,7 +2410,7 @@
       if (window.matchMedia('(hover:hover)').matches) return;   /* desktop already covered above */
       if (typeof DeviceOrientationEvent === 'undefined') return; /* no sensor support at all */
 
-      const MAX_DEG = 9;
+      const MAX_DEG = 7;
       let baseBeta = null, baseGamma = null;
       const targets = []; /* tilt controller instances */
 
@@ -2388,11 +2432,11 @@
         if (started) return;
         started = true;
         window.addEventListener('deviceorientation', handleOrientation);
-        document.querySelectorAll('.wcard').forEach(card => register(card, { tilt: 15, move: 30, perspective: 1400 }));
+        document.querySelectorAll('.wcard').forEach(card => register(card, { tilt: 20, move: 34, perspective: 1300 }));
         const aboutImg = document.querySelector('.about__img');
-        if (aboutImg) register(aboutImg, { tilt: 13, move: 22, perspective: 1500 });
+        if (aboutImg) register(aboutImg, { tilt: 18, move: 26, perspective: 1400 });
         const ctaEl = document.querySelector('.cta');
-        if (ctaEl) register(ctaEl, { tilt: 11, move: 18, perspective: 1900 });
+        if (ctaEl) register(ctaEl, { tilt: 15, move: 20, perspective: 1700 });
       }
 
       if (typeof DeviceOrientationEvent.requestPermission === 'function') {
@@ -2854,53 +2898,27 @@
           wins over any CSS by specificity, regardless of what system 1 is
           doing). If either system works, the content reveals correctly. */
 
-    /* .step's reveal animation finishes by permanently HOLDING opacity:1
-       via fill-mode:both, which silently blocks the hover-dim CSS rule
-       (.steps:hover .step:not(:hover) { opacity: .4 }) forever afterward —
-       same class of bug as the tilt/transform conflict, but happening at
-       the CSS animation level itself, not just the JS backup. Once the
-       reveal animation naturally finishes, drop it entirely so opacity is
-       freely available to normal stylesheet rules again. */
-    document.querySelectorAll('.step').forEach(step => {
-      step.addEventListener('animationend', () => {
-        /* toggle a plain CSS class (not an inline style) so the hover-dim
-           rule — which has higher specificity — can still correctly
-           override it. An inline style would have won regardless of hover
-           state and permanently blocked the dim effect, same bug as before
-           just one layer deeper. */
-        step.classList.add('is-settled');
-        step.style.animation = 'none';
-      });
-    });
+    /* .step's dim/reveal opacity is a composed formula (--reveal-o × --hover-o,
+       see the .step[data-r] rule) — reveal and hover-dim each own their own
+       slice, so neither can block the other regardless of which finishes
+       first. No JS intervention needed once that was true. */
 
     (function () {
       function revealVisible() {
         document.querySelectorAll('[data-r]').forEach(el => {
           const rect = el.getBoundingClientRect();
           if (rect.top < window.innerHeight * 0.92 && rect.bottom > 0) {
-            /* .step manages its own opacity via the hover-dim CSS rule
-               (.steps:hover .step:not(:hover) { opacity: .4 }) — an inline
-               style here would permanently pin it to 1 and silently block
-               that rule forever, the same class of bug as the tilt/transform
-               conflict below. */
-            /* .step manages its own opacity via the hover-dim CSS rule
-               (.steps:hover .step:not(:hover) { opacity: .4 }) — an inline
-               style here would permanently pin it to 1 and silently block
-               that rule forever, the same class of bug as the tilt/transform
-               conflict below. Use the same low-specificity class the CSS
-               animationend handler uses instead, so hover-dim can still win. */
-            if (el.matches('.step')) {
-              el.classList.add('is-settled');
-            } else {
-              el.style.opacity = '1';
-            }
-            /* tilt-enabled elements manage their own transform via the
-               magnetic-tilt effect — never touch it here, or this backup
-               would silently override the tilt the same way the CSS
-               animation used to. */
-            if (!el.matches('.wcard, .about__img, .cta, .wp-item__img, .hero__scroll')) {
-              el.style.transform = 'none';
-            }
+            /* sets ONLY the custom properties this system owns — never the
+               final opacity/transform directly. Whatever else is composing
+               those (tilt's --tilt-*, hover-dim's --hover-o) is completely
+               unaffected, so no exclusion list is needed here at all;
+               previously every element type that needed its OWN transform
+               or opacity for something else had to be manually added to a
+               growing exclusion list, and every time a new one was missed
+               (.hero__scroll, .step) it silently broke. Structurally
+               impossible now, not just patched. */
+            el.style.setProperty('--reveal-o', '1');
+            el.style.setProperty('--reveal-y', '0px');
           }
         });
       }
