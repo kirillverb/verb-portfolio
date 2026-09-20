@@ -1396,7 +1396,7 @@
          mobile viewports it pushes the subject too far off-center right */
       /* verified via actual headless-browser rendering at real mobile viewport —
          75% is the empirically confirmed sweet spot, not a calculation */
-      .cta__bg img { object-position: 75% center; }
+      .cta__bg img { object-position: 75% center; transform: scale(1.15); }
       .cta {
         justify-content: flex-start; text-align: left; align-items: flex-end;
         min-height: 0; aspect-ratio: 100 / 118;
