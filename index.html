@@ -2559,26 +2559,34 @@
     /* ── HEADER SCROLL ── */
     (function () {
       const h = document.getElementById('hdr');
-      let lastY = window.scrollY;
-      let downStart = lastY; /* where the current unbroken downward run began */
-      const HIDE_AFTER = 120;   /* don't start hiding until scrolled past the hero area */
-      const DOWN_DISTANCE = 350; /* how far down, in one unbroken run, before it hides —
-                                    without this, any single pixel of downward motion
-                                    (even a tiny trackpad twitch) hid it instantly */
+      let peakY = window.scrollY;   /* highest scrollY reached in the current run */
+      let runStart = peakY;         /* where the current run started measuring from */
+      const HIDE_AFTER = 120;    /* don't start hiding until scrolled past the hero area */
+      const DOWN_DISTANCE = 700; /* how far down, in one run, before it hides */
+      const UP_TOLERANCE = 20;   /* real scrolling (touch, trackpad) never moves in a
+                                    perfectly straight line — there's always a few
+                                    pixels of natural back-and-forth jitter. Treating
+                                    ANY upward tick as "the user reversed direction"
+                                    reset the whole run constantly, so at a distance
+                                    as large as 700px the run almost never survived
+                                    long enough to ever actually fire — the animation
+                                    looked like it had stopped working entirely, not
+                                    just less smooth. Only a reversal bigger than this
+                                    tolerance now counts as a genuine change of mind. */
       const fn = () => {
         const y = window.scrollY;
         h.classList.toggle('scrolled', y > 56);
         if (!h.classList.contains('menu-open')) {
-          if (y > lastY) {
-            if (y - downStart > DOWN_DISTANCE && y > HIDE_AFTER) {
-              h.classList.add('hdr--hidden');
-            }
-          } else if (y < lastY) {
-            downStart = y; /* any upward movement resets the run and shows right away */
+          if (y > peakY) peakY = y;
+          if (peakY - y > UP_TOLERANCE) {
+            /* genuine upward scroll — show immediately and start a fresh run here */
             h.classList.remove('hdr--hidden');
+            runStart = y;
+            peakY = y;
+          } else if (peakY - runStart > DOWN_DISTANCE && peakY > HIDE_AFTER) {
+            h.classList.add('hdr--hidden');
           }
         }
-        lastY = y;
       };
       window.addEventListener('scroll', fn, { passive: true });
       fn();
