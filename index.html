@@ -286,6 +286,7 @@
       display: flex; align-items: center; justify-content: space-between;
       padding: 26px var(--px);
       border-bottom: 1px solid transparent;
+      will-change: transform;
       /* while unscrolled, the header sits directly over the hero photo
          (permanently darkened via filter, regardless of site theme — see
          .hero__bg img), so it needs a fixed light palette here, NOT the
@@ -298,7 +299,7 @@
       --hdr-muted: rgba(255,255,255,.68);
       --hdr-dim:   rgba(255,255,255,.4);
       --hdr-track: rgba(255,255,255,.15);
-      transition: padding .4s, background .6s var(--ease), border-color .6s var(--ease), color .6s var(--ease), transform .35s var(--ease);
+      transition: padding .4s, background .6s var(--ease), border-color .6s var(--ease), color .6s var(--ease), transform .45s var(--ease);
     }
     .hdr--hidden { transform: translateY(-100%); }
     /* the work-page nav (.wp-nav) is a separate fixed/sticky bar — without
@@ -1187,7 +1188,9 @@
       object-position: 60% center;
       transition: transform .9s var(--ease);
     }
-    .cta:hover .cta__bg img { transform: scale(1.03); }
+    @media (hover: hover) {
+      .cta:hover .cta__bg img { transform: scale(1.03); }
+    }
     .cta__vignette {
       position: absolute; inset: 0;
     }
@@ -2559,7 +2562,7 @@
       let lastY = window.scrollY;
       let downStart = lastY; /* where the current unbroken downward run began */
       const HIDE_AFTER = 120;   /* don't start hiding until scrolled past the hero area */
-      const DOWN_DISTANCE = 200; /* how far down, in one unbroken run, before it hides —
+      const DOWN_DISTANCE = 350; /* how far down, in one unbroken run, before it hides —
                                     without this, any single pixel of downward motion
                                     (even a tiny trackpad twitch) hid it instantly */
       const fn = () => {
