@@ -218,10 +218,10 @@
        via @property is what lets a CSS animation interpolate them
        smoothly frame-by-frame instead of jumping in one step. */
     @property --reveal-o {
-      syntax: '<number>'; inherits: true; initial-value: 0;
+      syntax: '<number>'; inherits: false; initial-value: 0;
     }
     @property --reveal-y {
-      syntax: '<length>'; inherits: true; initial-value: 46px;
+      syntax: '<length>'; inherits: false; initial-value: 46px;
     }
     @keyframes reveal-in {
       from { --reveal-o: 0; --reveal-y: 46px; }
@@ -1091,7 +1091,7 @@
       .wp-results__desc { font-size: 12px; }
 
       /* footer */
-      .wp-foot { flex-direction: column; align-items: flex-start; gap: 14px; }
+      .wp-foot { flex-direction: column; align-items: center; gap: 14px; }
       .wp-foot a { font-size: 28px; }
     }
 
@@ -1389,7 +1389,7 @@
         grid-template-rows: auto auto;
         gap: 8px;
       }
-      .foot { flex-direction: column; align-items: flex-start; gap: 16px; }
+      .foot { flex-direction: column; align-items: center; gap: 16px; }
       .foot a { font-size: 28px; }
 
       /* CTA image: 60% shift was tuned for wide desktop crops — on narrow
@@ -2270,7 +2270,14 @@
         entries.forEach(e => {
           if (e.isIntersecting) {
             strip.classList.add('started');
-            io.unobserve(e.target);
+            strip.style.animationPlayState = 'running';
+          } else if (strip.classList.contains('started')) {
+            /* once started, pause rather than unobserve — an infinite CSS
+               animation keeps costing the compositor for as long as it's
+               running, even scrolled far off-screen, for the entire rest
+               of the visit. Pausing when out of view (and resuming when
+               back) avoids paying that cost indefinitely. */
+            strip.style.animationPlayState = 'paused';
           }
         });
       }, { threshold: 0.15 });
@@ -2514,10 +2521,27 @@
            not an actual Ctrl key press) — preventDefault() on it blocks
            native zoom entirely. Let this one pass through untouched. */
         if (e.ctrlKey) return;
+        /* once the page IS zoomed in, a two-finger trackpad move is how the
+           browser lets you PAN around the zoomed view in any direction —
+           it's still delivered as a plain wheel event (no ctrlKey), so
+           without this check it kept getting hijacked into "scroll the
+           page vertically", which blocked panning horizontally (and even
+           vertically, since our easing fights the browser's own pan)
+           entirely while zoomed. Bypass this whole layer whenever zoom is
+           active and let the browser handle panning natively. */
+        if (window.visualViewport && window.visualViewport.scale > 1.01) return;
         e.preventDefault();
         targetY = Math.max(0, Math.min(maxScroll(), targetY + e.deltaY));
         if (!raf) raf = requestAnimationFrame(tick);
       }, { passive: false });
+
+      /* re-sync so a wheel tick right after zooming back out doesn't yank
+         the page toward a target that went stale while zoomed */
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => {
+          if (window.visualViewport.scale <= 1.01) { targetY = window.scrollY; currentY = window.scrollY; }
+        });
+      }
 
       /* keep the eased target in sync with any OTHER way the page scrolls
          (anchor-link navigation, keyboard Page Down/Home/End, browser
@@ -2884,6 +2908,20 @@
           }
           layer.appendChild(el);
         }
+        /* pause the (infinite) rain/snow animation whenever the CTA itself
+           scrolls out of view, resume when it's back — same reasoning as
+           the marquee: an infinite CSS animation left running keeps
+           costing the compositor for the rest of the visit even scrolled
+           far away from it. */
+        const weatherIo = new IntersectionObserver(entries => {
+          entries.forEach(e => {
+            layer.style.animationPlayState = e.isIntersecting ? 'running' : 'paused';
+            Array.from(layer.children).forEach(p => {
+              p.style.animationPlayState = e.isIntersecting ? 'running' : 'paused';
+            });
+          });
+        }, { threshold: 0.01 });
+        weatherIo.observe(cta);
       });
     })();
 
