@@ -117,8 +117,10 @@
       background: #080808;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       gap: 18px;
+      opacity: 0; visibility: hidden; pointer-events: none;
       transition: opacity .6s var(--ease, ease), visibility .6s;
     }
+    .loader.is-visible { opacity: 1; visibility: visible; pointer-events: auto; }
     .loader.is-done { opacity: 0; visibility: hidden; pointer-events: none; }
     .loader__pct {
       font-family: 'Instrument Serif', 'Playfair Display', Georgia, serif;
@@ -1528,7 +1530,22 @@
          hero video — rather than faking a number on a timer. Anything
          belonging to a work page isn't loaded yet at this point at all
          (that content doesn't exist in the DOM until a project is opened),
-         so it's correctly excluded without needing a manual list. */
+         so it's correctly excluded without needing a manual list.
+
+         On fast connections all of this used to finish in well under a
+         second, so the loader would flash on and immediately off again —
+         more jarring than just not having one. Three adjustments fix that
+         without giving up an honest progress signal:
+         1) wait SHOW_DELAY before revealing it at all — if loading is
+            already done by then, it never appears in the first place;
+         2) once it IS shown, hold it for at least MIN_HOLD regardless of
+            how fast the real loading finishes after that point;
+         3) the displayed number eases toward the real percentage each
+            frame instead of jumping straight to whatever a load event
+            just pushed it to, so it reads as a smooth count rather than a
+            few abrupt jumps. */
+      const SHOW_DELAY = 150;
+      const MIN_HOLD = 700;
       const pctEl = document.getElementById('loaderPct');
       const fillEl = document.getElementById('loaderFill');
       const loaderEl = document.getElementById('loader');
@@ -1538,6 +1555,7 @@
       const trackedVideo = document.querySelector('video[data-video="hero"]');
       const total = trackedImgs.length + (trackedVideo ? 1 : 0);
       let done = 0;
+      let realPct = total ? 0 : 100;
 
       /* the loader visually covers everything, but nothing was actually
          stopping scroll input from reaching the real page underneath it —
@@ -1555,17 +1573,49 @@
         document.body.style.overflow = 'hidden';
       }
 
+      let everShown = false;
+      let showTime = null;
+      let rafId = null;
+      let displayedPct = 0;
+
+      function displayLoop() {
+        const target = Math.min(realPct, 99); /* never let the eased display touch 100 on its own — finish() sets the true final value explicitly */
+        displayedPct += (target - displayedPct) * 0.09;
+        if (Math.abs(target - displayedPct) < .3) displayedPct = target;
+        const shownPct = Math.round(displayedPct);
+        if (pctEl) pctEl.textContent = shownPct + '%';
+        if (fillEl) fillEl.style.width = shownPct + '%';
+        rafId = requestAnimationFrame(displayLoop);
+      }
+
+      function revealIfStillLoading() {
+        if (alreadyShown || finished) return;
+        everShown = true;
+        showTime = Date.now();
+        if (loaderEl) loaderEl.classList.add('is-visible');
+        rafId = requestAnimationFrame(displayLoop);
+      }
+      if (!alreadyShown) setTimeout(revealIfStillLoading, SHOW_DELAY);
+
       function bump() {
         done = Math.min(done + 1, total);
-        const pct = total ? Math.round((done / total) * 100) : 100;
-        if (pctEl) pctEl.textContent = pct + '%';
-        if (fillEl) fillEl.style.width = pct + '%';
-        if (done >= total) finish();
+        realPct = total ? Math.round((done / total) * 100) : 100;
+        if (realPct >= 100) tryFinish();
       }
+
       let finished = false;
+      function tryFinish() {
+        if (finished || !total) return; /* total===0 case is handled separately below */
+        if (!everShown) { finish(); return; } /* fast enough it never even appeared — nothing to hold */
+        const remaining = MIN_HOLD - (Date.now() - showTime);
+        if (remaining <= 0) finish(); else setTimeout(finish, remaining);
+      }
       function finish() {
         if (finished) return;
         finished = true;
+        if (rafId) cancelAnimationFrame(rafId);
+        if (pctEl) pctEl.textContent = '100%';
+        if (fillEl) fillEl.style.width = '100%';
         if (loaderEl) loaderEl.classList.add('is-done');
         if (!alreadyShown) document.body.style.overflow = '';
         try { sessionStorage.setItem('_loaderShown', '1'); } catch (e) {}
