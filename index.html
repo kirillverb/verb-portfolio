@@ -299,9 +299,13 @@
       --hdr-muted: rgba(255,255,255,.68);
       --hdr-dim:   rgba(255,255,255,.4);
       --hdr-track: rgba(255,255,255,.15);
-      transition: padding .4s, background .6s var(--ease), border-color .6s var(--ease), color .6s var(--ease), transform .45s var(--ease);
+      transition: padding .4s, background .6s var(--ease), border-color .6s var(--ease), color .6s var(--ease);
     }
-    .hdr--hidden { transform: translateY(-100%); }
+    /* the show/hide movement itself is applied as a direct inline style by
+       a JS RAF loop (see HEADER SCROLL below), not a class + CSS
+       transition — a position:fixed element's transform not reliably
+       transitioning mid-scroll is a known WebKit/iOS quirk this sidesteps
+       entirely. */
     /* the work-page nav (.wp-nav) is a separate fixed/sticky bar — without
        this, both it and the main .hdr render at once (previously masked only
        by accident, since .wp-nav's z-index used to be higher; that stopped
@@ -490,7 +494,7 @@
       display: flex; align-items: center; justify-content: center; overflow: hidden;
     }
     .hero__bg { position: absolute; inset: 0; }
-    .hero__bg img {
+    .hero__bg video {
       width: 100%; height: 100%; object-fit: cover; object-position: center 18%;
       filter: brightness(.14) saturate(.55);
     }
@@ -499,25 +503,23 @@
       background: linear-gradient(180deg,
         rgba(8,8,8,.25) 0%, transparent 35%, transparent 60%, rgba(8,8,8,.85) 100%);
     }
-    .hero__body {
-      position: relative; z-index: 2;
-      display: flex; flex-direction: column; align-items: center; gap: 22px;
-    }
-    .hero__play {
-      width: 68px; height: 68px; border-radius: 50%;
+    /* centered at the bottom of the hero, above the scroll indicator */
+    .hero__mute {
+      position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%);
+      z-index: 2; width: 44px; height: 44px; border-radius: 50%;
       border: 1px solid rgba(255,255,255,.28);
       display: flex; align-items: center; justify-content: center;
       transition: border-color .35s, transform .35s var(--ease);
-      opacity: 0; animation: fadeIn .9s var(--ease) .4s forwards;
     }
-    .hero__play:hover { border-color: rgba(255,255,255,.65); transform: scale(1.1); }
-    .hero__play svg { width: 18px; margin-left: 3px; fill: rgba(255,255,255,.85); }
-    .hero__label {
-      font-family: var(--sans); font-size: clamp(16px, 3vw, 28px);
-      font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
-      color: rgba(255,255,255,.68);
-      opacity: 0; animation: fadeUp .9s var(--ease) .55s forwards;
-    }
+    .hero__mute:hover { border-color: rgba(255,255,255,.65); transform: translateX(-50%) scale(1.08); }
+    .hero__mute svg { width: 18px; height: 18px; color: rgba(255,255,255,.85); }
+    /* muted (default) shows the "off" glyph as the CURRENT state icon is
+       whichever one is hidden — showing .hero__mute-off means "tap to turn
+       sound ON"; toggling aria-pressed swaps which icon is visible */
+    .hero__mute-off { display: block; }
+    .hero__mute-on { display: none; }
+    .hero__mute[aria-pressed="true"] .hero__mute-off { display: none; }
+    .hero__mute[aria-pressed="true"] .hero__mute-on { display: block; }
     .hero__scroll {
       position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%);
       z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 10px;
@@ -1179,7 +1181,7 @@
     .cta {
       position: relative; overflow: hidden; will-change: transform;
       --tilt-p: 900px; --tilt-rx: 0deg; --tilt-ry: 0deg; --tilt-tx: 0px; --tilt-ty: 0px;
-      min-height: 380px; display: flex; align-items: center;
+      min-height: 456px; display: flex; align-items: center;
       padding: clamp(52px, 7vw, 92px);
     }
     .cta__bg { position: absolute; inset: 0; }
@@ -1481,6 +1483,14 @@
         var key = img.getAttribute('data-img');
         if (IMG[key]) img.src = IMG[key];
       });
+      /* same pattern as images — points at a file that needs to actually
+         exist in a videos/ folder next to this HTML, same as the images/
+         folder does for photos. Swap the filename for the real export. */
+      const VIDEO = { hero: 'videos/hero.mp4' };
+      document.querySelectorAll('video[data-video]').forEach(function (v) {
+        var key = v.getAttribute('data-video');
+        if (VIDEO[key]) { v.src = VIDEO[key]; v.load(); }
+      });
     });
   </script>
 </head>
@@ -1591,19 +1601,26 @@
   <!-- ─── HERO ─── -->
   <section class="hero">
     <div class="hero__bg">
-      <img
-        src="https://images.unsplash.com/photo-1505682634904-d7c8d95cdc50?w=1800&auto=format&q=55"
-        alt="" aria-hidden="true" fetchpriority="high"
-      >
+      <video
+        data-video="hero"
+        autoplay muted loop playsinline
+        aria-hidden="true"
+      ></video>
     </div>
     <div class="hero__fade"></div>
-    <div class="hero__body" data-r>
-      <button class="hero__play" aria-label="Play video">
-        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-      </button>
-      <p class="hero__label">Тут будет видео 16:9</p>
-    </div>
-    <div class="hero__scroll" data-r style="--d:1" aria-hidden="true">
+    <button class="hero__mute" aria-label="Unmute video" aria-pressed="false" data-r style="--d:1">
+      <svg class="hero__mute-on" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 9v6h4l5 4V5L8 9H4Z" fill="currentColor"/>
+        <line x1="16.5" y1="15.5" x2="21.5" y2="8.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        <line x1="21.5" y1="15.5" x2="16.5" y2="8.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <svg class="hero__mute-off" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 9v6h4l5 4V5L8 9H4Z" fill="currentColor"/>
+        <path d="M16 8.5a5 5 0 0 1 0 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <div class="hero__scroll" data-r style="--d:2" aria-hidden="true">
       <span data-i18n="hero.scroll">Scroll</span>
       <div class="hero__scroll-line"></div>
     </div>
@@ -2556,23 +2573,62 @@
       }, { passive: true });
     })();
 
+    /* ── HERO VIDEO MUTE TOGGLE ── */
+    (function () {
+      const btn = document.querySelector('.hero__mute');
+      const vid = document.querySelector('.hero__bg video');
+      if (!btn || !vid) return;
+      btn.addEventListener('click', () => {
+        vid.muted = !vid.muted;
+        const unmuted = !vid.muted;
+        btn.setAttribute('aria-pressed', String(unmuted));
+        btn.setAttribute('aria-label', unmuted ? 'Mute video' : 'Unmute video');
+      });
+    })();
+
     /* ── HEADER SCROLL ── */
     (function () {
       const h = document.getElementById('hdr');
       let peakY = window.scrollY;   /* highest scrollY reached in the current run */
       let runStart = peakY;         /* where the current run started measuring from */
       const HIDE_AFTER = 120;    /* don't start hiding until scrolled past the hero area */
-      const DOWN_DISTANCE = 700; /* how far down, in one run, before it hides */
+      /* mobile gets half the distance — a phone screen is shorter, so the
+         same 700px reads as "it basically never collapses" relative to how
+         much of the page that covers */
+      const DOWN_DISTANCE = window.matchMedia('(hover:hover)').matches ? 700 : 350;
       const UP_TOLERANCE = 20;   /* real scrolling (touch, trackpad) never moves in a
                                     perfectly straight line — there's always a few
                                     pixels of natural back-and-forth jitter. Treating
                                     ANY upward tick as "the user reversed direction"
-                                    reset the whole run constantly, so at a distance
-                                    as large as 700px the run almost never survived
-                                    long enough to ever actually fire — the animation
-                                    looked like it had stopped working entirely, not
-                                    just less smooth. Only a reversal bigger than this
-                                    tolerance now counts as a genuine change of mind. */
+                                    reset the whole run constantly, so at a large
+                                    distance the run almost never survived long enough
+                                    to ever actually fire. Only a reversal bigger than
+                                    this tolerance now counts as a genuine change of mind. */
+
+      /* the actual show/hide motion is driven by this RAF loop, not a CSS
+         class + transition — position:fixed elements have a long-standing
+         WebKit/iOS quirk where transitions don't always render smoothly
+         while a scroll gesture is actively in progress (the transition can
+         appear to skip straight to its end state instead of easing). Since
+         we already lerp transform manually elsewhere in this file (the
+         tilt effect, the smooth-scroll), the same technique sidesteps that
+         entirely: we just set the exact pixel value every frame ourselves,
+         which every browser paints correctly regardless of that quirk. */
+      let hiddenTarget = 0; /* 0 = shown, 1 = hidden */
+      let current = 0;
+      let raf = null;
+      function tick() {
+        current += (hiddenTarget - current) * .18;
+        if (Math.abs(hiddenTarget - current) < .002) current = hiddenTarget;
+        h.style.transform = current > .001 ? `translateY(${-current * 100}%)` : '';
+        if (current !== hiddenTarget) raf = requestAnimationFrame(tick);
+        else raf = null;
+      }
+      function setHidden(hide) {
+        hiddenTarget = hide ? 1 : 0;
+        if (!raf) raf = requestAnimationFrame(tick);
+      }
+
       const fn = () => {
         const y = window.scrollY;
         h.classList.toggle('scrolled', y > 56);
@@ -2580,11 +2636,11 @@
           if (y > peakY) peakY = y;
           if (peakY - y > UP_TOLERANCE) {
             /* genuine upward scroll — show immediately and start a fresh run here */
-            h.classList.remove('hdr--hidden');
+            setHidden(false);
             runStart = y;
             peakY = y;
           } else if (peakY - runStart > DOWN_DISTANCE && peakY > HIDE_AFTER) {
-            h.classList.add('hdr--hidden');
+            setHidden(true);
           }
         }
       };
