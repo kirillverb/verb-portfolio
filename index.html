@@ -111,6 +111,32 @@
 
     /* ══ BASE ══ */
     html { scroll-behavior: smooth; }
+    /* ── LOADER ── */
+    .loader {
+      position: fixed; inset: 0; z-index: 10000;
+      background: #080808;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 18px;
+      transition: opacity .6s var(--ease, ease), visibility .6s;
+    }
+    .loader.is-done { opacity: 0; visibility: hidden; pointer-events: none; }
+    .loader__pct {
+      font-family: 'Instrument Serif', 'Playfair Display', Georgia, serif;
+      font-style: italic; font-weight: 400;
+      font-size: clamp(48px, 9vw, 96px);
+      color: #F4F3F0; line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .loader__bar {
+      width: clamp(120px, 22vw, 220px); height: 1px;
+      background: rgba(255,255,255,.14);
+      overflow: hidden;
+    }
+    .loader__bar-fill {
+      height: 100%; width: 0%;
+      background: #F4F3F0;
+      transition: width .25s ease-out;
+    }
     /* smooth site-wide theme switch — narrow property list on purpose so it
        never competes with the transform-based animations elsewhere (magnetic
        cards, reveal-on-scroll, slider). Anything with its own more specific
@@ -1490,11 +1516,70 @@
         var key = v.getAttribute('data-video');
         if (VIDEO[key]) { v.src = VIDEO[key]; v.load(); }
       });
+
+      /* ── LOADER PROGRESS ──
+         Tracks real loading of exactly what's visible on the very first
+         screen — the About photo, the three work-card covers, and the
+         hero video — rather than faking a number on a timer. Anything
+         belonging to a work page isn't loaded yet at this point at all
+         (that content doesn't exist in the DOM until a project is opened),
+         so it's correctly excluded without needing a manual list. */
+      const pctEl = document.getElementById('loaderPct');
+      const fillEl = document.getElementById('loaderFill');
+      const loaderEl = document.getElementById('loader');
+      const trackedImgs = Array.from(document.querySelectorAll(
+        'img[data-img="about"], img[data-img="jemCover"], img[data-img="collagenCover"], img[data-img="hubCover"]'
+      ));
+      const trackedVideo = document.querySelector('video[data-video="hero"]');
+      const total = trackedImgs.length + (trackedVideo ? 1 : 0);
+      let done = 0;
+
+      function bump() {
+        done = Math.min(done + 1, total);
+        const pct = total ? Math.round((done / total) * 100) : 100;
+        if (pctEl) pctEl.textContent = pct + '%';
+        if (fillEl) fillEl.style.width = pct + '%';
+        if (done >= total) finish();
+      }
+      let finished = false;
+      function finish() {
+        if (finished) return;
+        finished = true;
+        if (loaderEl) loaderEl.classList.add('is-done');
+      }
+
+      if (total === 0) {
+        finish();
+      } else {
+        trackedImgs.forEach(img => {
+          if (img.complete && img.naturalWidth > 0) bump();
+          else {
+            img.addEventListener('load', bump, { once: true });
+            img.addEventListener('error', bump, { once: true }); /* a broken image still counts — never block on it */
+          }
+        });
+        if (trackedVideo) {
+          if (trackedVideo.readyState >= 2) bump(); /* HAVE_CURRENT_DATA or further — a frame is already decoded */
+          else {
+            trackedVideo.addEventListener('loadeddata', bump, { once: true });
+            trackedVideo.addEventListener('error', bump, { once: true });
+          }
+        }
+      }
+      /* safety net — if something never fires (a slow network, a resource
+         that silently stalls), don't leave the visitor staring at a loader
+         forever */
+      setTimeout(finish, 6000);
     });
   </script>
 </head>
 <body>
 
+  <!-- ─── LOADER ─── -->
+  <div id="loader" class="loader">
+    <div class="loader__pct" id="loaderPct">0%</div>
+    <div class="loader__bar"><div class="loader__bar-fill" id="loaderFill"></div></div>
+  </div>
 
   <!-- ─── THEME RIPPLE ─── -->
   <div id="themeRipple" aria-hidden="true"></div>
