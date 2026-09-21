@@ -2796,6 +2796,50 @@
       });
     })();
 
+    /* ── SWIPE GESTURES (mobile only) ──
+       A reusable directional-swipe detector: tracks one touch from start to
+       end, and only fires if the movement is clearly DOMINANT in the
+       intended direction (moves much further that way than sideways) and
+       covers a real distance — short taps, ordinary scrolling, and
+       diagonal drags are all correctly ignored rather than mistaken for
+       an intentional swipe. */
+    function onSwipe(el, direction, callback) {
+      if (!el) return;
+      let sx = 0, sy = 0, tracking = false;
+      const MIN_DIST = 60;     /* how far the gesture has to travel to count at all */
+      const DOMINANCE = 1.5;   /* how much further it must move in the intended axis than the other, to rule out diagonal/scroll drags */
+      el.addEventListener('touchstart', e => {
+        if (e.touches.length !== 1) { tracking = false; return; }
+        sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+        tracking = true;
+      }, { passive: true });
+      el.addEventListener('touchend', e => {
+        if (!tracking) return;
+        tracking = false;
+        const t = e.changedTouches[0];
+        const dx = t.clientX - sx, dy = t.clientY - sy;
+        if (direction === 'right' && dx > MIN_DIST && dx > Math.abs(dy) * DOMINANCE) callback();
+        else if (direction === 'down' && dy > MIN_DIST && dy > Math.abs(dx) * DOMINANCE) callback();
+      }, { passive: true });
+    }
+
+    /* #3 — swipe right anywhere on an open work page closes it, mirroring
+       the iOS "swipe back" instinct many people reach for automatically
+       rather than tapping the small "All works" link in the top bar. */
+    onSwipe(document.getElementById('work-page'), 'right', () => {
+      if (window.closeWork) window.closeWork();
+    });
+
+    /* #4 — swipe down on either fullscreen burger menu closes it, the same
+       "pull down to dismiss" instinct as a notification shade or a modal
+       sheet — both mobile menus on the site get it for consistency. */
+    onSwipe(document.getElementById('mob'), 'down', () => {
+      if (window.closeMob) window.closeMob();
+    });
+    onSwipe(document.getElementById('wpMob'), 'down', () => {
+      if (window.closeWpMob) window.closeWpMob();
+    });
+
     /* ── HEADER SCROLL ── */
     (function () {
       const h = document.getElementById('hdr');
