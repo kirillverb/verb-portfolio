@@ -1539,25 +1539,25 @@
         </svg>
       </a>
       <nav class="hdr__nav">
-        <a href="#about" class="hdr__navlink">
+        <a href="#about" class="hdr__navlink" onclick="window._suppressHeaderAutoHide && window._suppressHeaderAutoHide()">
           <span class="hdr__navlabel">
             <span data-i18n="nav.about">About</span>
             <span class="hdr__navfill"></span>
           </span>
         </a>
-        <a href="#works" class="hdr__navlink">
+        <a href="#works" class="hdr__navlink" onclick="window._suppressHeaderAutoHide && window._suppressHeaderAutoHide()">
           <span class="hdr__navlabel">
             <span data-i18n="nav.works">Works</span>
             <span class="hdr__navfill"></span>
           </span>
         </a>
-        <a href="#process" class="hdr__navlink">
+        <a href="#process" class="hdr__navlink" onclick="window._suppressHeaderAutoHide && window._suppressHeaderAutoHide()">
           <span class="hdr__navlabel">
             <span data-i18n="nav.process">Process</span>
             <span class="hdr__navfill"></span>
           </span>
         </a>
-        <a href="#contact" class="hdr__navlink hdr__contact">
+        <a href="#contact" class="hdr__navlink hdr__contact" onclick="window._suppressHeaderAutoHide && window._suppressHeaderAutoHide()">
           <span class="hdr__navlabel">
             <span data-i18n="nav.contact">Contact</span>
             <span class="hdr__navfill"></span>
@@ -2628,10 +2628,36 @@
         if (!raf) raf = requestAnimationFrame(tick);
       }
 
+      let suppressed = false;
+      let settleTimer = null;
+      /* clicking a nav link (About/Works/Process/Contact) triggers the
+         browser's own smooth-scroll-to-anchor, which fires a long stream of
+         scroll events covering a large distance in one continuous motion —
+         exactly what the hide-on-scroll logic above is designed to detect,
+         even though the person didn't touch their wheel or trackpad at all.
+         Suppressed while a nav click is in flight, and only re-armed once
+         scrolling has genuinely settled afterward (debounced), so the very
+         next real scroll event right as the auto-scroll ends doesn't slip
+         through and hide it immediately either. */
+      window._suppressHeaderAutoHide = function () {
+        suppressed = true;
+        peakY = window.scrollY;
+        runStart = window.scrollY;
+      };
+      window.addEventListener('scroll', () => {
+        if (!suppressed) return;
+        clearTimeout(settleTimer);
+        settleTimer = setTimeout(() => {
+          suppressed = false;
+          peakY = window.scrollY;
+          runStart = window.scrollY;
+        }, 200);
+      }, { passive: true });
+
       const fn = () => {
         const y = window.scrollY;
         h.classList.toggle('scrolled', y > 56);
-        if (!h.classList.contains('menu-open')) {
+        if (!h.classList.contains('menu-open') && !suppressed) {
           if (y > peakY) peakY = y;
           if (peakY - y > UP_TOLERANCE) {
             /* genuine upward scroll — show immediately and start a fresh run here */
