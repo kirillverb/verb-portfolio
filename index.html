@@ -619,7 +619,7 @@
     .works { padding-block: clamp(52px, 7vw, 92px); }
     .works__h {
       font-family: var(--serif); font-style: italic; font-size: clamp(44px, 7.5vw, 84px);
-      font-weight: 400; line-height: .95; margin-bottom: clamp(36px, 5.5vw, 68px);
+      font-weight: 400; line-height: .95; margin-bottom: clamp(28px, 3.2vw, 40px);
     }
     .works__grid {
       display: grid; grid-template-columns: repeat(3, 1fr);
@@ -1211,7 +1211,7 @@
     .cta {
       position: relative; overflow: hidden; will-change: transform;
       --tilt-p: 900px; --tilt-rx: 0deg; --tilt-ry: 0deg; --tilt-tx: 0px; --tilt-ty: 0px;
-      min-height: 456px; display: flex; align-items: center;
+      min-height: 420px; display: flex; align-items: center;
       padding: clamp(52px, 7vw, 92px);
     }
     .cta__bg { position: absolute; inset: 0; }
@@ -2561,7 +2561,7 @@
         const aboutImg = document.querySelector('.about__img');
         if (aboutImg) bindDesktopTilt(aboutImg, { tilt: 13, move: 28, perspective: 1000, lerp: .12 });
         const ctaEl = document.querySelector('.cta');
-        if (ctaEl) bindDesktopTilt(ctaEl, { tilt: 11, move: 22, perspective: 1400, lerp: .12 });
+        if (ctaEl) bindDesktopTilt(ctaEl, { tilt: 16, move: 34, perspective: 900, lerp: .12 });
         window.removeEventListener('mousemove', bindAll);
       }
       if (window.matchMedia('(hover:hover)').matches) bindAll();
@@ -2603,7 +2603,7 @@
         const aboutImg = document.querySelector('.about__img');
         if (aboutImg) register(aboutImg, { tilt: 18, move: 26, perspective: 1400 });
         const ctaEl = document.querySelector('.cta');
-        if (ctaEl) register(ctaEl, { tilt: 15, move: 20, perspective: 1700 });
+        if (ctaEl) register(ctaEl, { tilt: 20, move: 34, perspective: 1300 });
       }
 
       if (typeof DeviceOrientationEvent.requestPermission === 'function') {
