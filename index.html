@@ -275,6 +275,18 @@
         animation-timeline: view();
         animation-range: entry 0% entry 65%;
       }
+      /* the composed-transform elements (see the .wcard[data-r] etc. rule
+         below — transform combines the animated --reveal-y with
+         perspective()/rotateX()/rotateY()/translate3d() for the tilt
+         effect) measurably glitch mid-reveal with this CSS-driven path:
+         opacity climbs smoothly for a while, then visibly resets to 0 and
+         restarts, confirmed by sampling it frame-by-frame. Isolating each
+         half (CSS alone vs. JS backup alone) proved the JS-only path is
+         perfectly smooth on its own — so these three fall back to that
+         exclusively rather than the scroll-timeline animation. */
+      .wcard[data-r], .about__img[data-r], .cta[data-r] {
+        animation: none;
+      }
     }
     /* elements that ALSO get the JS magnetic-tilt effect — the tilt system
        (see createTilt()) writes only to --tilt-*, never to transform
