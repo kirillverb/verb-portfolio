@@ -1190,6 +1190,11 @@
     }
     .step:hover .step__n,
     .step:hover .step__ttl { color: var(--text); }
+    @media (max-width: 660px) {
+      /* the desktop clamp() bottoms out at 20px on narrow mobile widths,
+         which read as too subtle for what should be a clear step heading */
+      .step__n, .step__ttl { font-size: 26px; }
+    }
 
     /* col 3: description */
     .step__desc {
@@ -1715,7 +1720,7 @@
     <div class="wrap">
       <div class="about__grid">
         <div class="about__img" data-r>
-          <img src="" data-img="about" alt="Kirya Verb" loading="lazy">
+          <img src="" data-img="about" alt="Kirya Verb">
         </div>
         <div class="about__copy">
           <div class="about__title-row" data-r style="--d:1">
@@ -1736,7 +1741,7 @@
       <h2 class="works__h" data-r data-i18n="works.h">Featured Works</h2>
       <div class="works__grid">
         <div class="wcard" data-r style="--d:1" data-work="jem" role="button" tabindex="0" aria-label="Open JEM Camp project">
-          <img src="" data-img="jemCover" alt="JEM Camp — Apparel Branding" loading="lazy"
+          <img src="" data-img="jemCover" alt="JEM Camp — Apparel Branding"
                style="object-position: center top;">
           <div class="wcard__over">
             <div class="wcard__text">
@@ -1749,7 +1754,7 @@
           </div>
         </div>
         <div class="wcard" data-r style="--d:2" data-work="collagen" role="button" tabindex="0" aria-label="Open 21 Collagen project">
-          <img src="" data-img="collagenCover" alt="21 Collagen — OOH Advertising" loading="lazy"
+          <img src="" data-img="collagenCover" alt="21 Collagen — OOH Advertising"
                style="object-position: center 30%;">
           <div class="wcard__over">
             <div class="wcard__text">
@@ -1762,7 +1767,7 @@
           </div>
         </div>
         <div class="wcard" data-r style="--d:3" data-work="hub" role="button" tabindex="0" aria-label="Open HUB project">
-          <img src="" data-img="hubCover" alt="HUB — Brand Guideline" loading="lazy"
+          <img src="" data-img="hubCover" alt="HUB — Brand Guideline"
                style="object-position: 55% center;">
           <div class="wcard__over">
             <div class="wcard__text">
