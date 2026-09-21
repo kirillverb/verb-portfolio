@@ -1551,6 +1551,7 @@
         if (finished) return;
         finished = true;
         if (loaderEl) loaderEl.classList.add('is-done');
+        try { sessionStorage.setItem('_loaderShown', '1'); } catch (e) {}
       }
 
       if (total === 0) {
@@ -1585,6 +1586,21 @@
     <div class="loader__pct" id="loaderPct">0%</div>
     <div class="loader__bar"><div class="loader__bar-fill" id="loaderFill"></div></div>
   </div>
+  <script>
+    /* runs synchronously, before the browser paints anything below it — a
+       refresh within the same tab keeps sessionStorage (unlike a brand new
+       tab/visit, where it's empty), so this is the one honest signal for
+       "has this tab already shown the loader once" without needing to wait
+       for DOMContentLoaded, by which point the loader would have already
+       been visible for at least one frame. */
+    (function () {
+      try {
+        if (sessionStorage.getItem('_loaderShown')) {
+          document.getElementById('loader').classList.add('is-done');
+        }
+      } catch (e) {}
+    })();
+  </script>
 
   <!-- ─── THEME RIPPLE ─── -->
   <div id="themeRipple" aria-hidden="true"></div>
