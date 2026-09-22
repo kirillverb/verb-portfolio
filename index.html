@@ -3935,6 +3935,16 @@
         document.body.classList.remove('work-open');
         if (!_fromPop) history.replaceState(null, '', window.location.pathname);
         setTimeout(() => {
+          /* a re-open (of this same project or another) can happen before
+             this delayed cleanup fires — most easily via the swipe-to-close
+             gesture, which adds its own delay before even calling this
+             function in the first place, pushing this timer's firing time
+             later and making that overlap far more likely in practice.
+             Wiping the content unconditionally would tear out whatever was
+             JUST rendered by that re-open, leaving the page visibly empty
+             despite being active. Only clear it if the page is genuinely
+             still closed. */
+          if (page.classList.contains('active')) return;
           document.body.style.overflow = '';
           window.scrollTo({ top: scrollY, behavior: 'instant' });
           content.innerHTML = '';
