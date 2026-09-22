@@ -3277,7 +3277,7 @@
         if (readCount >= totalWorks && wentToDribbble) {
           return isRu
             ? `Все три кейса, а потом ещё и Dribbble в придачу. Вы явно настроены серьёзно — тогда к делу?`
-            : `All three case studies, then Dribbble on top of that. You're clearly serious about this — shall we talk business?`;
+            : `All three featured works, then Dribbble on top of that. You're clearly serious about this — shall we talk business?`;
         }
         if (readCount >= totalWorks) {
           const believable = mins >= 2;
@@ -3286,8 +3286,8 @@
                 ? `Все три кейса просмотрены от начала до конца. Похоже, вы настроены серьёзно. Давайте обсудим проект.`
                 : `Все три кейса за пару минут. Надеюсь, главное не осталось за кадром.`)
             : (believable
-                ? `All three projects, from start to finish. Looks like you mean business. Let’s discuss your project.`
-                : `All three projects in a couple of minutes. Hope nothing important was missed.`);
+                ? `All three featured works, from start to finish. Looks like you mean business. Let’s discuss your project.`
+                : `All three featured works in a couple of minutes. Hope nothing important was missed.`);
         }
         /* went to Dribbble without having read all three cases here first
            (whether they read none or just some of them) — a distinct,
@@ -3296,16 +3296,16 @@
         if (wentToDribbble) {
           return isRu
             ? `Решили сразу на Dribbble, минуя кейсы здесь? Что ж, там тоже есть на что посмотреть. Обсудим ваш проект?`
-            : `Went straight to Dribbble, skipping the case studies here? Fair enough, there's plenty to see there too. Let's talk about your project?`;
+            : `Went straight to Dribbble, skipping the featured works here? Fair enough, there's plenty to see there too. Let's talk about your project?`;
         }
         if (readCount > 0) {
           return isRu
             ? `В несколько кейсов заглянули, но не во все. Уже достаточно, чтобы продолжить разговор.`
-            : `You explored a few projects, but not all. Enough to keep the conversation going.`;
+            : `You explored a few of the featured works, but not all. Enough to keep the conversation going.`;
         }
         return isRu
           ? `Сразу к финалу, минуя кейсы? Эффективно. Тогда обсудим ваш проект?`
-          : `Straight to the end, skipping the projects? Efficient. Then let’s discuss your project?`;
+          : `Straight to the end, skipping the featured works? Efficient. Then let’s discuss your project?`;
       }
 
       function renderMessage() {
