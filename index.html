@@ -540,7 +540,7 @@
     .hero__fade {
       position: absolute; inset: 0;
       background: linear-gradient(180deg,
-        rgba(8,8,8,.25) 0%, transparent 35%, transparent 60%, rgba(8,8,8,.85) 100%);
+        rgba(8,8,8,.5) 0%, transparent 30%, transparent 60%, rgba(8,8,8,.85) 100%);
     }
     /* centered at the bottom of the hero, above the scroll indicator */
     .hero__mute {
@@ -2711,8 +2711,10 @@
         return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
       }
 
+      let selfScrolling = false;
       function tick() {
         currentY += (targetY - currentY) * EASE;
+        selfScrolling = true;
         if (Math.abs(targetY - currentY) < 0.5) {
           currentY = targetY;
           window.scrollTo({ top: currentY, behavior: 'instant' });
@@ -2776,10 +2778,22 @@
 
       /* keep the eased target in sync with any OTHER way the page scrolls
          (anchor-link navigation, keyboard Page Down/Home/End, browser
-         back/forward restoring scroll position) — without this, the next
-         wheel tick would yank the page back toward a stale target */
+         back/forward restoring scroll position, closeWork()'s own
+         scrollTo call to restore the pre-work-page position) — without
+         this, the next wheel tick would yank the page back toward a stale
+         target. The check used to be "only if our RAF loop isn't
+         currently running" (!raf), but our own tick() calls scrollTo on
+         EVERY frame while raf IS running — so any external scroll change
+         landing while a prior gesture's loop hadn't fully settled yet got
+         silently ignored here, and the loop just kept pulling the page
+         back toward its now-stale target, overriding whatever had just
+         tried to move it. Tracking exactly which scroll events were our
+         own doing (rather than inferring it from raf's state) fixes that:
+         every OTHER scroll event resyncs, regardless of whether our loop
+         happens to still be mid-flight. */
       window.addEventListener('scroll', () => {
-        if (!raf) { targetY = window.scrollY; currentY = window.scrollY; }
+        if (selfScrolling) { selfScrolling = false; return; }
+        targetY = window.scrollY; currentY = window.scrollY;
       }, { passive: true });
     })();
 
