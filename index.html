@@ -2863,6 +2863,23 @@
           reset(true);
         }
       }, { passive: true });
+
+      /* an interrupted gesture (the OS taking over mid-swipe, a call or
+         notification arriving, the finger sliding off the element) fires
+         touchcancel instead of touchend — without handling it separately,
+         the inline transform/opacity applied during the drag was left
+         permanently stuck exactly where the interruption happened, with
+         transition:none, so nothing ever animated it back. The page or
+         menu would sit there part-way off-screen and half-transparent,
+         effectively "not showing" until the person reloaded. Always treat
+         an interruption as a cancelled gesture, snapping back to a clean
+         state — never as a completed close, since an interrupted gesture
+         can't be trusted to represent real intent either way. */
+      el.addEventListener('touchcancel', () => {
+        if (!committed) return;
+        committed = false;
+        reset(true);
+      }, { passive: true });
     }
 
     /* #3 — swipe right anywhere on an open work page closes it, mirroring
