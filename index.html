@@ -2797,46 +2797,88 @@
     })();
 
     /* ── SWIPE GESTURES (mobile only) ──
-       A reusable directional-swipe detector: tracks one touch from start to
-       end, and only fires if the movement is clearly DOMINANT in the
-       intended direction (moves much further that way than sideways) and
-       covers a real distance — short taps, ordinary scrolling, and
-       diagonal drags are all correctly ignored rather than mistaken for
-       an intentional swipe. */
-    function onSwipe(el, direction, callback) {
+       Live drag-tracking, not just a start/end check — the element visibly
+       follows the finger the whole time it's down, with a bit of drag
+       resistance so it doesn't feel like it's flying off underneath you.
+       Release past the threshold and it finishes the motion off-screen
+       before actually closing; release short of it and it springs back to
+       place, exactly like a native iOS dismiss sheet. Without this live
+       feedback, nothing on screen hints that a swipe does anything at all
+       until the exact moment it either fires or doesn't. */
+    function bindDragClose(el, axis, closeFn) {
       if (!el) return;
-      let sx = 0, sy = 0, tracking = false;
-      const MIN_DIST = 60;     /* how far the gesture has to travel to count at all */
-      const DOMINANCE = 1.5;   /* how much further it must move in the intended axis than the other, to rule out diagonal/scroll drags */
+      const THRESHOLD = 90;   /* how far (px, already damped) before release completes the close */
+      const DEAD_ZONE = 8;    /* ignore tiny jitter before deciding this is a real gesture at all */
+      const DOMINANCE = 1.3;  /* must move clearly more on the intended axis than the other, to rule out scrolling/diagonal drags */
+      const RESISTANCE = .55; /* the element moves slower than the finger — a real drag, not a 1:1 teleport */
+      let sx = 0, sy = 0, committed = false, rejected = false, dragPx = 0;
+
+      function apply(px, withTransition) {
+        el.style.transition = withTransition ? 'transform .32s var(--ease, ease), opacity .32s var(--ease, ease)' : 'none';
+        const pct = Math.min(1, px / (axis === 'x' ? window.innerWidth : window.innerHeight));
+        el.style.transform = axis === 'x' ? `translateX(${px}px)` : `translateY(${px}px)`;
+        el.style.opacity = String(1 - pct * .5);
+      }
+      function reset(withTransition) {
+        el.style.transition = withTransition ? 'transform .32s var(--ease, ease), opacity .32s var(--ease, ease)' : '';
+        el.style.transform = '';
+        el.style.opacity = '';
+      }
+
       el.addEventListener('touchstart', e => {
-        if (e.touches.length !== 1) { tracking = false; return; }
+        if (e.touches.length !== 1) return;
         sx = e.touches[0].clientX; sy = e.touches[0].clientY;
-        tracking = true;
+        committed = false; rejected = false; dragPx = 0;
       }, { passive: true });
-      el.addEventListener('touchend', e => {
-        if (!tracking) return;
-        tracking = false;
-        const t = e.changedTouches[0];
+
+      el.addEventListener('touchmove', e => {
+        if (rejected) return;
+        const t = e.touches[0];
         const dx = t.clientX - sx, dy = t.clientY - sy;
-        if (direction === 'right' && dx > MIN_DIST && dx > Math.abs(dy) * DOMINANCE) callback();
-        else if (direction === 'down' && dy > MIN_DIST && dy > Math.abs(dx) * DOMINANCE) callback();
+        const primary = axis === 'x' ? dx : dy;
+        const other = axis === 'x' ? dy : dx;
+        if (!committed) {
+          if (Math.abs(primary) < DEAD_ZONE) return; /* not enough movement yet to tell intent */
+          const rightDirection = primary > 0; /* both gestures only ever close in the positive direction — right, or down */
+          if (!rightDirection || Math.abs(primary) < Math.abs(other) * DOMINANCE) { rejected = true; return; }
+          committed = true;
+        }
+        e.preventDefault(); /* only once genuinely committed — never swallow an ordinary scroll gesture on the way to deciding */
+        dragPx = Math.max(0, primary) * RESISTANCE;
+        apply(dragPx, false);
+      }, { passive: false });
+
+      el.addEventListener('touchend', () => {
+        if (!committed) return;
+        committed = false;
+        if (dragPx > THRESHOLD) {
+          /* finish the motion the rest of the way off-screen, then hand off
+             to the real close function once it's actually out of view */
+          const full = axis === 'x' ? window.innerWidth : window.innerHeight;
+          el.style.transition = 'transform .22s var(--ease, ease), opacity .22s var(--ease, ease)';
+          el.style.transform = axis === 'x' ? `translateX(${full}px)` : `translateY(${full}px)`;
+          el.style.opacity = '0';
+          setTimeout(() => { reset(false); closeFn(); }, 220);
+        } else {
+          reset(true);
+        }
       }, { passive: true });
     }
 
     /* #3 — swipe right anywhere on an open work page closes it, mirroring
        the iOS "swipe back" instinct many people reach for automatically
        rather than tapping the small "All works" link in the top bar. */
-    onSwipe(document.getElementById('work-page'), 'right', () => {
+    bindDragClose(document.getElementById('work-page'), 'x', () => {
       if (window.closeWork) window.closeWork();
     });
 
     /* #4 — swipe down on either fullscreen burger menu closes it, the same
        "pull down to dismiss" instinct as a notification shade or a modal
        sheet — both mobile menus on the site get it for consistency. */
-    onSwipe(document.getElementById('mob'), 'down', () => {
+    bindDragClose(document.getElementById('mob'), 'y', () => {
       if (window.closeMob) window.closeMob();
     });
-    onSwipe(document.getElementById('wpMob'), 'down', () => {
+    bindDragClose(document.getElementById('wpMob'), 'y', () => {
       if (window.closeWpMob) window.closeWpMob();
     });
 
