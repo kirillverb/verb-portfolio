@@ -2798,20 +2798,28 @@
 
     /* ── SWIPE GESTURES (mobile only) ──
        Live drag-tracking, not just a start/end check — the element visibly
-       follows the finger the whole time it's down, with a bit of drag
-       resistance so it doesn't feel like it's flying off underneath you.
-       Release past the threshold and it finishes the motion off-screen
-       before actually closing; release short of it and it springs back to
-       place, exactly like a native iOS dismiss sheet. Without this live
+       follows the finger the whole time it's down. Release past a distance
+       threshold and it finishes off-screen before actually closing;
+       release short of it and it springs back to place. Without this live
        feedback, nothing on screen hints that a swipe does anything at all
-       until the exact moment it either fires or doesn't. */
+       until the exact moment it either fires or doesn't.
+
+       Tuned against how iOS's own back-swipe and dismiss-sheet gestures
+       actually behave, rather than an arbitrary distance rule: those
+       recognize a gesture from velocity as much as travel — a quick flick
+       of maybe a third of the way completes it, while a slow deliberate
+       drag needs to go further. Requiring a long, precise, slow drag (as
+       the first version did) is what made it feel like it needed surgical
+       precision to trigger at all. */
     function bindDragClose(el, axis, closeFn) {
       if (!el) return;
-      const THRESHOLD = 90;   /* how far (px, already damped) before release completes the close */
-      const DEAD_ZONE = 8;    /* ignore tiny jitter before deciding this is a real gesture at all */
-      const DOMINANCE = 1.3;  /* must move clearly more on the intended axis than the other, to rule out scrolling/diagonal drags */
-      const RESISTANCE = .55; /* the element moves slower than the finger — a real drag, not a 1:1 teleport */
+      const DEAD_ZONE = 6;     /* ignore tiny jitter before deciding this is a real gesture at all */
+      const DOMINANCE = 1.15;  /* must move more on the intended axis than the other, to rule out scrolling/diagonal drags — relaxed from 1.3 so a slightly diagonal real swipe still registers */
+      const RESISTANCE = .82;  /* close to 1:1 with the finger — the earlier heavy damping (.55) was a big part of what made it feel unresponsive */
+      const FLICK_VELOCITY = .55; /* px/ms — a quick flick past this speed completes the gesture regardless of distance, same as a real iOS pan gesture recognizer */
+      const MIN_FLICK_DIST = 24;  /* a flick still needs to have gone somewhere — rules out a fast little jitter/tap being misread as intent */
       let sx = 0, sy = 0, committed = false, rejected = false, dragPx = 0;
+      let lastT = 0, lastPos = 0, velocity = 0;
 
       function apply(px, withTransition) {
         el.style.transition = withTransition ? 'transform .32s var(--ease, ease), opacity .32s var(--ease, ease)' : 'none';
@@ -2828,7 +2836,8 @@
       el.addEventListener('touchstart', e => {
         if (e.touches.length !== 1) return;
         sx = e.touches[0].clientX; sy = e.touches[0].clientY;
-        committed = false; rejected = false; dragPx = 0;
+        committed = false; rejected = false; dragPx = 0; velocity = 0;
+        lastT = e.timeStamp; lastPos = axis === 'x' ? sx : sy;
       }, { passive: true });
 
       el.addEventListener('touchmove', e => {
@@ -2844,24 +2853,33 @@
           committed = true;
         }
         e.preventDefault(); /* only once genuinely committed — never swallow an ordinary scroll gesture on the way to deciding */
+        /* instantaneous velocity from just the last movement sample, not the
+           whole gesture's average — that's what makes a flick partway
+           through a slow drag still register as a flick */
+        const now = e.timeStamp;
+        const curPos = axis === 'x' ? t.clientX : t.clientY;
+        const dt = now - lastT;
+        if (dt > 0) velocity = (curPos - lastPos) / dt;
+        lastT = now; lastPos = curPos;
         dragPx = Math.max(0, primary) * RESISTANCE;
         apply(dragPx, false);
       }, { passive: false });
 
+      function complete() {
+        const full = axis === 'x' ? window.innerWidth : window.innerHeight;
+        el.style.transition = 'transform .22s var(--ease, ease), opacity .22s var(--ease, ease)';
+        el.style.transform = axis === 'x' ? `translateX(${full}px)` : `translateY(${full}px)`;
+        el.style.opacity = '0';
+        setTimeout(() => { reset(false); closeFn(); }, 220);
+      }
+
       el.addEventListener('touchend', () => {
         if (!committed) return;
         committed = false;
-        if (dragPx > THRESHOLD) {
-          /* finish the motion the rest of the way off-screen, then hand off
-             to the real close function once it's actually out of view */
-          const full = axis === 'x' ? window.innerWidth : window.innerHeight;
-          el.style.transition = 'transform .22s var(--ease, ease), opacity .22s var(--ease, ease)';
-          el.style.transform = axis === 'x' ? `translateX(${full}px)` : `translateY(${full}px)`;
-          el.style.opacity = '0';
-          setTimeout(() => { reset(false); closeFn(); }, 220);
-        } else {
-          reset(true);
-        }
+        const halfway = (axis === 'x' ? window.innerWidth : window.innerHeight) * RESISTANCE * .42;
+        const isFlick = velocity > FLICK_VELOCITY && dragPx > MIN_FLICK_DIST * RESISTANCE;
+        if (isFlick || dragPx > halfway) complete();
+        else reset(true);
       }, { passive: true });
 
       /* an interrupted gesture (the OS taking over mid-swipe, a call or
@@ -2881,6 +2899,7 @@
         reset(true);
       }, { passive: true });
     }
+    window.bindDragClose = bindDragClose; /* re-callable once #wpMob actually exists — see below */
 
     /* #3 — swipe right anywhere on an open work page closes it, mirroring
        the iOS "swipe back" instinct many people reach for automatically
@@ -2891,12 +2910,13 @@
 
     /* #4 — swipe down on either fullscreen burger menu closes it, the same
        "pull down to dismiss" instinct as a notification shade or a modal
-       sheet — both mobile menus on the site get it for consistency. */
+       sheet. #wpMob doesn't exist in the DOM yet at this point at all — it
+       only gets created later, the first time a work page renders (see
+       the innerHTML assignment near "wp-mob-container") — so binding it
+       here was always silently finding nothing. That render function now
+       calls bindDragClose itself, every time it (re-)creates the element. */
     bindDragClose(document.getElementById('mob'), 'y', () => {
       if (window.closeMob) window.closeMob();
-    });
-    bindDragClose(document.getElementById('wpMob'), 'y', () => {
-      if (window.closeWpMob) window.closeWpMob();
     });
 
     /* ── HEADER SCROLL ── */
@@ -3612,6 +3632,11 @@
             </div>
           </nav>
         `;
+        if (window.bindDragClose) {
+          window.bindDragClose(document.getElementById('wpMob'), 'y', () => {
+            if (window.closeWpMob) window.closeWpMob();
+          });
+        }
       }
 
       window.openWork = function (key, _fromPop) {
