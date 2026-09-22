@@ -3224,6 +3224,22 @@
       }
       window._getReadWorks = getRead;
 
+      /* tracks whether the visitor has clicked ANY Dribbble link anywhere
+         on the site — the "See more works" buttons, the footer link, each
+         project's own Dribbble shot link, both mobile menus' copies of
+         these. Every one of them opens in a new tab (target="_blank"), so
+         clicking never actually navigates away from this page — a single
+         delegated listener on the document catches all of them by their
+         href, present or future, rather than needing to individually find
+         and bind each specific button/link by hand (and re-bind the ones
+         that get re-created on every language switch or work-page open). */
+      let dribbbleClicked = false;
+      document.addEventListener('click', e => {
+        const a = e.target.closest && e.target.closest('a[href*="dribbble.com"]');
+        if (a) dribbbleClicked = true;
+      });
+      window._getDribbbleClicked = function () { return dribbbleClicked; };
+
       const footObserver = new IntersectionObserver(entries => {
         entries.forEach(e => {
           if (e.isIntersecting) {
@@ -3252,7 +3268,17 @@
         const elapsedMs = window._getActiveMs ? window._getActiveMs() : 0;
         const mins = Math.floor(elapsedMs / 60000);
         const isRu = currentLang === 'ru';
+        const wentToDribbble = (window._getDribbbleClicked && window._getDribbbleClicked()) || false;
 
+        /* all three cases read AND followed through to Dribbble on top of
+           that — the highest-engagement scenario of all, takes priority
+           over everything else including the plain "read all three"
+           branch below. */
+        if (readCount >= totalWorks && wentToDribbble) {
+          return isRu
+            ? `Все три кейса, а потом ещё и Dribbble в придачу. Вы явно настроены серьёзно — тогда к делу?`
+            : `All three case studies, then Dribbble on top of that. You're clearly serious about this — shall we talk business?`;
+        }
         if (readCount >= totalWorks) {
           const believable = mins >= 2;
           return isRu
@@ -3262,6 +3288,15 @@
             : (believable
                 ? `All three projects, from start to finish. Looks like you mean business. Let’s discuss your project.`
                 : `All three projects in a couple of minutes. Hope nothing important was missed.`);
+        }
+        /* went to Dribbble without having read all three cases here first
+           (whether they read none or just some of them) — a distinct,
+           lighter-touch scenario from the one above, teasing the detour
+           rather than treating it as a serious-buyer signal. */
+        if (wentToDribbble) {
+          return isRu
+            ? `Решили сразу на Dribbble, минуя кейсы здесь? Что ж, там тоже есть на что посмотреть. Обсудим ваш проект?`
+            : `Went straight to Dribbble, skipping the case studies here? Fair enough, there's plenty to see there too. Let's talk about your project?`;
         }
         if (readCount > 0) {
           return isRu
