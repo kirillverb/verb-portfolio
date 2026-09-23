@@ -2933,65 +2933,101 @@
       if (window.closeMob) window.closeMob();
     });
 
-    /* ── HEADER SCROLL ── */
+    /* ── HEADER SCROLL ──
+       Rebuilt from scratch after the previous version stayed visibly jerky
+       on mobile in every scenario. The animation itself (an RAF-driven
+       lerp writing transform directly, not a CSS transition) was already
+       the right idea for sidestepping WebKit's fixed-position/transition
+       quirk during active scroll — the actual remaining cause was that the
+       DECISION logic ran on every native 'scroll' event with no
+       throttling at all. iOS fires scroll events far more often than the
+       screen actually repaints during momentum scrolling, so this was
+       doing redundant reads and writes many times per visible frame,
+       directly competing with the browser's own scroll compositing for
+       that same frame — which is what reads as stutter, not the easing
+       math itself. Reading scrollY at most once per animation frame (via
+       a dirty flag serviced by requestAnimationFrame) removes that
+       entirely. translate3d also replaces translateY, a small but real
+       difference on older WebKit — the 3D form promotes to its own
+       compositor layer more reliably than the 2D one, which is the exact
+       kind of thing that makes fixed-position transforms during scroll
+       actually smooth versus merely usually-smooth. */
     (function () {
       const h = document.getElementById('hdr');
-      let peakY = window.scrollY;   /* highest scrollY reached in the current run */
-      let runStart = peakY;         /* where the current run started measuring from */
-      const HIDE_AFTER = 120;    /* don't start hiding until scrolled past the hero area */
-      /* mobile gets half the distance — a phone screen is shorter, so the
-         same 700px reads as "it basically never collapses" relative to how
-         much of the page that covers */
+      const loaderEl = document.getElementById('loader');
+      let peakY = window.scrollY;
+      let runStart = peakY;
+      const HIDE_AFTER = 120;
       const DOWN_DISTANCE = window.matchMedia('(hover:hover)').matches ? 700 : 350;
-      const UP_TOLERANCE = 20;   /* real scrolling (touch, trackpad) never moves in a
-                                    perfectly straight line — there's always a few
-                                    pixels of natural back-and-forth jitter. Treating
-                                    ANY upward tick as "the user reversed direction"
-                                    reset the whole run constantly, so at a large
-                                    distance the run almost never survived long enough
-                                    to ever actually fire. Only a reversal bigger than
-                                    this tolerance now counts as a genuine change of mind. */
+      const UP_TOLERANCE = 20;
 
-      /* the actual show/hide motion is driven by this RAF loop, not a CSS
-         class + transition — position:fixed elements have a long-standing
-         WebKit/iOS quirk where transitions don't always render smoothly
-         while a scroll gesture is actively in progress (the transition can
-         appear to skip straight to its end state instead of easing). Since
-         we already lerp transform manually elsewhere in this file (the
-         tilt effect, the smooth-scroll), the same technique sidesteps that
-         entirely: we just set the exact pixel value every frame ourselves,
-         which every browser paints correctly regardless of that quirk. */
       let hiddenTarget = 0; /* 0 = shown, 1 = hidden */
       let current = 0;
-      let raf = null;
-      function tick() {
+      let animRaf = null;
+      function animate() {
         current += (hiddenTarget - current) * .18;
         if (Math.abs(hiddenTarget - current) < .002) current = hiddenTarget;
-        h.style.transform = current > .001 ? `translateY(${-current * 100}%)` : '';
-        if (current !== hiddenTarget) raf = requestAnimationFrame(tick);
-        else raf = null;
+        h.style.transform = current > .001 ? `translate3d(0, ${-current * 100}%, 0)` : '';
+        if (current !== hiddenTarget) animRaf = requestAnimationFrame(animate);
+        else animRaf = null;
       }
       function setHidden(hide) {
         hiddenTarget = hide ? 1 : 0;
-        if (!raf) raf = requestAnimationFrame(tick);
+        if (!animRaf) animRaf = requestAnimationFrame(animate);
       }
 
       let suppressed = false;
       let settleTimer = null;
-      /* clicking a nav link (About/Works/Process/Contact) triggers the
-         browser's own smooth-scroll-to-anchor, which fires a long stream of
-         scroll events covering a large distance in one continuous motion —
-         exactly what the hide-on-scroll logic above is designed to detect,
-         even though the person didn't touch their wheel or trackpad at all.
-         Suppressed while a nav click is in flight, and only re-armed once
-         scrolling has genuinely settled afterward (debounced), so the very
-         next real scroll event right as the auto-scroll ends doesn't slip
-         through and hide it immediately either. */
       window._suppressHeaderAutoHide = function () {
         suppressed = true;
         peakY = window.scrollY;
         runStart = window.scrollY;
       };
+
+      /* the actual decision logic — only ever runs inside a
+         requestAnimationFrame callback, never directly from the scroll
+         event itself. */
+      let dirty = false;
+      function evaluate() {
+        dirty = false;
+        const y = window.scrollY;
+
+        if (loaderEl && !loaderEl.classList.contains('is-done')) {
+          peakY = y; runStart = y;
+          return;
+        }
+        if (suppressed) {
+          peakY = y; runStart = y;
+          return;
+        }
+
+        h.classList.toggle('scrolled', y > 56);
+        if (h.classList.contains('menu-open')) return;
+
+        if (y > peakY) peakY = y;
+        if (peakY - y > UP_TOLERANCE) {
+          setHidden(false);
+          runStart = y;
+          peakY = y;
+        } else if (peakY - runStart > DOWN_DISTANCE && peakY > HIDE_AFTER) {
+          setHidden(true);
+        }
+      }
+      function requestEvaluate() {
+        if (!dirty) { dirty = true; requestAnimationFrame(evaluate); }
+      }
+
+      window.addEventListener('scroll', requestEvaluate, { passive: true });
+
+      /* clicking a nav link (About/Works/Process/Contact) triggers the
+         browser's own smooth-scroll-to-anchor, which fires a long stream
+         of scroll events covering a large distance in one continuous
+         motion — exactly what the logic above is designed to detect, even
+         though the person didn't touch their wheel or trackpad at all.
+         Suppressed while a nav click is in flight, and only re-armed once
+         scrolling has genuinely settled afterward (debounced), so the
+         very next real scroll event right as the auto-scroll ends doesn't
+         slip through and hide it immediately either. */
       window.addEventListener('scroll', () => {
         if (!suppressed) return;
         clearTimeout(settleTimer);
@@ -3002,34 +3038,7 @@
         }, 200);
       }, { passive: true });
 
-      const fn = () => {
-        const y = window.scrollY;
-        /* covers touch-scroll on mobile and any other scroll source that
-           doesn't go through the wheel handler above — same reasoning:
-           the loading screen visually covers everything, but the header's
-           own hide-on-scroll distance tracking doesn't know that on its
-           own, so without this check it kept "counting" scroll that
-           happened while nobody could actually see the page yet. */
-        const loaderEl = document.getElementById('loader');
-        if (loaderEl && !loaderEl.classList.contains('is-done')) {
-          peakY = y; runStart = y; /* keep the tracker in sync rather than banking a gap */
-          return;
-        }
-        h.classList.toggle('scrolled', y > 56);
-        if (!h.classList.contains('menu-open') && !suppressed) {
-          if (y > peakY) peakY = y;
-          if (peakY - y > UP_TOLERANCE) {
-            /* genuine upward scroll — show immediately and start a fresh run here */
-            setHidden(false);
-            runStart = y;
-            peakY = y;
-          } else if (peakY - runStart > DOWN_DISTANCE && peakY > HIDE_AFTER) {
-            setHidden(true);
-          }
-        }
-      };
-      window.addEventListener('scroll', fn, { passive: true });
-      fn();
+      requestEvaluate();
     })();
 
     /* ── BURGER ── */
