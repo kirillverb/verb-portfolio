@@ -3450,51 +3450,54 @@
     })();
 
     /* ── SCROLL REVEAL ──
-       Two independent systems, deliberately redundant:
-       1) Pure CSS (animation-timeline: view()) — see the REVEAL block near
-          the top of <style>. No JS involved for this one at all.
-       2) This plain scroll-listener backup below. No IntersectionObserver,
-          no fancy API — just the oldest, most basic technique possible:
-          check each element's position on every scroll tick, and if it's
-          within the viewport, force it visible via an inline style (which
-          wins over any CSS by specificity, regardless of what system 1 is
-          doing). If either system works, the content reveals correctly. */
+       Rebuilt from scratch — the previous JS backup checked every single
+       [data-r] element's position by hand on every scroll frame
+       (querySelectorAll + getBoundingClientRect for each one, RAF-gated
+       but still re-running for the ENTIRE page's worth of elements each
+       time, most of which had either already revealed or weren't
+       anywhere near the viewport at all). getBoundingClientRect forces a
+       layout read, so that was real per-frame work competing with the
+       browser's own scroll compositing — the textbook cause of scroll
+       jank, not the animation's easing itself.
 
-    /* .step's dim/reveal opacity is a composed formula (--reveal-o × --hover-o,
-       see the .step[data-r] rule) — reveal and hover-dim each own their own
-       slice, so neither can block the other regardless of which finishes
-       first. No JS intervention needed once that was true. */
-
+       IntersectionObserver is the browser-native mechanism built
+       specifically for "tell me when this element enters the viewport" —
+       it runs off the main thread rather than polling on every scroll
+       tick, and each element only needs to be observed once: the instant
+       it reveals, it's unobserved entirely rather than kept in a list
+       that gets re-checked for the rest of the page's life. */
     (function () {
+      const io = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) return;
+          const el = entry.target;
+          el.style.setProperty('--reveal-o', '1');
+          el.style.setProperty('--reveal-y', '0px');
+          io.unobserve(el); /* one-time reveal — no reason to keep watching it */
+        });
+      }, {
+        /* fires once an element is 8% into the viewport from the bottom —
+           the same "92% down the screen" trigger point the old version
+           used, expressed as an IntersectionObserver rootMargin instead
+           of a manual rect comparison */
+        rootMargin: '0px 0px -8% 0px',
+        threshold: 0
+      });
+
+      const observed = new WeakSet();
       function revealVisible() {
+        /* the external entry point renderWork() calls after injecting new
+           work-page content — attaches any [data-r] element not already
+           being watched (newly added to the DOM, or from before this
+           script first ran) to the shared observer. */
         document.querySelectorAll('[data-r]').forEach(el => {
-          const rect = el.getBoundingClientRect();
-          if (rect.top < window.innerHeight * 0.92 && rect.bottom > 0) {
-            /* sets ONLY the custom properties this system owns — never the
-               final opacity/transform directly. Whatever else is composing
-               those (tilt's --tilt-*, hover-dim's --hover-o) is completely
-               unaffected, so no exclusion list is needed here at all;
-               previously every element type that needed its OWN transform
-               or opacity for something else had to be manually added to a
-               growing exclusion list, and every time a new one was missed
-               (.hero__scroll, .step) it silently broke. Structurally
-               impossible now, not just patched. */
-            el.style.setProperty('--reveal-o', '1');
-            el.style.setProperty('--reveal-y', '0px');
-          }
+          if (observed.has(el)) return;
+          observed.add(el);
+          io.observe(el);
         });
       }
-      let ticking = false;
-      function onScroll() {
-        if (!ticking) {
-          requestAnimationFrame(() => { revealVisible(); ticking = false; });
-          ticking = true;
-        }
-      }
-      window.addEventListener('scroll', onScroll, { passive: true });
-      window.addEventListener('resize', onScroll);
-      revealVisible(); /* run once immediately for whatever's already on screen */
-      window.revealVisible = revealVisible; /* exposed so renderWork() can call it for work-page content */
+      revealVisible(); /* attach whatever's already in the DOM on first run */
+      window.revealVisible = revealVisible;
     })();
 
     /* ── HERO PARALLAX ── */
