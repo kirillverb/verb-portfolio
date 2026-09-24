@@ -137,7 +137,7 @@
     .loader__bar-fill {
       height: 100%; width: 0%;
       background: #F4F3F0;
-      transition: width .25s ease-out;
+      transition: width .25s var(--ease, ease-out);
     }
     /* smooth site-wide theme switch — narrow property list on purpose so it
        never competes with the transform-based animations elsewhere (magnetic
@@ -478,7 +478,7 @@
       position: fixed; inset: 0; z-index: 90; background: var(--bg);
       display: flex; flex-direction: column; align-items: center;
       justify-content: center; gap: 6px;
-      opacity: 0; pointer-events: none; transition: opacity .4s;
+      opacity: 0; pointer-events: none; transition: opacity .4s var(--ease);
     }
     .mob.open { opacity: 1; pointer-events: auto; }
     .mob a {
@@ -932,7 +932,7 @@
     .wp-item__slide {
       position: absolute; inset: 0;
       opacity: 0;
-      transition: opacity 1s ease;
+      transition: opacity 1s var(--ease);
     }
     .wp-item__slide.active { opacity: 1; }
     .wp-item__slide img {
