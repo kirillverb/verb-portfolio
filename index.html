@@ -242,15 +242,25 @@
        was the root cause behind several earlier bugs (tilt vanishing,
        hover-dim breaking, the scroll indicator losing its centering) that
        kept recurring in different specific spots because the underlying
-       conflict was structural, not a one-off mistake. Registering these
-       via @property is what lets a CSS animation interpolate them
-       smoothly frame-by-frame instead of jumping in one step. */
-    @property --reveal-o {
-      syntax: '<number>'; inherits: false; initial-value: 0;
-    }
-    @property --reveal-y {
-      syntax: '<length>'; inherits: false; initial-value: 46px;
-    }
+       conflict was structural, not a one-off mistake.
+       --reveal-o/--reveal-y used to also be registered via @property, back
+       when a CSS @keyframes animation-timeline drove them directly and
+       needed that registration to interpolate smoothly rather than
+       jumping in one step. That CSS-driven path was removed after it was
+       found to glitch mid-animation on its own regardless of browser
+       support for @property — JS now sets these values directly instead,
+       and the ordinary `transition: opacity, transform` further down
+       handles the smooth animation of the real, standard properties
+       (which interpolate correctly on their own, independent of whether
+       the custom properties feeding them are "registered" at all). With
+       nothing left that actually depends on it, @property was removed
+       entirely rather than left in as unused, speculative code — verified
+       by testing with it stripped out altogether: both reveal and tilt
+       still worked correctly. The practical benefit is compatibility:
+       @property isn't supported before Safari 16.4, which is newer than
+       what's available on iOS 15 (an iPhone 7's final supported OS), so
+       this removes a dependency the exact devices that need broad
+       compatibility can't provide. */
     @keyframes reveal-in {
       from { --reveal-o: 0; --reveal-y: 46px; }
       to   { --reveal-o: 1; --reveal-y: 0px; }
