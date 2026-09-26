@@ -139,6 +139,14 @@
       background: #F4F3F0;
       transition: width .25s var(--ease, ease-out);
     }
+    .loader__tagline {
+      font-family: var(--sans); font-size: 12px; font-weight: 500;
+      letter-spacing: .08em; text-transform: uppercase;
+      color: rgba(244,243,240,.55);
+      opacity: 0; transform: translateY(4px);
+      transition: opacity .5s var(--ease, ease), transform .5s var(--ease, ease);
+    }
+    .loader__tagline.is-visible { opacity: 1; transform: none; }
     /* smooth site-wide theme switch — narrow property list on purpose so it
        never competes with the transform-based animations elsewhere (magnetic
        cards, reveal-on-scroll, slider). Anything with its own more specific
@@ -1377,6 +1385,7 @@
       .about__img { max-width: 420px; }
       .about__sig { font-size: 22px; }
       .process__grid { grid-template-columns: 1fr; gap: 56px; }
+      .process__sub { max-width: none; }
     }
     /* phones in landscape: width alone (852px on iPhone 14 Pro, etc.) clears
        the 660px breakpoint below, so without this the header would switch to
@@ -1635,6 +1644,8 @@
       }
 
       let finished = false;
+      const taglineEl = document.getElementById('loaderTagline');
+      const isRu = (navigator.language || '').toLowerCase().startsWith('ru');
       function tryFinish() {
         if (finished || !total) return; /* total===0 case is handled separately below */
         if (!everShown) { finish(); return; } /* fast enough it never even appeared — nothing to hold */
@@ -1647,6 +1658,20 @@
         if (rafId) cancelAnimationFrame(rafId);
         if (pctEl) pctEl.textContent = '100%';
         if (fillEl) fillEl.style.width = '100%';
+        /* the tagline only gets its moment if the loader was genuinely
+           visible to begin with — on a fast connection where it never
+           appeared at all, adding a delay just to show a phrase nobody
+           was waiting for would reintroduce exactly the flash-then-gone
+           problem this whole delayed-reveal system exists to avoid. */
+        if (everShown && taglineEl) {
+          taglineEl.textContent = isRu ? 'Детали решают всё.' : 'Details decide everything.';
+          taglineEl.classList.add('is-visible');
+          setTimeout(reallyFinish, 1000); /* time to actually read it before the screen fades */
+        } else {
+          reallyFinish();
+        }
+      }
+      function reallyFinish() {
         if (loaderEl) loaderEl.classList.add('is-done');
         if (!alreadyShown) document.body.style.overflow = '';
         try { sessionStorage.setItem('_loaderShown', '1'); } catch (e) {}
@@ -1683,6 +1708,7 @@
   <div id="loader" class="loader">
     <div class="loader__pct" id="loaderPct">0%</div>
     <div class="loader__bar"><div class="loader__bar-fill" id="loaderFill"></div></div>
+    <div class="loader__tagline" id="loaderTagline"></div>
   </div>
   <script>
     /* runs synchronously, before the browser paints anything below it — a
@@ -2250,7 +2276,7 @@
         'nav.contact':  'Contact',
         'hero.scroll':  'Scroll',
         'about.h':      'About me',
-        'about.text':   'I\'m a digital designer who creates clear and expressive visual solutions through simple forms. Drawing on research and user insight, I help make digital products clearer, more user-friendly, and visually cohesive.',
+        'about.text':   'I\'m a digital designer who creates clear and expressive visual solutions through simple forms, drawing on research and user insight. Three of those decisions are right below.',
         'works.h':      'Featured Works',
         'wcard1.tag':   'Identity & Merch',
         'wcard2.tag':   'Digital Product',
@@ -2277,7 +2303,7 @@
         'nav.contact':  'Контакт',
         'hero.scroll':  'Скролл',
         'about.h':      'О себе',
-        'about.text':   'Я цифровой дизайнер, создающий чёткие и выразительные визуальные решения через простые формы. Опираясь на исследования и понимание пользователей, я помогаю делать цифровые продукты яснее, удобнее и визуально целостнее.',
+        'about.text':   'Я цифровой дизайнер, создающий чёткие и выразительные визуальные решения через простые формы, опираясь на исследования и понимание пользователей. Три таких решения — ниже.',
         'works.h':      'Избранные кейсы',
         'wcard1.tag':   'Айдентика и мерч',
         'wcard2.tag':   'Цифровой продукт',
