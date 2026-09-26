@@ -1274,6 +1274,9 @@
       object-position: center 20%;
       transition: transform .9s var(--ease);
     }
+    @media (hover: hover) {
+      .cta:hover .cta__bg img { transform: scale(1.03); }
+    }
     .cta__vignette {
       position: absolute; inset: 0;
     }
@@ -1495,9 +1498,12 @@
       /* verified via actual headless-browser rendering at real mobile viewport —
          75% is the empirically confirmed sweet spot, not a calculation */
       .cta__bg img {
-        position: absolute; width: 337%; max-width: none; height: 110%; top: -5%; left: -118.5%;
-        object-position: 100% 25%;
-        transform: scale(1.15);
+        opacity: 0; /* the actual pan/position now happens via background-image below — object-fit:cover mathematically can't give independent X and Y room at once, so the <img> stays only for semantics/loading, not for display */
+      }
+      .cta__bg {
+        background-size: 320% auto;
+        background-position: 90% 60%;
+        background-repeat: no-repeat;
       }
       .cta {
         justify-content: flex-start; text-align: left; align-items: flex-end;
@@ -1579,6 +1585,18 @@
         var key = img.getAttribute('data-img');
         if (IMG[key]) img.src = IMG[key];
       });
+      /* the CTA photo needs independent horizontal AND vertical positioning
+         on mobile — object-fit:cover mathematically can't provide both at
+         once (exactly one axis always ends up with zero pan room, no
+         matter the box proportions, since cover always picks whichever
+         scale factor makes ONE axis match exactly). background-image with
+         an explicit background-size sidesteps that entirely, so mobile
+         uses this instead; desktop's simple object-fit setup already
+         works fine and stays untouched. */
+      if (IMG.cta) {
+        var ctaBg = document.querySelector('.cta__bg');
+        if (ctaBg) ctaBg.style.backgroundImage = 'url(' + IMG.cta + ')';
+      }
       /* same pattern as images — points at a file that needs to actually
          exist in a videos/ folder next to this HTML, same as the images/
          folder does for photos. Swap the filename for the real export. */
