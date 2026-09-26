@@ -1275,9 +1275,6 @@
       object-position: center 35%;
       transition: transform .9s var(--ease);
     }
-    @media (hover: hover) {
-      .cta:hover .cta__bg img { transform: scale(1.03); }
-    }
     .cta__vignette {
       position: absolute; inset: 0;
     }
@@ -1499,7 +1496,8 @@
       /* verified via actual headless-browser rendering at real mobile viewport —
          75% is the empirically confirmed sweet spot, not a calculation */
       .cta__bg img {
-        object-position: 80% center;
+        position: absolute; width: 430%; max-width: none; height: 110%; top: -5%; left: -165%;
+        object-position: 80% 25%;
         transform: scale(1.15);
       }
       .cta {
