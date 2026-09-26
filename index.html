@@ -115,13 +115,20 @@
     .loader {
       position: fixed; inset: 0; z-index: 10000;
       background: #080808;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 18px;
+      display: flex; align-items: center; justify-content: center;
       opacity: 0; visibility: hidden; pointer-events: none;
       transition: opacity .6s var(--ease, ease), visibility .6s;
     }
     .loader.is-visible { opacity: 1; visibility: visible; pointer-events: auto; }
     .loader.is-done { opacity: 0; visibility: hidden; pointer-events: none; }
+    .loader__progress {
+      display: flex; flex-direction: column; align-items: center; gap: 18px;
+      transition: opacity .5s var(--ease, ease), transform .5s var(--ease, ease);
+    }
+    /* the count and bar disappear entirely once the real loading is done —
+       rather than sitting alongside the tagline as a lesser afterthought,
+       so the phrase that follows gets the screen fully to itself */
+    .loader__progress.is-hidden { opacity: 0; transform: scale(.92); }
     .loader__pct {
       font-family: 'Instrument Serif', 'Playfair Display', Georgia, serif;
       font-style: italic; font-weight: 400;
@@ -139,12 +146,25 @@
       background: #F4F3F0;
       transition: width .25s var(--ease, ease-out);
     }
+    /* the tagline is a title-card moment on its own, not a caption under
+       the numbers — large, centered, independent of the progress group's
+       own layout box (position: absolute so its entrance doesn't have to
+       wait on or interact with that group's exit at all), the same
+       italic serif voice as the site's own headings so it reads as a
+       genuine statement rather than a footnote. Tappable to skip early —
+       cursor: pointer is a small but real hint that it's interactive,
+       not just decorative text to wait out. */
     .loader__tagline {
-      font-family: var(--sans); font-size: 12px; font-weight: 500;
-      letter-spacing: .08em; text-transform: uppercase;
-      color: rgba(244,243,240,.55);
-      opacity: 0; transform: translateY(4px);
-      transition: opacity .5s var(--ease, ease), transform .5s var(--ease, ease);
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 32px; text-align: center;
+      font-family: 'Instrument Serif', 'Playfair Display', Georgia, serif;
+      font-style: italic; font-weight: 400;
+      font-size: clamp(32px, 6.5vw, 60px); line-height: 1.15;
+      color: #F4F3F0;
+      opacity: 0; transform: translateY(18px) scale(.97);
+      transition: opacity .8s cubic-bezier(.22,1,.36,1), transform .8s cubic-bezier(.22,1,.36,1);
+      cursor: pointer;
     }
     .loader__tagline.is-visible { opacity: 1; transform: none; }
     /* smooth site-wide theme switch — narrow property list on purpose so it
@@ -1248,7 +1268,7 @@
     .cta__bg { position: absolute; inset: 0; }
     .cta__bg img {
       width: 100%; height: 100%; object-fit: cover;
-      object-position: center 40%;
+      object-position: center -30%;
       transition: transform .9s var(--ease);
     }
     @media (hover: hover) {
@@ -1474,7 +1494,7 @@
          mobile viewports it pushes the subject too far off-center right */
       /* verified via actual headless-browser rendering at real mobile viewport —
          75% is the empirically confirmed sweet spot, not a calculation */
-      .cta__bg img { object-position: 70% 15%; transform: scale(1.3); }
+      .cta__bg img { object-position: 70% -10%; transform: scale(1.3); }
       .cta {
         justify-content: flex-start; text-align: left; align-items: flex-end;
         min-height: 0; aspect-ratio: 100 / 118;
@@ -1664,9 +1684,32 @@
            was waiting for would reintroduce exactly the flash-then-gone
            problem this whole delayed-reveal system exists to avoid. */
         if (everShown && taglineEl) {
-          taglineEl.textContent = isRu ? 'Детали решают всё.' : 'Details decide everything.';
-          taglineEl.classList.add('is-visible');
-          setTimeout(reallyFinish, 1000); /* time to actually read it before the screen fades */
+          const progressEl = document.getElementById('loaderProgress');
+          /* brief hold at 100% so it actually registers as "done" before
+             anything starts moving, then the count/bar fade out entirely
+             — a clean handoff rather than the phrase sharing the screen
+             with them as a lesser afterthought */
+          setTimeout(() => {
+            if (progressEl) progressEl.classList.add('is-hidden');
+            setTimeout(() => {
+              taglineEl.textContent = isRu ? 'Детали решают всё.' : 'Details decide everything.';
+              taglineEl.classList.add('is-visible');
+              /* tapping the phrase is a real, deliberate override — skip
+                 it early rather than waiting out the full hold. A single
+                 timer covers both paths: whichever happens first (the
+                 tap, or the 2-second hold simply running out) is what
+                 actually moves on. */
+              let advanced = false;
+              function advance() {
+                if (advanced) return;
+                advanced = true;
+                loaderEl.removeEventListener('click', advance);
+                reallyFinish();
+              }
+              loaderEl.addEventListener('click', advance);
+              setTimeout(advance, 2000);
+            }, 500); /* matches the progress group's own fade-out duration */
+          }, 250);
         } else {
           reallyFinish();
         }
@@ -1706,8 +1749,10 @@
 
   <!-- ─── LOADER ─── -->
   <div id="loader" class="loader">
-    <div class="loader__pct" id="loaderPct">0%</div>
-    <div class="loader__bar"><div class="loader__bar-fill" id="loaderFill"></div></div>
+    <div class="loader__progress" id="loaderProgress">
+      <div class="loader__pct" id="loaderPct">0%</div>
+      <div class="loader__bar"><div class="loader__bar-fill" id="loaderFill"></div></div>
+    </div>
     <div class="loader__tagline" id="loaderTagline"></div>
   </div>
   <script>
