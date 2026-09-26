@@ -1270,8 +1270,9 @@
     }
     .cta__bg { position: absolute; inset: 0; }
     .cta__bg img {
-      width: 100%; height: 100%; object-fit: cover;
-      object-position: center;
+      position: absolute; width: 140%; max-width: none; height: 105%; top: -2.5%; left: -20%;
+      object-fit: cover;
+      object-position: center 20%;
       transition: transform .9s var(--ease);
     }
     @media (hover: hover) {
@@ -1498,7 +1499,7 @@
       /* verified via actual headless-browser rendering at real mobile viewport —
          75% is the empirically confirmed sweet spot, not a calculation */
       .cta__bg img {
-        object-position: center;
+        object-position: 80% center;
       }
       .cta {
         justify-content: flex-start; text-align: left; align-items: flex-end;
