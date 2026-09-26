@@ -1268,7 +1268,7 @@
     .cta__bg { position: absolute; inset: 0; }
     .cta__bg img {
       width: 100%; height: 100%; object-fit: cover;
-      object-position: center -30%;
+      object-position: center;
       transition: transform .9s var(--ease);
     }
     @media (hover: hover) {
@@ -1494,7 +1494,7 @@
          mobile viewports it pushes the subject too far off-center right */
       /* verified via actual headless-browser rendering at real mobile viewport —
          75% is the empirically confirmed sweet spot, not a calculation */
-      .cta__bg img { object-position: 70% -10%; transform: scale(1.3); }
+      .cta__bg img { object-position: 70% -25%; transform: scale(1.3); }
       .cta {
         justify-content: flex-start; text-align: left; align-items: flex-end;
         min-height: 0; aspect-ratio: 100 / 118;
@@ -1665,7 +1665,13 @@
 
       let finished = false;
       const taglineEl = document.getElementById('loaderTagline');
-      const isRu = (navigator.language || '').toLowerCase().startsWith('ru');
+      /* prefer whatever the person actually chose on this site before —
+         the browser's own language is only a fallback guess for a first
+         visit that's never set a preference at all. Without checking this
+         first, the tagline could show in the opposite language from the
+         one currently selected on the site itself. */
+      const savedLang = (function () { try { return localStorage.getItem('kv-lang'); } catch (e) { return null; } })();
+      const isRu = savedLang ? savedLang === 'ru' : (navigator.language || '').toLowerCase().startsWith('ru');
       function tryFinish() {
         if (finished || !total) return; /* total===0 case is handled separately below */
         if (!everShown) { finish(); return; } /* fast enough it never even appeared — nothing to hold */
@@ -1692,7 +1698,7 @@
           setTimeout(() => {
             if (progressEl) progressEl.classList.add('is-hidden');
             setTimeout(() => {
-              taglineEl.textContent = isRu ? 'Детали решают всё.' : 'Details decide everything.';
+              taglineEl.innerHTML = (isRu ? 'Детали решают всё.' : 'Details decide everything.').split(' ').join('<br>');
               taglineEl.classList.add('is-visible');
               /* tapping the phrase is a real, deliberate override — skip
                  it early rather than waiting out the full hold. A single
