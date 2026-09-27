@@ -1270,10 +1270,11 @@
     }
     .cta__bg { position: absolute; inset: 0; }
     .cta__bg img {
-      width: 100%; height: 100%; object-fit: cover;
-      object-position: center 20%;
+      position: absolute; inset: 0;
+      width: 100%; height: 100%; object-fit: cover; object-position: center;
       transition: transform .9s var(--ease);
     }
+    .cta__bg-mobile { display: none; }
     @media (hover: hover) {
       .cta:hover .cta__bg img { transform: scale(1.03); }
     }
@@ -1493,18 +1494,14 @@
       .foot { flex-direction: column; align-items: center; gap: 16px; }
       .foot a { font-size: 28px; }
 
-      /* CTA image: 60% shift was tuned for wide desktop crops — on narrow
-         mobile viewports it pushes the subject too far off-center right */
-      /* verified via actual headless-browser rendering at real mobile viewport —
-         75% is the empirically confirmed sweet spot, not a calculation */
-      .cta__bg img {
-        opacity: 0; /* the actual pan/position now happens via background-image below — object-fit:cover mathematically can't give independent X and Y room at once, so the <img> stays only for semantics/loading, not for display */
-      }
-      .cta__bg {
-        background-size: 320% auto;
-        background-position: 70% 90%;
-        background-repeat: no-repeat;
-      }
+      /* two separate, pre-cropped photos — one composed for the wide
+         desktop banner, one for the tall mobile one — rather than trying
+         to math a single photo into looking right in both wildly
+         different container shapes. Whoever crops cta-mobile.jpg controls
+         the framing directly in their photo editor; no CSS percentages
+         to reason about at all. */
+      .cta__bg-desktop { display: none; }
+      .cta__bg-mobile { display: block; }
       .cta {
         justify-content: flex-start; text-align: left; align-items: flex-end;
         min-height: 0; aspect-ratio: 100 / 118;
@@ -1523,6 +1520,7 @@
         const IMG = {
       about: 'images/about.png',
       cta: 'images/cta.jpg',
+      ctaMobile: 'images/cta-mobile.jpg',
       jem: 'images/jem.jpg',
       jemredesign: 'images/jemredesign.jpg',
       jemcards: 'images/jemcards.jpg',
@@ -1585,18 +1583,6 @@
         var key = img.getAttribute('data-img');
         if (IMG[key]) img.src = IMG[key];
       });
-      /* the CTA photo needs independent horizontal AND vertical positioning
-         on mobile — object-fit:cover mathematically can't provide both at
-         once (exactly one axis always ends up with zero pan room, no
-         matter the box proportions, since cover always picks whichever
-         scale factor makes ONE axis match exactly). background-image with
-         an explicit background-size sidesteps that entirely, so mobile
-         uses this instead; desktop's simple object-fit setup already
-         works fine and stays untouched. */
-      if (IMG.cta) {
-        var ctaBg = document.querySelector('.cta__bg');
-        if (ctaBg) ctaBg.style.backgroundImage = 'url(' + IMG.cta + ')';
-      }
       /* same pattern as images — points at a file that needs to actually
          exist in a videos/ folder next to this HTML, same as the images/
          folder does for photos. Swap the filename for the real export. */
@@ -2111,7 +2097,8 @@
   <div class="cta-outer" id="contact">
     <div class="cta" data-r>
       <div class="cta__bg">
-        <img src="" data-img="cta" alt="" aria-hidden="true" loading="lazy">
+        <img src="" data-img="cta" alt="" aria-hidden="true" loading="lazy" class="cta__bg-desktop">
+        <img src="" data-img="ctaMobile" alt="" aria-hidden="true" loading="lazy" class="cta__bg-mobile">
       </div>
       <div class="cta__vignette"></div>
       <div class="cta__weather" id="ctaWeather" aria-hidden="true"></div>
